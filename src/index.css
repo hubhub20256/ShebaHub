@@ -1,0 +1,33 @@
+/* src/index.css */
+:root {
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  /* Professional Color Palette */
+  --primary-color: #0056b3; /* Sheba-like Blue */
+  --bg-color: #f4f7f6;
+  --text-color: #333;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  min-height: 100vh;
+}
+
+/* Make links look professional */
+a {
+  text-decoration: none;
+  color: inherit;
+  transition: color 0.3s;
+}
+
+h1,
+h2,
+h3 {
+  margin-top: 0;
+}
