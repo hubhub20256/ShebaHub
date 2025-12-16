@@ -21,7 +21,6 @@ function App() {
       {/* The Layout wraps all child routes */}
       <Route element={<Layout />}>
         <Route path="/" element={<Home />} />
-        <Route path="/search" element={<Search />} />
 
         {/* Dynamic Routes */}
         <Route path="/user/:id" element={<Profile />} />

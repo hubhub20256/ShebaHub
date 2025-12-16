@@ -24,9 +24,6 @@ const Navbar = () => {
         <Link to="/mentors" style={styles.link}>
           מנחים
         </Link>
-        <Link to="/search" style={styles.link}>
-          חיפוש
-        </Link>
         <Link to="/About" style={styles.link}>
           אודותינו
         </Link>
