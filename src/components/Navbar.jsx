@@ -1,11 +1,9 @@
 import { Link } from "react-router-dom";
 import "../index.css";
 import ShebaNavbarLogo from "../assets/ShebaNavbarLogo.png";
-import { useAuth } from "../context/AuthContext"; // 1. MISSING IMPORT
+import { useAuth } from "../context/AuthContext";
 
 const Navbar = () => {
-  // 2. MISSING HOOK CALL
-  // We must "extract" the user and logout function from the context
   const { user, logout } = useAuth();
 
   return (
@@ -89,12 +87,12 @@ const styles = {
   links: {
     display: "flex",
     gap: "1rem",
-    alignItems: "center", // Align items vertically
+    alignItems: "center",
   },
   link: {
     textDecoration: "none",
     color: "#333",
-    fontWeight: "500", // Slightly bolder for readability
+    fontWeight: "500",
   },
 };
 
