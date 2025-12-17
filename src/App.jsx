@@ -12,6 +12,7 @@ import {
   Researches,
   Apprentices,
   Register,
+  Login,
 } from "./pages";
 
 import Layout from "./components/Layout.jsx";
@@ -28,6 +29,7 @@ function App() {
         <Route path="/user/:id" element={<Profile />} />
         <Route path="/research/:id" element={<Research />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/login" element={<Login />} />
 
         {/* Static Content Pages */}
         <Route path="/about" element={<About />} />

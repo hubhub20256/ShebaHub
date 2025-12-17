@@ -1,8 +1,8 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import AuthLayout from "../components/AuthLayout";
+import { FormInput, FormButton, FormSelect } from "../components/forms";
 
 const Register = () => {
-  // State to manage all form inputs
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -12,196 +12,157 @@ const Register = () => {
     gender: "",
     agreed: false,
   });
+  const [errors, setErrors] = useState({});
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
+    if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
     setFormData((prev) => ({
       ...prev,
       [name]: type === "checkbox" ? checked : value,
     }));
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    console.log("Form Submitted:", formData);
-    // Add registration logic here (e.g., API call)
+  const validateForm = () => {
+    let newErrors = {};
+    if (!formData.firstName) newErrors.firstName = "שם פרטי הוא שדה חובה";
+    if (!formData.lastName) newErrors.lastName = "שם משפחה הוא שדה חובה";
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!formData.email || !emailRegex.test(formData.email))
+      newErrors.email = "נא להזין כתובת אימייל תקינה";
+
+    if (!formData.password || formData.password.length < 6)
+      newErrors.password = "הסיסמה חייבת להכיל לפחות 6 תווים";
+    if (formData.password !== formData.confirmPassword)
+      newErrors.confirmPassword = "הסיסמאות אינן תואמות";
+    if (!formData.agreed) newErrors.agreed = "חובה לאשר את תנאי השימוש";
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (validateForm()) {
+      console.log("Form Validated & Submitted:", formData);
+    } else {
+      console.log("Validation Failed");
+    }
+  };
+
+  const description = (
+    <>
+      ברוכ/ת הבא/ה
+      <br />
+      כדי ליצור חשבון חדש במערכת, אנא מלאו את הפרטים הבאים.
+      <br />
+      ההרשמה מאפשרת גישה מלאה לפיצ'רים, שמירת נתונים אישיים, יצירת קשר עם מנחים,
+      מתלמדים וניהול פרויקטים.
+    </>
+  );
+
   return (
-    <div style={styles.container}>
-      <div style={styles.formWrapper}>
-        <h1 style={styles.title}>הרשמה</h1>
-        <h2 style={styles.subtitle}>ברוכ/ת הבא/ה</h2>
-        <p style={styles.description}>
-          כדי ליצור חשבון חדש במערכת, אנא מלאו את הפרטים הבאים.
-          <br />
-          ההרשמה מאפשרת גישה מלאה לפיצ'רים, שמירת נתונים אישיים, יצירת קשר עם
-          מנחים, מתלמדים וניהול פרויקטים.
-        </p>
-
-        <form onSubmit={handleSubmit} style={styles.form}>
-          <input
-            type="text"
-            name="firstName"
-            placeholder="שם פרטי"
-            value={formData.firstName}
-            onChange={handleChange}
-            style={styles.input}
-          />
-          <input
-            type="text"
-            name="lastName"
-            placeholder="שם משפחה"
-            value={formData.lastName}
-            onChange={handleChange}
-            style={styles.input}
-          />
-          <input
-            type="email"
-            name="email"
-            placeholder="דואר אלקטרוני"
-            value={formData.email}
-            onChange={handleChange}
-            style={styles.input}
-          />
-          <input
-            type="password"
-            name="password"
-            placeholder="סיסמה"
-            value={formData.password}
-            onChange={handleChange}
-            style={styles.input}
-          />
-          <input
-            type="password"
-            name="confirmPassword"
-            placeholder="אימות סיסמה"
-            value={formData.confirmPassword}
-            onChange={handleChange}
-            style={styles.input}
-          />
-
-          {/* Gender Selection */}
-          <div style={styles.radioGroup}>
-            <label style={styles.radioLabel}>
-              <input
-                type="radio"
-                name="gender"
-                value="female"
-                onChange={handleChange}
-                style={styles.radioInput}
-              />
-              נקבה
-            </label>
-            <label style={styles.radioLabel}>
-              <input
-                type="radio"
-                name="gender"
-                value="male"
-                onChange={handleChange}
-                style={styles.radioInput}
-              />
-              זכר
-            </label>
-            <label style={styles.radioLabel}>
-              <input
-                type="radio"
-                name="gender"
-                value="other"
-                onChange={handleChange}
-                style={styles.radioInput}
-              />
-              אחר
-            </label>
-          </div>
-
-          {/* Terms Checkbox */}
-          <div style={styles.checkboxContainer}>
-            <label style={styles.checkboxLabel}>
-              הסכמה לתנאי שימוש ומדיניות פרטיות
-              <input
-                type="checkbox"
-                name="agreed"
-                checked={formData.agreed}
-                onChange={handleChange}
-                style={styles.checkboxInput}
-              />
-            </label>
-          </div>
-
-          {/* Although not in the screenshot crop, a form needs a submit button */}
-          <button type="submit" style={styles.button}>
-            הרשמה
-          </button>
-        </form>
-
-        <div style={styles.footer}>
-          <span>כבר יש לך חשבון? </span>
-          <Link to="/login" style={styles.link}>
-            להתחברות
-          </Link>
+    <AuthLayout
+      title="הרשמה"
+      subtitle={description}
+      footerText="כבר יש לך חשבון?"
+      footerLinkText="להתחברות"
+      footerPath="/login"
+    >
+      <form
+        onSubmit={handleSubmit}
+        style={{ display: "flex", flexDirection: "column", gap: "0.2rem" }}
+      >
+        {/* Reusable Inputs */}
+        <FormInput
+          name="firstName"
+          placeholder="שם פרטי"
+          value={formData.firstName}
+          onChange={handleChange}
+          error={errors.firstName}
+        />
+        <FormInput
+          name="lastName"
+          placeholder="שם משפחה"
+          value={formData.lastName}
+          onChange={handleChange}
+          error={errors.lastName}
+        />
+        <FormInput
+          type="email"
+          name="email"
+          placeholder="דואר אלקטרוני"
+          value={formData.email}
+          onChange={handleChange}
+          error={errors.email}
+        />
+        <FormInput
+          type="password"
+          name="password"
+          placeholder="סיסמה"
+          value={formData.password}
+          onChange={handleChange}
+          error={errors.password}
+        />
+        <FormInput
+          type="password"
+          name="confirmPassword"
+          placeholder="אימות סיסמה"
+          value={formData.confirmPassword}
+          onChange={handleChange}
+          error={errors.confirmPassword}
+        />
+        {/* Gender Selection (Unique to this page, so we use local styles) */}
+        <FormSelect
+          name="gender"
+          placeholder="בחר מגדר..."
+          value={formData.gender}
+          onChange={handleChange}
+          error={errors.gender} // Now the dropdown turns red if they forget to pick one!
+          options={[
+            { value: "female", label: "נקבה" },
+            { value: "male", label: "זכר" },
+            { value: "other", label: "אחר" },
+          ]}
+        />
+        {/* Checkbox (Unique to this page) */}
+        <div style={styles.checkboxContainer}>
+          <label style={styles.checkboxLabel}>
+            הסכמה לתנאי שימוש
+            <input
+              type="checkbox"
+              name="agreed"
+              checked={formData.agreed}
+              onChange={handleChange}
+            />
+          </label>
         </div>
-      </div>
-    </div>
+        {errors.agreed && (
+          <span
+            style={{ color: "red", textAlign: "center", fontSize: "0.8rem" }}
+          >
+            {errors.agreed}
+          </span>
+        )}
+        <FormButton>הרשמה</FormButton>>
+      </form>
+    </AuthLayout>
   );
 };
 
+// Styles unique to Register.jsx
 const styles = {
-  container: {
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    direction: "rtl", // Critical for Hebrew layout
-    fontFamily: "Arial, sans-serif",
-  },
-  formWrapper: {
-    width: "100%",
-    maxWidth: "500px",
-    textAlign: "center",
-    padding: "2rem",
-  },
-  title: {
-    fontSize: "2.5rem",
-    color: "#2c3e50", // Dark blue matches header
-    marginBottom: "0.5rem",
-    fontWeight: "bold",
-  },
-  subtitle: {
-    fontSize: "1.2rem",
-    marginBottom: "0.5rem",
-    color: "#333",
-  },
-  description: {
-    fontSize: "0.9rem",
-    color: "#666",
-    marginBottom: "2rem",
-    lineHeight: "1.5",
-  },
-  form: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "1rem",
-  },
-  input: {
-    padding: "0.8rem",
-    fontSize: "1rem",
-    border: "1px solid #ccc",
-    borderRadius: "4px", // Slight rounding looks cleaner
-    textAlign: "right",
-  },
   radioGroup: {
     display: "flex",
     justifyContent: "center",
     gap: "1.5rem",
-    marginTop: "0.5rem",
+    marginTop: "1rem",
   },
   radioLabel: {
     display: "flex",
     alignItems: "center",
     gap: "0.5rem",
-    cursor: "pointer",
-  },
-  radioInput: {
     cursor: "pointer",
   },
   checkboxContainer: {
@@ -211,37 +172,10 @@ const styles = {
   },
   checkboxLabel: {
     display: "flex",
-    flexDirection: "row-reverse", // Keeps text and checkbox aligned correctly for RTL
+    flexDirection: "row-reverse",
     alignItems: "center",
     gap: "0.5rem",
-    fontSize: "0.9rem",
     cursor: "pointer",
-  },
-  checkboxInput: {
-    width: "16px",
-    height: "16px",
-    cursor: "pointer",
-  },
-  button: {
-    marginTop: "1.5rem",
-    padding: "0.8rem",
-    backgroundColor: "#2c3e50",
-    color: "#fff",
-    border: "none",
-    borderRadius: "4px",
-    fontSize: "1rem",
-    cursor: "pointer",
-    fontWeight: "bold",
-  },
-  footer: {
-    marginTop: "1.5rem",
-    fontSize: "0.9rem",
-  },
-  link: {
-    color: "#000",
-    fontWeight: "bold",
-    textDecoration: "underline",
-    marginRight: "0.3rem",
   },
 };
 
