@@ -36,6 +36,9 @@ const Navbar = () => {
       </div>
       <div style={styles.links}>
         {/* We'll use a placeholder ID for now */}
+        <Link to="/register" style={styles.link}>
+          הרשמה
+        </Link>
         <Link to="/user/1" style={styles.link}>
           פרופיל
         </Link>

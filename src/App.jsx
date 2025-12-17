@@ -11,6 +11,7 @@ import {
   Mentors,
   Researches,
   Apprentices,
+  Register,
 } from "./pages";
 
 import Layout from "./components/Layout.jsx";
@@ -26,6 +27,7 @@ function App() {
         {/* Dynamic Routes */}
         <Route path="/user/:id" element={<Profile />} />
         <Route path="/research/:id" element={<Research />} />
+        <Route path="/register" element={<Register />} />
 
         {/* Static Content Pages */}
         <Route path="/about" element={<About />} />
