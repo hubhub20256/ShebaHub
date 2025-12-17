@@ -145,7 +145,7 @@ const Register = () => {
             {errors.agreed}
           </span>
         )}
-        <FormButton>הרשמה</FormButton>>
+        <FormButton>הרשמה</FormButton>
       </form>
     </AuthLayout>
   );
