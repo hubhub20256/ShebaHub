@@ -15,6 +15,9 @@ const Navbar = () => {
         </Link>
       </div>
       <div style={styles.links}>
+        <Link to="/mentor/create-profile" style={styles.link}>
+          יצירת פרופיל מנחה
+        </Link>
         <Link to="/researches" style={styles.link}>
           מחקרים
         </Link>
