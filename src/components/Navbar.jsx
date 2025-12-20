@@ -33,6 +33,7 @@ const Navbar = () => {
         <Link to="/" style={styles.link}>
           דף בית
         </Link>
+        
       </div>
       <div style={styles.links}>
         {/* We'll use a placeholder ID for now */}

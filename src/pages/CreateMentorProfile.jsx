@@ -1,18 +1,36 @@
 import React, { useState } from "react";
-import { SPECIALTIES } from "../data/specialties";
+import {
+  SPECIALTIES_BASE,
+  SPECIALTIES_SUPER,
+  SPECIALTIES_FELLOWSHIPS,
+} from "../data/specialties";
+
+const SPECIALTY_GROUPS = [
+  { v: "", t: "[ בחרי/י קטגוריה ]" },
+  { v: "base", t: "מקצועות הבסיס" },
+  { v: "super", t: "מקצועות העל" },
+  { v: "fellows", t: "השתלמויות עמיתים" },
+];
+
+const specialtiesByGroup = {
+  base: SPECIALTIES_BASE,
+  super: SPECIALTIES_SUPER,
+  fellows: SPECIALTIES_FELLOWSHIPS,
+};
 
 export default function CreateMentorProfile() {
-  const [role, setRole] = useState("mentor"); // mentor | apprentice
+  const [role, setRole] = useState("mentor");
 
   const [form, setForm] = useState({
+    specialtyGroup: "",
     specialty: "",
     stageInMedicalTraining: "",
     workplace: "",
-    degrees: "",
+    degrees: [],
     institution: "",
     academicRank: "",
 
-    hasMentoringExperience: "", // "כן" | "לא"
+    hasMentoringExperience: "",
     mentoringExperienceDetails: "",
 
     researchInterests: "",
@@ -30,7 +48,6 @@ export default function CreateMentorProfile() {
   function updateField(name, value) {
     setForm((prev) => ({ ...prev, [name]: value }));
 
-    // ננקה שגיאה של אותו שדה ברגע שמשנים אותו
     setErrors((prev) => {
       if (!prev[name]) return prev;
       const copy = { ...prev };
@@ -44,18 +61,54 @@ export default function CreateMentorProfile() {
     updateField(name, value);
   }
 
+  function handleSpecialtyGroupChange(e) {
+    const nextGroup = e.target.value;
+
+    setForm((prev) => ({
+      ...prev,
+      specialtyGroup: nextGroup,
+      specialty: "",
+    }));
+
+    setErrors((prev) => {
+      const copy = { ...prev };
+      delete copy.specialtyGroup;
+      delete copy.specialty;
+      return copy;
+    });
+  }
+
   function handleFileChange(e) {
     const { name, files } = e.target;
     updateField(name, files && files[0] ? files[0] : null);
   }
 
+  function toggleDegree(deg) {
+    setForm((prev) => {
+      const exists = prev.degrees.includes(deg);
+      const nextDegrees = exists
+        ? prev.degrees.filter((x) => x !== deg)
+        : [...prev.degrees, deg];
+      return { ...prev, degrees: nextDegrees };
+    });
+
+    setErrors((prev) => {
+      if (!prev.degrees) return prev;
+      const copy = { ...prev };
+      delete copy.degrees;
+      return copy;
+    });
+  }
+
   function validate() {
     const next = {};
 
+    if (!form.specialtyGroup) next.specialtyGroup = "שדה חובה";
     if (!form.specialty) next.specialty = "שדה חובה";
+
     if (!form.stageInMedicalTraining) next.stageInMedicalTraining = "שדה חובה";
     if (!form.workplace.trim()) next.workplace = "שדה חובה";
-    if (!form.degrees) next.degrees = "שדה חובה";
+    if (!form.degrees || form.degrees.length === 0) next.degrees = "שדה חובה";
     if (!form.institution) next.institution = "שדה חובה";
     if (!form.academicRank) next.academicRank = "שדה חובה";
 
@@ -81,6 +134,12 @@ export default function CreateMentorProfile() {
     alert("נשמר לבדיקה (Console). בשלב הבא נחבר ל-API.");
   }
 
+  const selectedGroup = form.specialtyGroup || "";
+  const specialtyOptions = [
+    { v: "", t: selectedGroup ? "[ בחרי/י התמחות ]" : "[ קודם בחרי/י קטגוריה ]" },
+    ...((specialtiesByGroup[selectedGroup] || []).map((s) => ({ v: s, t: s }))),
+  ];
+
   return (
     <div dir="rtl" style={styles.page}>
       <h1 style={styles.title}>יצירת פרופיל</h1>
@@ -99,23 +158,30 @@ export default function CreateMentorProfile() {
           onClick={() => setRole("apprentice")}
           style={{ ...styles.roleBtn, ...(role === "apprentice" ? styles.roleBtnActive : {}) }}
         >
-            מתלמד/ת
+          מתלמד/ת
         </button>
       </div>
 
       <form onSubmit={submit} style={styles.card}>
         <div className="mentor-grid" style={styles.grid}>
-        <SelectField
+          <SelectField
+            label="קטגוריית התמחות"
+            name="specialtyGroup"
+            value={form.specialtyGroup}
+            onChange={handleSpecialtyGroupChange}
+            error={errors.specialtyGroup}
+            options={SPECIALTY_GROUPS}
+          />
+
+          <SelectField
             label="התמחות / תחום מרכזי"
             name="specialty"
             value={form.specialty}
             onChange={handleChange}
             error={errors.specialty}
-            options={[
-                { v: "", t: "[ בחרי/י התמחות ]" },
-                ...SPECIALTIES.map((s) => ({ v: s, t: s })),
-            ]}
-            />
+            options={specialtyOptions}
+            disabled={!selectedGroup}
+          />
 
           <SelectField
             label="שלב בהכשרה הרפואית"
@@ -140,18 +206,13 @@ export default function CreateMentorProfile() {
             placeholder="תפרטי/י על מקום העבודה"
           />
 
-          <SelectField
+          <DegreesField
             label="תארים"
             name="degrees"
             value={form.degrees}
-            onChange={handleChange}
+            onToggle={toggleDegree}
             error={errors.degrees}
-            options={[
-              { v: "", t: "[ בחרי/י תואר ]" },
-              { v: "MD", t: "MD" },
-              { v: "PhD", t: "PhD" },
-              { v: "MD, PhD", t: "MD, PhD" },
-            ]}
+            options={["MD", "PhD", "MSc", "MPH", "MBA"]}
           />
 
           <SelectField
@@ -162,27 +223,30 @@ export default function CreateMentorProfile() {
             error={errors.institution}
             options={[
               { v: "", t: "[ בחרי/י מוסד ]" },
+              { v: "האוניברסיטה העברית בירושלים", t: "האוניברסיטה העברית בירושלים" },
               { v: "אוניברסיטת תל אביב", t: "אוניברסיטת תל אביב" },
-              { v: "האוניברסיטה העברית", t: "האוניברסיטה העברית" },
-              { v: "טכניון", t: "טכניון" },
+              { v: "אוניברסיטת בן-גוריון בנגב", t: "אוניברסיטת בן-גוריון בנגב" },
+              { v: "אוניברסיטת בר-אילן", t: "אוניברסיטת בר-אילן" },
+              { v: "אוניברסיטת אריאל", t: "אוניברסיטת אריאל" },
+              { v: "הטכניון – מכון טכנולוגי לישראל", t: "הטכניון – מכון טכנולוגי לישראל" },
             ]}
           />
 
           <SelectField
-            label="דרגה אקדמית"
+            label="שלב בהכשרה הרפואית"
             name="academicRank"
             value={form.academicRank}
             onChange={handleChange}
             error={errors.academicRank}
             options={[
-              { v: "", t: "[ בחרי/י דרגה ]" },
-              { v: "מרצה/ה", t: "מרצה/ה" },
-              { v: "מרצה/ה בכיר/ה", t: "מרצה/ה בכיר/ה" },
-              { v: "פרופ׳", t: "פרופ׳" },
+              { v: "", t: "בחרי שלב בהכשרה" },
+              { v: "סטאז׳", t: "סטאז׳" },
+              { v: "מתמחה", t: "מתמחה" },
+              { v: "מומחה/ית", t: "מומחה/ית" },
+              { v: "התמחות־על / עמית/ת", t: "התמחות־על / עמית/ת" },
             ]}
           />
         </div>
-
 
         <div style={styles.field}>
           <label style={styles.label}>ניסיון בהנחיה</label>
@@ -226,7 +290,6 @@ export default function CreateMentorProfile() {
           disabled={form.hasMentoringExperience !== "כן"}
         />
 
-
         <SelectField
           label="תחומי עניין מחקר"
           name="researchInterests"
@@ -262,7 +325,6 @@ export default function CreateMentorProfile() {
           rows={4}
         />
 
-
         <InputField
           label="לקבלת חוות דעת ממנחים ומתלמדים"
           name="recommendationRequest"
@@ -272,7 +334,6 @@ export default function CreateMentorProfile() {
           placeholder="תציין/י תואר אקדמי + שם מלא + דואר אלקטרוני"
         />
 
-        <SectionTitle>העלאת קבצים</SectionTitle>
 
         <FileField
           label="העלאת קבצים"
@@ -289,9 +350,9 @@ export default function CreateMentorProfile() {
         />
 
         <div style={styles.actions}>
-        <button type="submit" style={styles.primaryBtn}>
+          <button type="submit" style={styles.primaryBtn}>
             אישור
-        </button>
+          </button>
         </div>
 
         <style>{`
@@ -330,21 +391,79 @@ function InputField({ label, name, value, onChange, error, placeholder, disabled
   );
 }
 
-function SelectField({ label, name, value, onChange, error, options }) {
+function SelectField({
+  label,
+  name,
+  value,
+  onChange,
+  error,
+  options,
+  multiple = false,
+  disabled = false,
+}) {
+  const normalizedValue = multiple
+    ? Array.isArray(value)
+      ? value
+      : []
+    : value ?? "";
+
   return (
     <div style={styles.field}>
       <label htmlFor={name} style={styles.label}>{label}</label>
+
       <select
         id={name}
         name={name}
-        value={value}
+        value={normalizedValue}
         onChange={onChange}
-        style={{ ...styles.select, ...(error ? styles.inputError : {}) }}
+        multiple={multiple}
+        disabled={disabled}
+        style={{
+          ...styles.select,
+          ...(multiple ? { height: "auto", minHeight: 110 } : {}),
+          ...(error ? styles.inputError : {}),
+          ...(disabled ? styles.disabled : {}),
+        }}
       >
+        {/* {!multiple && <option value="">[ בחרי/י ]</option>} */}
+
         {options.map((o) => (
-          <option key={`${name}-${o.t}`} value={o.v}>{o.t}</option>
+          <option key={`${name}-${o.v}`} value={o.v}>
+            {o.t}
+          </option>
         ))}
       </select>
+
+      {error ? <div style={styles.error}>{error}</div> : null}
+    </div>
+  );
+}
+
+function DegreesField({ label, name, value, onToggle, error, options }) {
+  const selected = Array.isArray(value) ? value : [];
+
+  return (
+    <div style={styles.field}>
+      <label style={styles.label}>{label}</label>
+
+      <div style={styles.checkboxGrid}>
+        {options.map((opt) => {
+          const checked = selected.includes(opt);
+
+          return (
+            <label key={`${name}-${opt}`} style={styles.checkboxItem}>
+              <input
+                type="checkbox"
+                checked={checked}
+                onChange={() => onToggle(opt)}
+                style={styles.checkbox}
+              />
+              <span>{opt}</span>
+            </label>
+          );
+        })}
+      </div>
+
       {error ? <div style={styles.error}>{error}</div> : null}
     </div>
   );
@@ -391,7 +510,7 @@ const styles = {
     fontSize: 34,
     fontWeight: 800,
     textAlign: "center",
-    color: THEME_COLOR, // כותרת ראשית
+    color: THEME_COLOR,
   },
   roleSwitch: {
     display: "flex",
@@ -411,7 +530,7 @@ const styles = {
     color: THEME_COLOR,
   },
   roleBtnActive: {
-    background: THEME_COLOR, // כפתור נבחר
+    background: THEME_COLOR,
     color: "white",
     border: `1px solid ${THEME_COLOR}`,
   },
@@ -442,7 +561,7 @@ const styles = {
   label: {
     fontSize: 14,
     fontWeight: 700,
-    color: THEME_COLOR, // כותרות שדות
+    color: THEME_COLOR,
   },
   input: {
     padding: "10px 12px",
@@ -486,7 +605,7 @@ const styles = {
     color: THEME_COLOR,
   },
   pillBtnActive: {
-    background: THEME_COLOR, // כפתור נבחר (כן/לא)
+    background: THEME_COLOR,
     color: "white",
     border: `1px solid ${THEME_COLOR}`,
   },
@@ -507,7 +626,7 @@ const styles = {
     padding: "10px 18px",
     borderRadius: 14,
     border: `1px solid ${THEME_COLOR}`,
-    background: THEME_COLOR, // כפתור אישור
+    background: THEME_COLOR,
     color: "white",
     cursor: "pointer",
     minWidth: 180,
@@ -524,5 +643,24 @@ const styles = {
   },
   disabled: {
     opacity: 0.7,
+  },
+  checkboxGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+    gap: 10,
+    marginTop: 4,
+  },
+  checkboxItem: {
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+    padding: "10px 12px",
+    borderRadius: 10,
+    border: "1px solid rgba(0,0,0,0.18)",
+    background: "white",
+  },
+  checkbox: {
+    width: 16,
+    height: 16,
   },
 };
