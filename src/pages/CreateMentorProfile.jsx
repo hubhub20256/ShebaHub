@@ -32,6 +32,7 @@ export default function CreateMentorProfile() {
     specialty: "",
     stageInMedicalTraining: "",
     workplace: "",
+    isShebaEmployee: "", // שדה חדש
     degrees: [],
     institution: "",
     academicRank: "",
@@ -52,7 +53,6 @@ export default function CreateMentorProfile() {
     weeklyHours: "",
     startDate: "",
 
-    // שדות חדשים שביקשת
     workType: "",
     softwareSkills: "",
     compensationPreference: "",
@@ -102,7 +102,6 @@ export default function CreateMentorProfile() {
     });
   }
 
-  // פונקציית וולידציה
   function validate() {
     const next = {};
     if (!form.institution) next.institution = "שדה חובה";
@@ -220,6 +219,20 @@ export default function CreateMentorProfile() {
             ]}
           />
 
+          {/* שדות חדשים למתלמד אחרי מוסד לימודים */}
+          {role === "apprentice" && (
+            <>
+              <InputField label="מקום עבודה" name="workplace" value={form.workplace} onChange={handleChange} placeholder="מקום עבודה (אם רלוונטי)" />
+              <div style={styles.field}>
+                <label style={styles.label}>האם את/ה מועסק בשיבא?</label>
+                <div style={styles.inline}>
+                  <button type="button" onClick={() => updateField("isShebaEmployee", "כן")} style={{ ...styles.pillBtn, ...(form.isShebaEmployee === "כן" ? styles.pillBtnActive : {}) }}>כן</button>
+                  <button type="button" onClick={() => updateField("isShebaEmployee", "לא")} style={{ ...styles.pillBtn, ...(form.isShebaEmployee === "לא" ? styles.pillBtnActive : {}) }}>לא</button>
+                </div>
+              </div>
+            </>
+          )}
+
           {role === "mentor" && (
             <SelectField
               label="שלב בהכשרה הרפואית"
@@ -231,7 +244,6 @@ export default function CreateMentorProfile() {
             />
           )}
 
-          {/* שדות חדשים למתלמד בגריד */}
           {role === "apprentice" && (
             <>
               <SelectField
@@ -349,7 +361,6 @@ export default function CreateMentorProfile() {
   );
 }
 
-// רכיבי העזר (ללא שינוי כפי שביקשת)
 function InputField({ label, name, value, onChange, placeholder, disabled, error }) {
   return (
     <div style={styles.field}>
