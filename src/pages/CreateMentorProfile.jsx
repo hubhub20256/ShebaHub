@@ -217,7 +217,7 @@ export default function CreateMentorProfile() {
         <div style={{ ...styles.section, borderTop: "1px solid #eee", paddingTop: 24 }}>
           <h3 style={styles.sectionTitle}>ניסיון ומקום עבודה</h3>
           <div className="mentor-grid" style={styles.grid}>
-             <InputField label="מקום עבודה" name="workplace" value={form.workplace} onChange={handleChange} error={role === "mentor" ? errors.workplace : null} placeholder={role === "mentor" ? "תפרטי/י על מקום העבודה" : "מקום עבודה (אם רלוונטי)"} />
+             <InputField label="מקום עבודה" name="workplace" value={form.workplace} onChange={handleChange} error={role === "mentor" ? errors.workplace : null} placeholder={role === "mentor" ? "מקום העבודה" : "מקום עבודה (אם רלוונטי)"} />
 
             {role === "apprentice" && (
                 <div style={styles.field}>
@@ -312,7 +312,7 @@ export default function CreateMentorProfile() {
         <div style={{ ...styles.section, borderTop: "1px solid #eee", paddingTop: 24 }}>
           <h3 style={styles.sectionTitle}>פרטים נוספים וקבצים</h3>
           <TextAreaField label="תיאור רקע אישי ואקדמי" name="personalAcademicDescription" value={form.personalAcademicDescription} onChange={handleChange} error={errors.personalAcademicDescription} rows={4} />
-          <TextAreaField label="לקבלת חוות דעת ממנחים/מתלמדים" name="recommendationRequest" value={form.recommendationRequest} onChange={handleChange} placeholder="תואר + שם מלא + דואר אלקטרוני" rows={3} />
+          <TextAreaField label="לקבלת חוות דעת ממנחים/מתלמדים" name="recommendationRequest" value={form.recommendationRequest} onChange={handleChange} placeholder="תואר + שם מלא + דואר אלקטרוני" rows={4} />
           
           <div className="mentor-grid" style={{...styles.grid, marginTop: 15}}>
             <FileField label="העלאת קבצים" name="filesUpload" file={form.filesUpload} onChange={handleFileChange} />
