@@ -13,7 +13,9 @@ import {
   Apprentices,
   Register,
   Login,
+  CreateMentorProfile,
 } from "./pages";
+
 
 import Layout from "./components/Layout.jsx";
 
@@ -36,6 +38,7 @@ function App() {
         <Route path="/apprentices" element={<Apprentices />} />
         <Route path="/mentors" element={<Mentors />} />
         <Route path="/researches" element={<Researches />} />
+        <Route path="/mentor/create-profile" element={<CreateMentorProfile />} />
       </Route>
     </Routes>
   );

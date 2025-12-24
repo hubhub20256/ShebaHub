@@ -36,6 +36,7 @@ const Navbar = () => {
         <Link to="/" style={styles.link}>
           דף בית
         </Link>
+        
       </div>
 
       {/* This section now works because 'user' is defined above */}
