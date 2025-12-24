@@ -1,8 +1,11 @@
 import { Link } from "react-router-dom";
 import "../index.css";
 import ShebaNavbarLogo from "../assets/ShebaNavbarLogo.png";
+import { useAuth } from "../context/AuthContext";
 
 const Navbar = () => {
+  const { user, logout } = useAuth();
+
   return (
     <nav style={styles.nav}>
       <div style={styles.logoContainer}>
@@ -35,11 +38,30 @@ const Navbar = () => {
         </Link>
         
       </div>
+
+      {/* This section now works because 'user' is defined above */}
       <div style={styles.links}>
-        {/* We'll use a placeholder ID for now */}
-        <Link to="/user/1" style={styles.link}>
-          פרופיל
-        </Link>
+        {user ? (
+          // IF LOGGED IN: Show Profile & Logout
+          <>
+            <Link to={`/user/${user.id || "me"}`} style={styles.link}>
+              פרופיל אישי
+            </Link>
+            <Link to="/" onClick={logout} style={styles.link}>
+              התנתקות
+            </Link>
+          </>
+        ) : (
+          // IF LOGGED OUT: Show Login/Register
+          <>
+            <Link to="/login" style={styles.link}>
+              התחברות
+            </Link>
+            <Link to="/register" style={styles.link}>
+              הרשמה
+            </Link>
+          </>
+        )}
       </div>
     </nav>
   );
@@ -59,17 +81,19 @@ const styles = {
     alignItems: "center",
   },
   logoImage: {
-    height: "50px", // Set a fixed height to prevent layout shifts
-    width: "auto", // Maintain aspect ratio
+    height: "50px",
+    width: "auto",
     objectFit: "contain",
   },
   links: {
     display: "flex",
     gap: "1rem",
+    alignItems: "center",
   },
   link: {
     textDecoration: "none",
     color: "#333",
+    fontWeight: "500",
   },
 };
 
