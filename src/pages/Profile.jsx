@@ -7,7 +7,7 @@ const Profile = () => {
     <div className="page-container">
       <h1>User Profile</h1>
       <p>
-        Viewing profile for User ID: <strong>{id}</strong>
+        Viewing profile for User ID HI hello test: <strong>{id}</strong>
       </p>
     </div>
   );
