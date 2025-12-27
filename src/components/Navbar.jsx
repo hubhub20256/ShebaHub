@@ -18,9 +18,6 @@ const Navbar = () => {
         </Link>
       </div>
       <div style={styles.links}>
-        <Link to="/create-profile" style={styles.link}>
-          יצירת פרופיל מנחה
-        </Link>
         <Link to="/researches" style={styles.link}>
           מחקרים
         </Link>
@@ -29,9 +26,6 @@ const Navbar = () => {
         </Link>
         <Link to="/mentors" style={styles.link}>
           מנחים
-        </Link>
-        <Link to="/search" style={styles.link}>
-          חיפוש
         </Link>
         <Link to="/About" style={styles.link}>
           אודותינו
