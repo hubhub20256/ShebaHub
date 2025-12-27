@@ -204,14 +204,14 @@ export default function CreateResearch() {
               required={true}
             />
             
-            <InputField label="אישור הלסינקי" name="helsinkiApproval" value={form.helsinkiApproval} onChange={handleChange} placeholder="מספר אישור / סטטוס" required={true} />
+            <InputField label="אישור הלסינקי" name="helsinkiApproval" value={form.helsinkiApproval} onChange={handleChange} placeholder="מספר אישור / סטטוס" required={false} />
 
              <ToggleField 
               label="נתונים" 
               value={form.dataType} 
               onChange={(val) => updateField("dataType", val)}
               options={["רטרוספקטיבי", "פרוספקטיבי"]}
-              required={true}
+              required={false}
             />
             
             {/* Optional Fields (TextAreas) */}
