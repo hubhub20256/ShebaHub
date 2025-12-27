@@ -8,5 +8,5 @@ export { default as Researches } from "./Researches";
 export { default as Apprentices } from "./Apprentices";
 export { default as Register } from "./Register";
 export { default as Login } from "./Login";
-export { default as CreateMentorProfile } from "./CreateMentorProfile";
-
+export { default as CreateProfile } from "./CreateProfile";
+export { default as CreateResearch} from "./CreateResearch";
