@@ -15,27 +15,34 @@ const styles = {
   title: { fontSize: 32, fontWeight: 800, marginBottom: 8 },
   titleUnderline: { width: 50, height: 4, background: ACCENT_TEAL, margin: "0 auto", borderRadius: 2 },
   card: { border: "1px solid rgba(0,0,0,0.06)", borderRadius: 16, padding: "32px", background: "white", boxShadow: "0 12px 40px rgba(0,0,0,0.03)" },
-  sectionTitle: { fontSize: 17, fontWeight: 700, color: THEME_COLOR, marginBottom: 16, borderRight: `4px solid ${ACCENT_PINK}`, paddingRight: 8, lineHeight: "1" },
-  grid: { display: "grid", gap: "20px", marginBottom: 24 },
+  sectionTitle: { fontSize: 17, fontWeight: 700, color: THEME_COLOR, marginBottom: 20, borderRight: `4px solid ${ACCENT_PINK}`, paddingRight: 8, lineHeight: "1" },
   
-  // Base Field Styles
+  // Layout Grids
+  fullWidth: { marginBottom: 20 },
+  grid: { display: "grid", gap: "24px", marginBottom: 24, alignItems: "start" },
+
+  // Fields
   field: { display: "flex", flexDirection: "column", gap: 6, marginBottom: 4, position: "relative" },
   label: { fontSize: 13, fontWeight: 600, color: "#4a4a8a", marginBottom: 2 },
-  input: { padding: "10px 14px", borderRadius: 8, border: "1px solid #ddd", fontSize: 14, outlineColor: ACCENT_TEAL, transition: "border 0.2s", height: 42, boxSizing: "border-box", width: "100%", fontFamily: "inherit", background: "white" },
-  select: { padding: "10px 14px", borderRadius: 8, border: "1px solid #ddd", fontSize: 14, background: "white", outlineColor: ACCENT_TEAL, height: 42, width: "100%", fontFamily: "inherit", cursor: "pointer", appearance: "none" },
-  textarea: { padding: "10px 14px", borderRadius: 8, border: "1px solid #ddd", fontSize: 14, resize: "vertical", outlineColor: ACCENT_TEAL, fontFamily: "inherit" },
+  requiredStar: { color: ACCENT_PINK, marginRight: 4 },
   
-  // Custom Components Styles
+  input: { padding: "10px 14px", borderRadius: 8, border: "1px solid #ddd", fontSize: 14, outlineColor: ACCENT_TEAL, transition: "border 0.2s", height: 42, boxSizing: "border-box", width: "100%", fontFamily: "inherit", background: "white" },
+  textarea: { padding: "10px 14px", borderRadius: 8, border: "1px solid #ddd", fontSize: 14, resize: "vertical", outlineColor: ACCENT_TEAL, fontFamily: "inherit", minHeight: "80px" },
+
+  // Custom Components
+  customSelectTrigger: { padding: "10px 14px", borderRadius: 8, border: "1px solid #ddd", fontSize: 14, background: "white", height: 42, width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", cursor: "pointer", boxSizing: "border-box" },
+  dropdownMenu: { position: "absolute", top: "105%", left: 0, right: 0, maxHeight: "220px", overflowY: "auto", background: "white", borderRadius: 8, border: "1px solid #ddd", boxShadow: "0 4px 15px rgba(0,0,0,0.1)", zIndex: 100 },
+  dropdownItem: { padding: "10px 14px", cursor: "pointer", fontSize: 14, borderBottom: "1px solid #f5f5f5", transition: "background 0.1s" },
+
   fileWrapper: { position: "relative", width: "100%" },
   fileInput: { opacity: 0, position: "absolute", zIndex: -1, width: "0.1px" },
   fileLabel: { display: "block", textAlign: "center", padding: "12px", borderRadius: 8, border: `1px dashed ${ACCENT_TEAL}`, color: ACCENT_TEAL, fontWeight: 600, cursor: "pointer", fontSize: 13, background: "#fafffe", transition: "0.2s" },
-  
-  // Toggle Button Styles (Matching screenshot)
-  toggleContainer: { display: "flex", gap: 12 },
-  toggleBtn: { flex: 1, padding: "10px", borderRadius: 10, border: "1px solid #7e7e7e", background: "white", color: "#666", cursor: "pointer", fontWeight: 600, fontSize: 14, transition: "all 0.2s" },
-  toggleBtnActive: { background: ACCENT_TEAL, color: "white", borderColor: ACCENT_TEAL, border: `1px solid ${ACCENT_TEAL}` },
 
-  // Date Picker Custom Styles
+  toggleContainer: { display: "flex", gap: 12 },
+  toggleBtn: { flex: 1, padding: "10px", borderRadius: 10, border: "1px solid #ddd", background: "white", color: "#666", cursor: "pointer", fontWeight: 600, fontSize: 14, transition: "all 0.2s" },
+  toggleBtnActive: { background: ACCENT_TEAL, color: "white", borderColor: ACCENT_TEAL, boxShadow: "0 2px 8px rgba(108, 213, 191, 0.4)" },
+
+  // Date Picker
   dateInputWrapper: { position: "relative", width: "100%" },
   calendarIcon: { position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: ACCENT_TEAL, pointerEvents: "none" },
   calendarPopup: { position: "absolute", top: "110%", left: 0, width: "100%", maxWidth: "300px", background: "white", borderRadius: 12, boxShadow: "0 10px 30px rgba(0,0,0,0.15)", border: "1px solid #eee", padding: 16, zIndex: 100 },
@@ -102,14 +109,21 @@ export default function CreateResearch() {
       <form style={styles.card} onSubmit={handleSubmit}>
         <div style={styles.sectionTitle}>פרטי המחקר</div>
         
+        {/* Full Width Section for Name and Description for better mobile/desktop flow */}
+        <div style={styles.fullWidth}>
+          <InputField label="שם המחקר" name="researchName" value={form.researchName} onChange={handleChange} required={true} />
+        </div>
+        <div style={styles.fullWidth}>
+          <TextAreaField label="תיאור המחקר" name="description" value={form.description} onChange={handleChange} required={true} />
+        </div>
+
+        {/* 2-Column Grid */}
         <div className="research-grid" style={styles.grid}>
           
-          {/* Right Column */}
+          {/* Right Column (RTL) */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            <InputField label="שם המחקר" name="researchName" value={form.researchName} onChange={handleChange} />
-            <TextAreaField label="תיאור המחקר" name="description" value={form.description} onChange={handleChange} />
-            <InputField label="תחומי המחקר" name="researchArea" value={form.researchArea} onChange={handleChange} />
-            <InputField label="מנחים" name="mentors" value={form.mentors} onChange={handleChange} />
+            <InputField label="תחומי המחקר" name="researchArea" value={form.researchArea} onChange={handleChange} required={true} />
+            <InputField label="מנחים" name="mentors" value={form.mentors} onChange={handleChange} required={true} />
             
             <InputField 
               label="גודל הצוות" 
@@ -119,6 +133,7 @@ export default function CreateResearch() {
               type="number" 
               min="1" 
               placeholder="מספר מתלמדים"
+              required={true}
             />
             
             <DatePickerField 
@@ -126,6 +141,7 @@ export default function CreateResearch() {
               name="startDate" 
               value={form.startDate} 
               onChange={(val) => updateField("startDate", val)} 
+              required={true}
             />
 
             <InputField 
@@ -135,6 +151,7 @@ export default function CreateResearch() {
               onChange={handleChange} 
               type="number" 
               min="1" 
+              required={true}
             />
 
             <InputField 
@@ -144,62 +161,65 @@ export default function CreateResearch() {
               onChange={handleChange} 
               type="number" 
               min="1" 
+              required={true}
             />
 
-            <SelectField 
+            <CustomSelectField 
               label="תגמול" 
-              name="compensation" 
               value={form.compensation} 
-              onChange={handleChange}
+              onChange={(val) => updateField("compensation", val)}
               options={["מלגה", "שכר", "קרדיט אקדמי", "ללא תגמול / התנדבות"]}
-              placeholder="[ בחרי סוג תגמול ]"
+              placeholder="בחרי סוג תגמול"
+              required={true}
+            />
+             
+             <CustomSelectField 
+              label="מיקום" 
+              value={form.location} 
+              onChange={(val) => updateField("location", val)}
+              options={ISRAEL_CITIES}
+              placeholder="בחרי עיר"
+              required={true}
             />
           </div>
 
-          {/* Left Column */}
+          {/* Left Column (RTL) */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             
-            <SelectField 
+            <CustomSelectField 
               label="אופן העבודה" 
-              name="workMode" 
               value={form.workMode} 
-              onChange={handleChange}
+              onChange={(val) => updateField("workMode", val)}
               options={["פרונטלי", "היברידי", "מרחוק"]}
-              placeholder="[ בחרי אופן עבודה ]"
+              placeholder="בחרי אופן עבודה"
+              required={true}
             />
 
-            <InputField label="דרישות" name="requirements" value={form.requirements} onChange={handleChange} />
-            <InputField label="מיומנויות וכלים" name="skillsAndTools" value={form.skillsAndTools} onChange={handleChange} />
-            <InputField label="תוצרי המחקר" name="output" value={form.output} onChange={handleChange} />
-            
-            <SelectField 
-              label="מיקום" 
-              name="location" 
-              value={form.location} 
-              onChange={handleChange}
-              options={ISRAEL_CITIES}
-              placeholder="[ בחרי עיר ]"
-            />
-
-            <SelectField 
+            <CustomSelectField 
               label="סטטוס המחקר" 
-              name="status" 
               value={form.status} 
-              onChange={handleChange}
+              onChange={(val) => updateField("status", val)}
               options={["פעיל", "מגייס", "הסתיים", "בהקפאה"]}
-              placeholder="[ בחרי סטטוס ]"
+              placeholder="בחרי סטטוס"
+              required={true}
             />
-
-            <InputField label="אישור הלסינקי" name="helsinkiApproval" value={form.helsinkiApproval} onChange={handleChange} placeholder="מספר אישור / סטטוס" />
             
-            <ToggleField 
+            <InputField label="אישור הלסינקי" name="helsinkiApproval" value={form.helsinkiApproval} onChange={handleChange} placeholder="מספר אישור / סטטוס" required={true} />
+
+             <ToggleField 
               label="נתונים" 
               value={form.dataType} 
               onChange={(val) => updateField("dataType", val)}
               options={["רטרוספקטיבי", "פרוספקטיבי"]}
+              required={true}
             />
             
-            <FileField label="חוזה" name="contract" file={form.contract} onChange={handleFileChange} />
+            {/* Optional Fields (TextAreas) */}
+            <TextAreaField label="דרישות" name="requirements" value={form.requirements} onChange={handleChange} required={false} />
+            <TextAreaField label="מיומנויות וכלים" name="skillsAndTools" value={form.skillsAndTools} onChange={handleChange} required={false} />
+            <TextAreaField label="תוצרי המחקר" name="output" value={form.output} onChange={handleChange} required={false} />
+            
+            <FileField label="חוזה" name="contract" file={form.contract} onChange={handleFileChange} required={true} />
           </div>
 
         </div>
@@ -209,18 +229,16 @@ export default function CreateResearch() {
         </div>
       </form>
 
-      {/* Style for responsive grid and custom select arrow */}
       <style>{`
         .research-grid { grid-template-columns: 1fr; }
         @media (min-width: 768px) {
           .research-grid { grid-template-columns: 1fr 1fr; }
         }
-        select {
-           background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%232C2C6C%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
-           background-repeat: no-repeat;
-           background-position: left 12px top 50%;
-           background-size: 10px auto;
-        }
+        /* Scrollbar styling */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: #ccc; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #aaa; }
       `}</style>
     </div>
   );
@@ -228,10 +246,19 @@ export default function CreateResearch() {
 
 // --- Helper Components ---
 
-function InputField({ label, name, value, onChange, type = "text", placeholder, min }) {
+function Label({ text, required }) {
+  return (
+    <label style={styles.label}>
+      {text}
+      {required && <span style={styles.requiredStar}>*</span>}
+    </label>
+  );
+}
+
+function InputField({ label, name, value, onChange, type = "text", placeholder, min, required = false }) {
   return (
     <div style={styles.field}>
-      <label style={styles.label}>{label}</label>
+      <Label text={label} required={required} />
       <input 
         type={type} 
         name={name} 
@@ -240,38 +267,90 @@ function InputField({ label, name, value, onChange, type = "text", placeholder, 
         placeholder={placeholder} 
         min={min}
         style={styles.input} 
+        required={required}
       />
     </div>
   );
 }
 
-function SelectField({ label, name, value, onChange, options, placeholder }) {
+function TextAreaField({ label, name, value, onChange, required = false }) {
   return (
     <div style={styles.field}>
-      <label style={styles.label}>{label}</label>
-      <select name={name} value={value} onChange={onChange} style={styles.select}>
-        <option value="">{placeholder}</option>
-        {options.map((opt) => (
-          <option key={opt} value={opt}>{opt}</option>
-        ))}
-      </select>
+      <Label text={label} required={required} />
+      <textarea 
+        name={name} 
+        value={value} 
+        onChange={onChange} 
+        rows={4} 
+        style={styles.textarea} 
+        required={required}
+      />
     </div>
   );
 }
 
-function TextAreaField({ label, name, value, onChange }) {
+function CustomSelectField({ label, value, onChange, options, placeholder, required = false }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const containerRef = useRef(null);
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (containerRef.current && !containerRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleSelect = (option) => {
+    onChange(option);
+    setIsOpen(false);
+  };
+
   return (
-    <div style={styles.field}>
-      <label style={styles.label}>{label}</label>
-      <textarea name={name} value={value} onChange={onChange} rows={3} style={styles.textarea} />
+    <div style={styles.field} ref={containerRef}>
+      <Label text={label} required={required} />
+      <div 
+        onClick={() => setIsOpen(!isOpen)} 
+        style={styles.customSelectTrigger}
+      >
+        <span style={{ color: value ? THEME_COLOR : "#999" }}>
+          {value || placeholder}
+        </span>
+        <svg width="10" height="10" viewBox="0 0 24 24" fill={THEME_COLOR}>
+          <path d="M7 10l5 5 5-5z" />
+        </svg>
+      </div>
+
+      {isOpen && (
+        <div style={styles.dropdownMenu}>
+          {options.map((option) => (
+            <div
+              key={option}
+              onClick={() => handleSelect(option)}
+              onMouseEnter={(e) => e.target.style.background = "#f0f7ff"}
+              onMouseLeave={(e) => e.target.style.background = "white"}
+              style={{
+                ...styles.dropdownItem,
+                color: value === option ? THEME_COLOR : "#333",
+                fontWeight: value === option ? "700" : "400",
+                background: value === option ? "#f0f7ff" : "white"
+              }}
+            >
+              {option}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
 
-function ToggleField({ label, value, onChange, options }) {
+function ToggleField({ label, value, onChange, options, required = false }) {
   return (
     <div style={styles.field}>
-      <label style={styles.label}>{label}</label>
+      <Label text={label} required={required} />
       <div style={styles.toggleContainer}>
         {options.map((option) => {
           const isActive = value === option;
@@ -294,12 +373,12 @@ function ToggleField({ label, value, onChange, options }) {
   );
 }
 
-function FileField({ label, name, file, onChange }) {
+function FileField({ label, name, file, onChange, required = false }) {
   return (
     <div style={styles.field}>
-      <label style={styles.label}>{label}</label>
+      <Label text={label} required={required} />
       <div style={styles.fileWrapper}>
-        <input type="file" name={name} id={`file-${name}`} onChange={onChange} style={styles.fileInput} />
+        <input type="file" name={name} id={`file-${name}`} onChange={onChange} style={styles.fileInput} required={required} />
         <label htmlFor={`file-${name}`} style={styles.fileLabel}>
           {file ? `קובץ נבחר: ${file.name}` : "לחץ להעלאת קובץ"}
         </label>
@@ -308,13 +387,10 @@ function FileField({ label, name, file, onChange }) {
   );
 }
 
-// --- Custom Date Picker (Matching Screenshot) ---
-function DatePickerField({ label, name, value, onChange }) {
+function DatePickerField({ label, name, value, onChange, required = false }) {
   const [isOpen, setIsOpen] = useState(false);
-  // Default to current date if no value, or parse value
   const today = new Date();
   const [currentMonth, setCurrentMonth] = useState(today);
-  
   const containerRef = useRef(null);
 
   useEffect(() => {
@@ -328,7 +404,6 @@ function DatePickerField({ label, name, value, onChange }) {
   }, []);
 
   const handleDayClick = (day) => {
-    // Format YYYY-MM-DD
     const dateStr = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
     onChange(dateStr);
     setIsOpen(false);
@@ -340,16 +415,15 @@ function DatePickerField({ label, name, value, onChange }) {
   };
 
   const daysInMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0).getDate();
-  const startDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1).getDay(); // 0 is Sunday
+  const startDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1).getDay();
 
   const monthNames = ["ינואר", "פברואר", "מרץ", "אפריל", "מאי", "יוני", "יולי", "אוגוסט", "ספטמבר", "אוקטובר", "נובמבר", "דצמבר"];
   const dayNames = ["א", "ב", "ג", "ד", "ה", "ו", "ש"];
 
   return (
     <div style={styles.field} ref={containerRef}>
-      <label style={styles.label}>{label}</label>
+      <Label text={label} required={required} />
       <div style={styles.dateInputWrapper} onClick={() => setIsOpen(!isOpen)}>
-        {/* Calendar Icon SVG */}
         <svg style={styles.calendarIcon} width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
           <line x1="16" y1="2" x2="16" y2="6"></line>
@@ -374,12 +448,9 @@ function DatePickerField({ label, name, value, onChange }) {
             </span>
             <button type="button" onClick={() => changeMonth(-1)} style={styles.calendarNavBtn}>&gt;</button>
           </div>
-          
           <div style={styles.calendarGrid}>
             {dayNames.map(d => <div key={d} style={styles.dayLabel}>{d}</div>)}
-            {/* Empty cells for start of month */}
             {Array.from({ length: startDay }).map((_, i) => <div key={`empty-${i}`} />)}
-            {/* Days */}
             {Array.from({ length: daysInMonth }).map((_, i) => {
               const day = i + 1;
               const isSelected = value && parseInt(value.split("-")[2]) === day && 
