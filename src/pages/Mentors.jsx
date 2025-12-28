@@ -25,7 +25,7 @@ const mockMentors = [
     specialty: "נוירולוגיה קלינית",
     degrees: "דוקטור לרפואה (MD) בהצטיינות יתרה",
     Educational_institution: "אוניברסיטת בן-גוריון בנגב"
-  }
+  },
 ];
 
 export default function Mentors() {
