@@ -1,4 +1,4 @@
-import "./mentorsCard.css";
+import "./card.css";
 
 export default function MentorsCard({mentor}) {
   return (

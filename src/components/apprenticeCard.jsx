@@ -1,4 +1,4 @@
-import "./apprenticeCard.css";
+import "./card.css";
 
 export default function apprenticesCard({apprentice}) {
   return (
