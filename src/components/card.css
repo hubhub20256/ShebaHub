@@ -26,7 +26,33 @@
   overflow: hidden;
   display: grid;
   place-items: center;
+/* 
+  background-color: #e84b5a; 
+  background-image: url('../assets/student1.jpg'); /* Replace with your image URL */
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  */
+
+
+.apprenticeCardavatar.male {
+  background-image: url('../gallery/apprentice-male.png');
 }
+
+.apprenticeCardavatar.female {
+  background-image: url('../gallery/apprentice-female.png');
+}
+
+/ --- MENTOR IMAGES --- */
+.mentorCardavatar.male {
+  background-image: url('../gallery/mentor-male.png');
+}
+
+.mentorCardavatar.female {
+  background-image: url('../gallery/mentor-female.png');
+}
+}
+  
 
 .apprenticeCard__img,
 .mentorCard__img {
