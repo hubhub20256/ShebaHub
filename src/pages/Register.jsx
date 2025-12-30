@@ -1,8 +1,11 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom"; 
 import AuthLayout from "../components/AuthLayout";
 import { FormInput, FormButton, FormSelect } from "../components/forms";
 
 const Register = () => {
+  const navigate = useNavigate();
+
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -46,6 +49,7 @@ const Register = () => {
     e.preventDefault();
     if (validateForm()) {
       console.log("Form Validated & Submitted:", formData);
+      navigate("/create-profile"); 
     } else {
       console.log("Validation Failed");
     }
@@ -53,12 +57,7 @@ const Register = () => {
 
   const description = (
     <>
-      ברוכ/ת הבא/ה
-      <br />
-      כדי ליצור חשבון חדש במערכת, אנא מלאו את הפרטים הבאים.
-      <br />
-      ההרשמה מאפשרת גישה מלאה לפיצ'רים, שמירת נתונים אישיים, יצירת קשר עם מנחים,
-      מתלמדים וניהול פרויקטים.
+      ברוכה הבאה
     </>
   );
 
@@ -74,7 +73,6 @@ const Register = () => {
         onSubmit={handleSubmit}
         style={{ display: "flex", flexDirection: "column", gap: "0.2rem" }}
       >
-        {/* Reusable Inputs */}
         <FormInput
           name="firstName"
           placeholder="שם פרטי"
@@ -113,20 +111,18 @@ const Register = () => {
           onChange={handleChange}
           error={errors.confirmPassword}
         />
-        {/* Gender Selection (Unique to this page, so we use local styles) */}
         <FormSelect
           name="gender"
           placeholder="בחר מגדר..."
           value={formData.gender}
           onChange={handleChange}
-          error={errors.gender} // Now the dropdown turns red if they forget to pick one!
+          error={errors.gender}
           options={[
-            { value: "female", label: "נקבה" },
-            { value: "male", label: "זכר" },
+            { value: "woman", label: "אישה" },
+            { value: "man", label: "גבר" },
             { value: "other", label: "אחר" },
           ]}
         />
-        {/* Checkbox (Unique to this page) */}
         <div style={styles.checkboxContainer}>
           <label style={styles.checkboxLabel}>
             הסכמה לתנאי שימוש
@@ -151,7 +147,6 @@ const Register = () => {
   );
 };
 
-// Styles unique to Register.jsx
 const styles = {
   radioGroup: {
     display: "flex",
