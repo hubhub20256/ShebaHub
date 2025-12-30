@@ -1,11 +1,9 @@
 import React, { useState } from "react";
-// 1. Import useNavigate
 import { useNavigate } from "react-router-dom"; 
 import AuthLayout from "../components/AuthLayout";
 import { FormInput, FormButton, FormSelect } from "../components/forms";
 
 const Register = () => {
-  // 2. Initialize the navigate function
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
@@ -51,7 +49,6 @@ const Register = () => {
     e.preventDefault();
     if (validateForm()) {
       console.log("Form Validated & Submitted:", formData);
-      // 3. Navigate to the create-profile route
       navigate("/create-profile"); 
     } else {
       console.log("Validation Failed");
@@ -61,7 +58,7 @@ const Register = () => {
   const description = (
     <>
       ברוכה הבאה
-          </>
+    </>
   );
 
   return (
@@ -121,8 +118,8 @@ const Register = () => {
           onChange={handleChange}
           error={errors.gender}
           options={[
-            { value: "female", label: "נקבה" },
-            { value: "male", label: "זכר" },
+            { value: "woman", label: "אישה" },
+            { value: "man", label: "גבר" },
             { value: "other", label: "אחר" },
           ]}
         />
