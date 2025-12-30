@@ -1,5 +1,8 @@
 import React from "react";
 import ApprenticeCard from "../components/apprenticeCard";
+import img1 from '../assets/student1.png';
+import img2 from '../assets/student2.png';
+import img3 from '../assets/student3.png';
 
 const mockApprentices = [
   {
@@ -8,15 +11,18 @@ const mockApprentices = [
     email: "dana.k@med-example.com",
     school_beginner_year: "2019",
     medical_level: "סטודנט שנה 3",
-    Educational_institution: "אוניברסיטת תל אביב - הפקולטה לרפואה"
+    Educational_institution: "אוניברסיטת תל אביב - הפקולטה לרפואה",
+    profileImage: img1
   },
+
   {
     id: 2,
     gender: "זכר",
     email: "yotam.lev@hospital-demo.co.il",
     school_beginner_year: "2015",
     medical_level: "סטאזר",
-    Educational_institution: "האוניברסיטה העברית והדסה עין כרם"
+    Educational_institution: "האוניברסיטה העברית והדסה עין כרם",
+    profileImage: img2
   },
   {
     id: 3,
@@ -24,14 +30,15 @@ const mockApprentices = [
     email: "michal.s@clinic-test.org",
     school_beginner_year: "20214",
     medical_level: "מתמחה בביורפואה",
-    Educational_institution: "אוניברסיטת בן-גוריון בנגב"
+    Educational_institution: "אוניברסיטת בן-גוריון בנגב",
+    profileImage: img3
   }
 ];
 
 export default function Apprentices() {
   return (
     <div style={{ padding: 24 }} dir="rtl">
-      <h1 style={{ marginBottom: 12 }}>Apprentices</h1>
+      <h1 style={{ marginBottom: 12 }}>מתמחים</h1>
 
       <div
         style={{
