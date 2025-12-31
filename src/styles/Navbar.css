@@ -1,179 +1,205 @@
 /* 
- * Navbar.css
+ * ========================================================
+ * 🎨 NAVBAR STYLES - EXPLAINED FOR BEGINNERS 🎨
+ * ========================================================
  * 
- * This file contains the styles for the application's navigation bar.
- * It implements a responsive design:
- * - Desktop: Horizontal layout with logo on left, links on right.
- * - Mobile (<768px): Hamburger menu that toggles a dropdown/drawer.
+ * Hi! This file controls how the Navigation Bar (the top strip with buttons) looks.
+ * We use something called "CSS" to tell the browser about colors, sizes, and positions.
  */
 
-/* =========================================
-   Base Styles (Mobile First / Shared)
-   ========================================= */
-
-/* Main Navbar Container */
+/* 
+ * 1. THE MAIN CONTAINER 
+ * This is the big box that holds everything: Code Logo, Links, and Login buttons.
+ */
 .navbar {
+  /* 'flex' lets us line things up side-by-side easily! */
   display: flex;
+
+  /* This pushes the items apart! 
+     1. Logo goes to the left.
+     2. Middle links go to the center.
+     3. Login buttons go to the right. 
+  */
   justify-content: space-between;
+
+  /* This makes sure everything is vertically centered (not too high, not too low) */
   align-items: center;
-  flex-wrap: wrap; /* Allow items to wrap for mobile menu "push" effect */
-  padding: 1rem 2rem;
-  background-color: #f8f9fa;
-  border-bottom: 1px solid #ddd;
+
+  /* This allows items to wrap to the next line if there isn't enough space.
+     We need this for the mobile menu to "push" the page down! */
+  flex-wrap: wrap;
+
+  /* Formatting (Spacing and Colors) */
+  padding: 1rem 2rem;          /* Breathing room inside the box */
+  background-color: #f8f9fa;   /* Light grey background */
+  border-bottom: 1px solid #ddd; /* A thin line at the bottom */
+
+  /* 'relative' + 'z-index' ensures the navbar stays ON TOP of other page content */
   position: relative;
   z-index: 1000;
 }
 
-/* Logo Section */
+/* 
+ * 2. THE LOGO
+ * Just a wrapper to make sure the logo sits nicely.
+ */
 .navbar-logo-container {
   display: flex;
   align-items: center;
-  /* Ensure logo doesn't shrink */
-  flex-shrink: 0;
+  flex-shrink: 0; /* Prevents the logo from getting smushed if space runs out */
 }
 
 .navbar-logo-image {
-  height: 50px;
-  width: auto;
-  object-fit: contain;
+  height: 50px;       /* Fixed height */
+  width: auto;        /* Width adjusts automatically to keep the shape */
+  object-fit: contain; /* Ensures the image doesn't get cut off */
 }
 
 /* 
- * Navigation Links Container 
- * By default (Desktop), these are displayed in a row.
- */
-/* 
- * Navigation Links Container 
- * Wrapper for both the Main Links and the Auth Links.
- * On Desktop: Spans the remaining width and separates the two groups.
+ * 3. THE LINKS CONTAINER (The visible buttons)
+ * This part is tricky! We want 3 groups on Desktop, but 1 list on Mobile.
  */
 .navbar-links {
-  display: flex;
-  justify-content: space-between; /* Pushes left group and right group apart */
-  align-items: center;
-  flex-grow: 1; /* Take up remaining space */
-  margin-left: 2rem; /* Space after logo */
+  /* 
+   * MAGIC TRICK: 'display: contents'
+   * On Desktop, this makes this invisible wrapper disappear! 
+   * The browser ignores it and treats its children (the link groups) 
+   * as direct children of the .navbar.
+   * This is how we get the Left - Center - Right layout!
+   */
+  display: contents;
 }
 
-/* Groups of links (Main vs Auth) */
+/* Groups of links (Like "Researchers, Mentors" vs "Profile, Logout") */
 .navbar-group {
-  display: flex;
-  gap: 1.5rem;
+  display: flex;       /* Lay them out in a row */
+  gap: 1.5rem;         /* Space between each word */
   align-items: center;
 }
 
-/* Individual Link Styles */
+/* 
+ * 4. INDIVIDUAL LINKS 
+ * How each text button looks (color, font, hover effect)
+ */
 .navbar-link {
-  text-decoration: none;
-  color: #333;
-  font-weight: 500;
-  font-size: 1rem;
-  transition: color 0.2s ease;
-  white-space: nowrap; /* Prevent breaking on small desktops */
+  text-decoration: none; /* Removes the underline */
+  color: #333;           /* Dark grey color */
+  font-weight: 500;      /* Make it slightly bold */
+  font-size: 1rem;       /* Standard text size */
+  transition: color 0.2s ease; /* Smooth color change when hovering */
+  white-space: nowrap;   /* Don't let the text wrap to a new line */
 }
 
 .navbar-link:hover {
-  color: #0056b3; /* Primary Blue Hover */
+  color: #0056b3; /* Change to Blue when mouse is over it */
 }
 
 /* 
- * Hamburger Menu Icon 
- * Hidden by default on Desktop 
+ * 5. HAMBURGER MENU ( The ☰ Icon ) 
+ * We hide this on big screens because we have space for all links!
  */
 .hamburger-menu {
-  display: none;
+  display: none; /* HIDDEN on Desktop */
   background: none;
   border: none;
-  cursor: pointer;
+  cursor: pointer; /* Shows a hand cursor */
   flex-direction: column;
-  gap: 5px;
+  gap: 5px; /* Space between the 3 lines */
   padding: 0.5rem;
-  z-index: 1001; /* Ensure clicks register above the menu */
+  z-index: 1001;
 }
 
+/* The 3 lines of the hamburger */
 .hamburger-line {
   width: 25px;
   height: 3px;
   background-color: #333;
   border-radius: 2px;
-  transition: all 0.3s ease;
+  transition: all 0.3s ease; /* Smooth animation for turning into X */
 }
 
-/* =========================================
-   Mobile Styles (Screens < 768px)
-   ========================================= */
+/* 
+ * ========================================================
+ * 📱 MOBILE STYLES (Screen Width < 768px) 📱
+ * ========================================================
+ * These rules ONLY apply when the screen is small (like a phone).
+ */
 @media (max-width: 768px) {
   
-  /* Show the Hamburger Icon */
+  /* 1. Show the Hamburger Icon! */
   .hamburger-menu {
-    display: flex;
+    display: flex; 
   }
 
-  /* 
-   * Mobile Menu State (Hidden by default) 
-   * We transform the .navbar-links into a full-width block that pushes content down.
-   */
+  /* 2. Transform the Links into a Vertical Menu */
   .navbar-links {
-    width: 100%;
-    margin-left: 0; /* Reset desktop margin */
+    /* Stop using 'contents'. We need a real box now! */
+    display: flex;
+    width: 100%; /* Take up full width */
+    
+    /* RESET desktop styles */
+    margin-left: 0;
+    
+    /* STYLING THE DRAWER */
     background-color: #f8f9fa;
-    /* Border top to separate from logo/hamburger when open */
     border-top: 1px solid transparent; 
     
-    flex-direction: column;
+    /* Stack items from Top to Bottom */
+    flex-direction: column; 
     align-items: center;
     padding: 0;
+    
+    /* ANIMATION MAGIC: Start with height 0 (invisible) */
     max-height: 0;
-    overflow: hidden; /* Hide content when closed */
-    transition: max-height 0.4s ease-in-out, border-color 0.4s; /* Smooth slide down */
+    overflow: hidden; /* Hide anything that spills out */
     
-    /* Remove shadow if we want it to look like part of the page, or keep it. 
-       Let's keep it subtle or remove it for a completely flat "push" look. 
-       User said "push it fluently below", usually implies part of the layout. 
-       Removing shadow. */
-    box-shadow: none; 
+    /* Animate the height and border color smoothly */
+    transition: max-height 0.4s ease-in-out, border-color 0.4s;
     
-    display: flex; /* Ensure flex is active for direction change */
-    gap: 0; /* Reset gap, handle padding in links */
+    box-shadow: none; /* Flat design */
+    gap: 0;
   }
 
   /* 
-   * Active State for Mobile Menu 
-   * When the javascript toggles class 'active', show the menu 
+   * 3. WHEN THE MENU IS OPEN (.active)
+   * Javascript adds this class when you click the button.
    */
   .navbar-links.active {
-    max-height: 500px; /* Arbitrary large height to allow expansion */
+    max-height: 500px; /* Grow big enough to show all links! */
     padding: 1rem 0;
-    border-top-color: #eee; /* Show separator when open */
+    border-top-color: #eee; /* Add a line separator */
   }
 
-  /* Stack the groups vertically on mobile */
+  /* Stack the groups vertically */
   .navbar-group {
     flex-direction: column;
     width: 100%;
     gap: 0;
   }
 
-  /* Adjust links for mobile vertical list */
+  /* Make links big and easy to tap with a finger */
   .navbar-link {
     display: block;
     padding: 0.8rem 0;
     width: 100%;
     text-align: center;
-    border-bottom: 1px solid #eee;
+    border-bottom: 1px solid #eee; /* Light divider line */
   }
   
-  /* Remove border from last item */
+  /* Remove list divider from the last item */
   .navbar-group:last-child .navbar-link:last-child {
     border-bottom: none;
   }
 
-  /* Optional: Animation for Hamburger to X */
+  /* 
+   * 4. ANIMATE HAMBURGER TO 'X' 
+   * When open, we rotate the top and bottom lines to make an X.
+   */
   .hamburger-menu.open .hamburger-line:nth-child(1) {
     transform: rotate(45deg) translate(5px, 6px);
   }
   .hamburger-menu.open .hamburger-line:nth-child(2) {
-    opacity: 0;
+    opacity: 0; /* Hide the middle line */
   }
   .hamburger-menu.open .hamburger-line:nth-child(3) {
     transform: rotate(-45deg) translate(5px, -6px);
