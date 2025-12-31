@@ -6,43 +6,46 @@ import ShebaNavbarLogo from "../assets/ShebaNavbarLogo.png";
 import { useAuth } from "../context/AuthContext";
 
 /**
- * ========================================================
- * 🚀 NAVBAR COMPONENT - EXPLAINED FOR BEGINNERS 🚀
- * ========================================================
+ * ===================================================================================
+ * 🚀 NAVBAR COMPONENT DOCUMENTATION
+ * ===================================================================================
  * 
- * This file creates the Navigation Bar using React.
- * It handles the logic, like checking if a user is logged in
- * and opening/closing the mobile menu.
+ * HOW IT WORKS (BEGINNER'S GUIDE):
+ * 
+ * 1. STATE MANAGEMENT (useState):
+ *    - We need to remember if the menu is OPEN or CLOSED.
+ *    - 'isMenuOpen' is our memory variable.
+ *    - 'toggleMenu' flips it (Open -> Close / Close -> Open).
+ *    - 'closeMenu' forces it to Close (useful when a link is clicked).
+ * 
+ * 2. CONDITIONAL RENDERING (The ? : User Check):
+ *    - Inside the JSX, we check '{user ? ... : ...}'.
+ *    - IF 'user' exists (Loggeed In) -> Show "Profile" and "Logout".
+ *    - IF 'user' is null (Logged Out) -> Show "Login" and "Register".
+ * 
+ * 3. DYNAMIC CLASSES (CSS Connections):
+ *    - When 'isMenuOpen' is true, we add the class "active" to the links container.
+ *    - In Navbar.css, ".navbar-links.active" has rules to show the menu!
+ *    - We also add "open" to the hamburger button to animate it into an 'X'.
+ * 
+ * ===================================================================================
  */
-const Navbar = () => {
-  // 1. GET USER INFO
-  // We use a custom 'hook' to get the current user and the logout function.
-  const { user, logout } = useAuth();
 
-  // 2. MANAGE MENU STATE (Open or Closed?)
-  // 'useState' remembers memory variables for us.
-  // isMenuOpen = false (Closed by default)
-  // setIsMenuOpen = A function to change that value.
+const Navbar = () => {
+  const { user, logout } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  // Function to FLIP the state (True -> False / False -> True)
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
   };
 
-  // Function to ALWAYS CLOSE the menu (Used when a link is clicked)
   const closeMenu = () => {
     setIsMenuOpen(false);
   };
 
   return (
-    // The main container with the class 'navbar' (See Navbar.css)
     <nav className="navbar">
-      
-      {/* 
-        SECTION 1: LOGO 
-        Clicking the logo takes you home ('/') and closes the menu.
-      */}
+      {/* 1. Logo Section */}
       <div className="navbar-logo-container">
         <Link to="/" onClick={closeMenu}>
           <img
@@ -53,11 +56,7 @@ const Navbar = () => {
         </Link>
       </div>
 
-      {/* 
-        SECTION 2: HAMBURGER BUTTON (Mobile Only)
-        When clicked, it runs 'toggleMenu'.
-        The class 'open' is added if isMenuOpen is true, triggering the CSS animation.
-      */}
+      {/* 2. Hamburger Button (Mobile Only) */}
       <button 
         className={`hamburger-menu ${isMenuOpen ? "open" : ""}`} 
         onClick={toggleMenu}
@@ -68,14 +67,10 @@ const Navbar = () => {
         <span className="hamburger-line"></span>
       </button>
 
-      {/* 
-        SECTION 3: NAVIGATION LINKS
-        This container holds all the text buttons.
-        If isMenuOpen is true, we add the 'active' class to show the drawer.
-      */}
+      {/* 3. Navigation Links Container */}
       <div className={`navbar-links ${isMenuOpen ? "active" : ""}`}>
         
-        {/* GROUP A: Middle Links (Researchers, Mentors...) */}
+        {/* Main Navigation Group */}
         <div className="navbar-group">
           <Link to="/researches" className="navbar-link" onClick={closeMenu}>
             מחקרים
@@ -94,15 +89,10 @@ const Navbar = () => {
           </Link>
         </div>
 
-        {/* GROUP B: Auth Links (Right Side) */}
+        {/* Auth Navigation Group */}
         <div className="navbar-group">
-          {/* 
-            LOGIC CHECK: Is the user logged in? 
-            ? = YES, show Profile/Logout
-            : = NO, show Login/Register
-          */}
           {user ? (
-            // YES: User is logged in
+            /* Logged In State */
             <>
               <Link to={`/user/${user.id || "me"}`} className="navbar-link" onClick={closeMenu}>
                 פרופיל אישי
@@ -110,8 +100,8 @@ const Navbar = () => {
               <Link
                 to="/"
                 onClick={() => {
-                  logout();    // 1. Log them out
-                  closeMenu(); // 2. Close the menu
+                  logout();
+                  closeMenu();
                 }}
                 className="navbar-link"
               >
@@ -119,7 +109,7 @@ const Navbar = () => {
               </Link>
             </>
           ) : (
-            // NO: User is NOT logged in
+            /* Logged Out State */
             <>
               <Link to="/login" className="navbar-link" onClick={closeMenu}>
                 התחברות
