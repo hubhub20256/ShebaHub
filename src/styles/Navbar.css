@@ -1,0 +1,181 @@
+/* 
+ * Navbar.css
+ * 
+ * This file contains the styles for the application's navigation bar.
+ * It implements a responsive design:
+ * - Desktop: Horizontal layout with logo on left, links on right.
+ * - Mobile (<768px): Hamburger menu that toggles a dropdown/drawer.
+ */
+
+/* =========================================
+   Base Styles (Mobile First / Shared)
+   ========================================= */
+
+/* Main Navbar Container */
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap; /* Allow items to wrap for mobile menu "push" effect */
+  padding: 1rem 2rem;
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #ddd;
+  position: relative;
+  z-index: 1000;
+}
+
+/* Logo Section */
+.navbar-logo-container {
+  display: flex;
+  align-items: center;
+  /* Ensure logo doesn't shrink */
+  flex-shrink: 0;
+}
+
+.navbar-logo-image {
+  height: 50px;
+  width: auto;
+  object-fit: contain;
+}
+
+/* 
+ * Navigation Links Container 
+ * By default (Desktop), these are displayed in a row.
+ */
+/* 
+ * Navigation Links Container 
+ * Wrapper for both the Main Links and the Auth Links.
+ * On Desktop: Spans the remaining width and separates the two groups.
+ */
+.navbar-links {
+  display: flex;
+  justify-content: space-between; /* Pushes left group and right group apart */
+  align-items: center;
+  flex-grow: 1; /* Take up remaining space */
+  margin-left: 2rem; /* Space after logo */
+}
+
+/* Groups of links (Main vs Auth) */
+.navbar-group {
+  display: flex;
+  gap: 1.5rem;
+  align-items: center;
+}
+
+/* Individual Link Styles */
+.navbar-link {
+  text-decoration: none;
+  color: #333;
+  font-weight: 500;
+  font-size: 1rem;
+  transition: color 0.2s ease;
+  white-space: nowrap; /* Prevent breaking on small desktops */
+}
+
+.navbar-link:hover {
+  color: #0056b3; /* Primary Blue Hover */
+}
+
+/* 
+ * Hamburger Menu Icon 
+ * Hidden by default on Desktop 
+ */
+.hamburger-menu {
+  display: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  flex-direction: column;
+  gap: 5px;
+  padding: 0.5rem;
+  z-index: 1001; /* Ensure clicks register above the menu */
+}
+
+.hamburger-line {
+  width: 25px;
+  height: 3px;
+  background-color: #333;
+  border-radius: 2px;
+  transition: all 0.3s ease;
+}
+
+/* =========================================
+   Mobile Styles (Screens < 768px)
+   ========================================= */
+@media (max-width: 768px) {
+  
+  /* Show the Hamburger Icon */
+  .hamburger-menu {
+    display: flex;
+  }
+
+  /* 
+   * Mobile Menu State (Hidden by default) 
+   * We transform the .navbar-links into a full-width block that pushes content down.
+   */
+  .navbar-links {
+    width: 100%;
+    margin-left: 0; /* Reset desktop margin */
+    background-color: #f8f9fa;
+    /* Border top to separate from logo/hamburger when open */
+    border-top: 1px solid transparent; 
+    
+    flex-direction: column;
+    align-items: center;
+    padding: 0;
+    max-height: 0;
+    overflow: hidden; /* Hide content when closed */
+    transition: max-height 0.4s ease-in-out, border-color 0.4s; /* Smooth slide down */
+    
+    /* Remove shadow if we want it to look like part of the page, or keep it. 
+       Let's keep it subtle or remove it for a completely flat "push" look. 
+       User said "push it fluently below", usually implies part of the layout. 
+       Removing shadow. */
+    box-shadow: none; 
+    
+    display: flex; /* Ensure flex is active for direction change */
+    gap: 0; /* Reset gap, handle padding in links */
+  }
+
+  /* 
+   * Active State for Mobile Menu 
+   * When the javascript toggles class 'active', show the menu 
+   */
+  .navbar-links.active {
+    max-height: 500px; /* Arbitrary large height to allow expansion */
+    padding: 1rem 0;
+    border-top-color: #eee; /* Show separator when open */
+  }
+
+  /* Stack the groups vertically on mobile */
+  .navbar-group {
+    flex-direction: column;
+    width: 100%;
+    gap: 0;
+  }
+
+  /* Adjust links for mobile vertical list */
+  .navbar-link {
+    display: block;
+    padding: 0.8rem 0;
+    width: 100%;
+    text-align: center;
+    border-bottom: 1px solid #eee;
+  }
+  
+  /* Remove border from last item */
+  .navbar-group:last-child .navbar-link:last-child {
+    border-bottom: none;
+  }
+
+  /* Optional: Animation for Hamburger to X */
+  .hamburger-menu.open .hamburger-line:nth-child(1) {
+    transform: rotate(45deg) translate(5px, 6px);
+  }
+  .hamburger-menu.open .hamburger-line:nth-child(2) {
+    opacity: 0;
+  }
+  .hamburger-menu.open .hamburger-line:nth-child(3) {
+    transform: rotate(-45deg) translate(5px, -6px);
+  }
+}
