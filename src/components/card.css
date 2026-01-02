@@ -1,28 +1,38 @@
-.apprenticeCard,
-.mentorCard {
+
+.apprenticeCard, .mentorCard {
   border: 2px solid #0e8f7a;
   border-radius: 18px;
   background: white;
-  padding: 14px;
+  padding: 15px;
   box-sizing: border-box;
   width: 100%;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.05);
 }
 
-.apprenticeCard__header,
-.mentorCard__header {
+
+.mentorCard__header,
+.apprenticeCard__header {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-bottom: 10px;
+  gap: 20px;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 15px;
 }
 
-.apprenticeCard__avatar,
-.mentorCard__avatar {
-  width: 46px;
-  height: 46px;
-  border-radius: 999px;
-  background: #e84b5a;
-  flex: 0 0 auto;
+.main-title {
+  text-align: center;
+  width: 100%;
+  margin-bottom: 30px;
+  font-size: 2.5rem;
+  color: #2c3e50;
+}
+
+
+.mentorCard__avatar,
+.apprenticeCard__avatar {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
   overflow: hidden;
   display: grid;
   place-items: center;
@@ -30,49 +40,83 @@
 
 .apprenticeCard__img,
 .mentorCard__img {
+  border: 3px solid #0e8f7a;
+  flex-shrink: 0;
+}
+
+.mentorCard__img,
+.apprenticeCard__img {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
-.apprenticeCard__avatarFallback,
-.mentorCard__avatarFallback {
-  width: 24px;
-  height: 24px;
-  border-radius: 999px;
-  background: #f0c34a;
-}
 
-.apprenticeCard__title,
-.mentorCard__title {
-  font-size: 18px;
+.mentorCard__title,
+.apprenticeCard__title {
+  font-weight: 800;
+  font-size: 2rem;   
   margin: 0;
-  font-weight: 800;
+  color: #2c3e50;
 }
 
-.apprenticeCard__grid,
-.mentorCard__grid {
-  display: grid;
+
+.mentorCard__content,
+.apprenticeCard__content {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+
+.mentorCard__boxes,
+.apprenticeCard__boxes {
+  display: flex;
   gap: 8px;
 }
 
-.apprenticeCard__row,
-.mentorCard__row {
+
+.mentorCard__labels,
+.apprenticeCard__labels {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  line-height: 1.5;
+  font-size: 21px;
+  line-height: 1.8;
+}
+
+.mentorCard__labels strong,
+.apprenticeCard__labels strong {
+  color: #0e8f7a;
+  margin-left: 10px;
+  display: inline-block;
+  font-size: 23px;
+}
+
+.cards-grid {
   display: grid;
-  grid-template-columns: 70px 1fr;
-  gap: 8px;
-  font-size: 14px;
+  gap: 20px;
+  justify-content: center;
+  margin: 0 auto;
+  width: 100%;
+  max-width: 1200px;
 }
 
-.apprenticeCard__label,
-.mentorCard__label {
-  font-weight: 800;
-  white-space: nowrap;
+@media (max-width: 600px) {
+  .apprenticeCard__header {
+    gap: 12px;
+  }
+
+  .apprenticeCard__title {
+    font-size: 1.2rem;
+  }
 }
 
-.apprenticeCard__value,
-.mentorCard__value {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+@media (min-width: 768px) {
+  .cards-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 30px;
+    padding: 20px;
+  }
 }
