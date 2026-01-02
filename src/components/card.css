@@ -1,5 +1,6 @@
 .apprenticeCard,
-.mentorCard {
+.mentorCard,
+.researchCard {
   border: 2px solid #0e8f7a;
   border-radius: 18px;
   background: white;
@@ -9,7 +10,8 @@
 }
 
 .apprenticeCard__header,
-.mentorCard__header {
+.mentorCard__header,
+.researchCard__header {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -70,20 +72,24 @@
 }
 
 .apprenticeCard__title,
-.mentorCard__title {
+.mentorCard__title,
+.researchCard__title {
   font-size: 18px;
   margin: 0;
   font-weight: 800;
+  font-family: inherit;
 }
 
 .apprenticeCard__grid,
-.mentorCard__grid {
+.mentorCard__grid,
+.researchCard__grid {
   display: grid;
   gap: 8px;
 }
 
 .apprenticeCard__row,
-.mentorCard__row {
+.mentorCard__row,
+.researchCard__row {
   display: grid;
   grid-template-columns: 70px 1fr;
   gap: 8px;
@@ -91,14 +97,24 @@
 }
 
 .apprenticeCard__label,
-.mentorCard__label {
+.mentorCard__label,
+.researchCard__label {
   font-weight: 800;
   white-space: nowrap;
 }
 
 .apprenticeCard__value,
-.mentorCard__value {
+.mentorCard__value,
+.researchCard__value {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.researchCard__title {
+  font-family: "Heebo", sans-serif;
+  font-size: 18px;
+  margin: 0;
+  font-weight: 800;
+  
 }
