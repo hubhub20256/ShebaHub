@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom"; 
 import AuthLayout from "../components/AuthLayout";
 import { FormInput, FormButton, FormSelect } from "../components/forms";
+import "../styles/Register.css";
 
 const Register = () => {
   const navigate = useNavigate();
@@ -69,10 +70,7 @@ const Register = () => {
       footerLinkText="להתחברות"
       footerPath="/login"
     >
-      <form
-        onSubmit={handleSubmit}
-        style={{ display: "flex", flexDirection: "column", gap: "0.2rem" }}
-      >
+      <form onSubmit={handleSubmit} className="register-form">
         <FormInput
           name="firstName"
           placeholder="שם פרטי"
@@ -123,8 +121,8 @@ const Register = () => {
             { value: "other", label: "אחר" },
           ]}
         />
-        <div style={styles.checkboxContainer}>
-          <label style={styles.checkboxLabel}>
+        <div className="register-checkbox-container">
+          <label className="register-checkbox-label">
             הסכמה לתנאי שימוש
             <input
               type="checkbox"
@@ -135,9 +133,7 @@ const Register = () => {
           </label>
         </div>
         {errors.agreed && (
-          <span
-            style={{ color: "red", textAlign: "center", fontSize: "0.8rem" }}
-          >
+          <span className="register-error">
             {errors.agreed}
           </span>
         )}
@@ -145,33 +141,6 @@ const Register = () => {
       </form>
     </AuthLayout>
   );
-};
-
-const styles = {
-  radioGroup: {
-    display: "flex",
-    justifyContent: "center",
-    gap: "1.5rem",
-    marginTop: "1rem",
-  },
-  radioLabel: {
-    display: "flex",
-    alignItems: "center",
-    gap: "0.5rem",
-    cursor: "pointer",
-  },
-  checkboxContainer: {
-    display: "flex",
-    justifyContent: "center",
-    marginTop: "1rem",
-  },
-  checkboxLabel: {
-    display: "flex",
-    flexDirection: "row-reverse",
-    alignItems: "center",
-    gap: "0.5rem",
-    cursor: "pointer",
-  },
 };
 
 export default Register;
