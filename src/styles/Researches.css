@@ -1,0 +1,112 @@
+/* src/styles/Researches.css */
+
+/* Main Page Container */
+.researches-page {
+  /* Inherit shared background from index/global if needed, or define here */
+  min-height: 100vh;
+  padding: 40px 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+  box-sizing: border-box;
+  font-family: inherit; /* Inherit global font */
+}
+
+/* Page Title */
+.researches-title {
+  text-align: center;
+  margin: 0 0 32px 0;
+  font-size: 2.2rem;
+  font-weight: 800;
+  color: #2c3e50;
+}
+
+/* Search Row Container */
+.researches-search-row {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  margin-bottom: 32px;
+}
+
+/* Search Input Wrapper */
+.researches-search-wrapper {
+  position: relative;
+  width: 100%;
+  max-width: 520px;
+}
+
+/* Search Input Field */
+.researches-search-input {
+  width: 100%;
+  height: 48px; /* Slightly taller for better touch target */
+  padding: 0 50px 0 16px; /* Right padding for icon in RTL */
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  outline: none;
+  font-size: 15px;
+  background: #ffffff;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  box-sizing: border-box;
+}
+
+.researches-search-input:focus {
+  border-color: #37B9A3; /* Sheba teal */
+  box-shadow: 0 0 0 3px rgba(55, 185, 163, 0.1);
+}
+
+/* Search Icon */
+.researches-search-icon {
+  position: absolute;
+  top: 50%;
+  right: 16px; /* Position on the right for RTL */
+  transform: translateY(-50%);
+  color: #94a3b8;
+  font-size: 20px;
+  pointer-events: none;
+}
+
+/* No Results Message */
+.researches-no-results {
+  text-align: center;
+  margin-top: 40px;
+  color: #64748b;
+  font-size: 1rem;
+}
+
+/* 
+ * NOTE: The Grid functionality relies on 'cards-grid' which is likely global or shared.
+ * We can override it here specifically for this page if needed, or let it cascade.
+ * For now, we assume 'cards-grid' from card.css handles the layout. 
+ * If we wanted to isolate it completely:
+ */
+/*
+.researches-grid {
+  display: grid;
+  gap: 20px;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+}
+*/
+
+/* --- Media Queries --- */
+
+@media (max-width: 600px) {
+  .researches-page {
+    padding: 24px 16px;
+  }
+
+  .researches-title {
+    font-size: 1.75rem;
+    margin-bottom: 24px;
+  }
+
+  .researches-search-input {
+    height: 44px;
+    font-size: 14px;
+    padding-right: 44px;
+  }
+
+  .researches-search-icon {
+    right: 14px;
+    font-size: 18px;
+  }
+}
