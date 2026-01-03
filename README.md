@@ -1,16 +1,85 @@
-# React + Vite
+# 🏥 ShebaHub
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+**ShebaHub** is a web platform designed to connect **Researchers**, **Mentors**, and **Apprentices** within the Sheba ecosystem. It serves as a central hub for managing academic research, mentorship opportunities, and professional development.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## 🚀 Features
 
-## React Compiler
+- **Responsive Navigation**: A fully adaptive Navbar that provides a seamless experience on both Desktop and Mobile devices.
+    - **Desktop**: Clean 3-part layout (Logo | Navigation | User Actions).
+    - **Mobile**: Smooth "Push-down" Hamburger menu.
+- **User Authentication**: Built-in support for Login, Registration, and User Profiles (`/login`, `/register`, `/user/:id`).
+- **Research & Mentorship Management**: Dedicated sections for browsing Researches, Apprentices, and Mentors.
+- **Modern UI/UX**: Clean, professional design with consistent styling and accessible components.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+---
 
-## Expanding the ESLint configuration
+## 🛠️ Technology Stack
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+- **Frontend Framework**: [React](https://react.dev/) (v18+)
+- **Build Tool**: [Vite](https://vitejs.dev/) - For lightning-fast development and building.
+- **Styling**: pure CSS with clear architecture (`src/styles/` + `src/index.css`).
+- **Routing**: [React Router](https://reactrouter.com/) for single-page navigation.
+
+---
+
+## 📂 Project Structure
+
+```bash
+ShebaHub/
+├── src/
+│   ├── assets/         # Images and static assets (Logos, Icons)
+│   ├── components/     # Reusable React components (Navbar, Forms, Cards)
+│   ├── context/        # Global state management (AuthContext)
+│   ├── pages/          # Full page views (Home, Login, Researches)
+│   ├── styles/         # Global and Component-specific CSS files
+│   ├── App.jsx         # Main Application Entry Point
+│   └── main.jsx        # React DOM Root
+├── public/             # Public static files
+└── index.html          # HTML entry point
+```
+
+---
+
+## 🏁 Getting Started
+
+Follow these steps to set up the project locally on your machine.
+
+### Prerequisites
+- Node.js (v16.0.0 or higher)
+- npm (Node Package Manager)
+
+### Installation
+
+1. **Clone the repository** (if applicable) or download the source code.
+   ```bash
+   git clone https://github.com/your-username/ShebaHub.git
+   cd ShebaHub
+   ```
+
+2. **Install Dependencies**
+   ```bash
+   npm install
+   ```
+
+3. **Start the Development Server**
+   ```bash
+   npm run dev
+   ```
+   
+   The app will run at `http://localhost:5173` (or another port if 5173 is busy).
+
+---
+
+## 🤝 Contributing
+
+This project is currently under active development.
+- **Navbar**: Recently updated to be fully responsive with educational code comments.
+- **Auth**: Functional login/register flows.
+
+Feel free to open issues or suggest improvements!
+
+---
+
+*Verified & Documented by the Dev Team.*
