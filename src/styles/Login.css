@@ -1,0 +1,16 @@
+/* src/styles/Login.css */
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem; /* 8px */
+  width: 100%;
+}
+
+.login-error {
+  color: #dc3545; /* Standard Bootstrap-like danger red */
+  text-align: center;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+}

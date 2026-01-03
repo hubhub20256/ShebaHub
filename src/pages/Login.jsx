@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import AuthLayout from "../components/AuthLayout";
 import { FormInput, FormButton } from "../components/forms"; // Adjust path if needed
 import { useAuth } from "../context/AuthContext";
+import "../styles/Login.css";
 
 const Login = () => {
   const [formData, setFormData] = useState({ email: "", password: "" });
@@ -76,23 +77,9 @@ const Login = () => {
       footerLinkText="הרשמה"
       footerPath="/register"
     >
-      <form
-        onSubmit={handleSubmit}
-        style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}
-      >
+      <form onSubmit={handleSubmit} className="login-form">
         {/* Show Server Error if exists (e.g. "Wrong Password") */}
-        {serverError && (
-          <div
-            style={{
-              color: "red",
-              textAlign: "center",
-              fontWeight: "bold",
-              marginBottom: "0.5rem",
-            }}
-          >
-            {serverError}
-          </div>
-        )}
+        {serverError && <div className="login-error">{serverError}</div>}
 
         <FormInput
           type="email"
