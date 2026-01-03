@@ -7,6 +7,7 @@ import img2 from "../assets/student2.png";
 import img3 from "../assets/student3.png";
 
 import "../components/card.css";
+import "../styles/Apprentices.css";
 
 const mockApprentices = [
   {
@@ -66,15 +67,15 @@ export default function Apprentices() {
   }, [searchQuery]);
 
   return (
-    <div className="page-wrapper" dir="rtl">
-      <h1 className="main-title">מתלמדים</h1>
+    <div className="apprentices-page" dir="rtl">
+      <h1 className="apprentices-title">מתלמדים</h1>
 
-      <div className="search-row">
-        <div className="search-input-wrapper">
-          <FiSearch className="search-icon" />
+      <div className="apprentices-search-row">
+        <div className="apprentices-search-wrapper">
+          <FiSearch className="apprentices-search-icon" />
           <input
             type="text"
-            className="search-input with-icon"
+            className="apprentices-search-input"
             placeholder="..חיפוש לפי שם מתלמד/ת, תחומי עניין מחקרי, זמינות למחקר ועוד"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -89,7 +90,7 @@ export default function Apprentices() {
       </div>
 
       {filteredApprentices.length === 0 && (
-        <p className="no-results">לא נמצאו תוצאות.</p>
+        <p className="apprentices-no-results">לא נמצאו תוצאות.</p>
       )}
     </div>
   );

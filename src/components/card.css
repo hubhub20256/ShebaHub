@@ -82,6 +82,18 @@
   font-size: 17px;
 }
 
+/* ===== Groups ===== */
+.card-email-group {
+  /* Return to standard block flow to match other rows alignment */
+  display: block;
+  margin-bottom: 4px;
+}
+
+.card-email-group span {
+  word-break: break-word; /* Prevent overflow on desktop/mobile */
+  overflow-wrap: anywhere;
+}
+
 /* ===== Cards Grid ===== */
 
 .cards-grid {
@@ -104,24 +116,46 @@
 /* ===== Mobile Tweaks ===== */
 
 @media (max-width: 600px) {
+  /* Reduce outer card padding */
+  .apprenticeCard,
+  .mentorCard,
+  .researchCard {
+    padding: 10px;
+  }
+
+  /* Compact header */
   .mentorCard__header,
   .apprenticeCard__header {
     gap: 10px;
+    padding-bottom: 8px;
+  }
+  
+  /* Smaller Avatar */
+  .mentorCard__avatar,
+  .apprenticeCard__avatar {
+    width: 60px;
+    height: 60px;
   }
 
   .mentorCard__title,
   .apprenticeCard__title {
-    font-size: 1.2rem;
+    font-size: 1.1rem;
   }
 
   .mentorCard__labels,
   .apprenticeCard__labels {
-    font-size: 14px;
+    font-size: 13.5px;
+    gap: 4px;
   }
 
   .mentorCard__labels strong,
   .apprenticeCard__labels strong {
-    font-size: 15px;
+    font-size: 14px;
+  }
+
+  .card-email-group span {
+    display: block;
+    width: 100%;
   }
 }
 
