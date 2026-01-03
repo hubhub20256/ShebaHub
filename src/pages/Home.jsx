@@ -5,7 +5,7 @@ const Home = () => {
     <main style={styles.page}>
       <section style={styles.hero}>
         <div style={styles.left} dir="rtl">
-          <h1 style={styles.title}>Welcome to ShebaHub</h1>
+          <h1 style={styles.title}>ברוכה הבאה לShebaHub</h1>
 
           <p style={styles.subtitle}>
             פלטפורמה לחיבור בין חוקרים לסטודנטים ומתמחים לקידום מחקר, חדשנות
