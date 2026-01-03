@@ -1,9 +1,22 @@
 import "./card.css";
 
-export default function apprenticesCard({apprentice}) {
+export default function ApprenticesCard({ apprentice }) {
   return (
     <section className="apprenticeCard" dir="rtl">
-      <h2 className="apprenticeCard__title">{apprentice.name}</h2>
+  
+      <header className="apprenticeCard__header">
+        <div className="apprenticeCard__avatar">
+          {apprentice.profileImage && (
+            <img
+              src={apprentice.profileImage}
+              alt={`${apprentice.name || "apprentice"} avatar`}
+              style={{ width: "100%", height: "100%", objectFit: "cover" }}
+            />
+          )}
+        </div>
+        <h2 className="apprenticeCard__title">{apprentice.name}</h2>
+      </header>
+
 
       <div className="apprenticeCard__content">
         <div className="apprenticeCard__boxes">
@@ -15,15 +28,6 @@ export default function apprenticesCard({apprentice}) {
         </div>
 
         <aside className="apprenticeCard__side">
-          <div className="apprenticeCard__avatar">
-            {apprentice.profileImage && (
-              <img
-                src={apprentice.profileImage}
-                alt={`${apprentice.name || 'apprentice'} avatar`}
-                style={{ width: "100%", height: "100%", objectFit: "cover" }}
-              />
-            )}
-          </div>
           <div className="apprenticeCard__labels">
             <div><strong>מין:</strong> {apprentice.gender}</div>
             <div><strong>דואר אלקטרוני:</strong> {apprentice.email}</div>

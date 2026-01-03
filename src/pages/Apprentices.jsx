@@ -6,6 +6,7 @@ import img3 from '../assets/student3.png';
 
 const mockApprentices = [
   {
+    name: "דנה כהן",
     id: 1,
     gender: "נקבה",
     email: "dana.k@med-example.com",
@@ -16,6 +17,7 @@ const mockApprentices = [
   },
 
   {
+    name: "יותם לוי",
     id: 2,
     gender: "זכר",
     email: "yotam.lev@hospital-demo.co.il",
@@ -25,6 +27,7 @@ const mockApprentices = [
     profileImage: img2
   },
   {
+    name: "מיכל שמש",
     id: 3,
     gender: "נקבה",
     email: "michal.s@clinic-test.org",
@@ -37,17 +40,10 @@ const mockApprentices = [
 
 export default function Apprentices() {
   return (
-    <div style={{ padding: 24 }} dir="rtl">
-      <h1 style={{ marginBottom: 12 }}>מתמחים</h1>
-
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
-          gap: 14,
-        }}
-      >
-        {mockApprentices.map((m) => (
+    <div className="page-wrapper" dir="rtl">
+       <h1 className="main-title">מתלמדים</h1>
+        <div className="cards-grid">
+        {mockApprentices.slice(0, 20).map((m)=> (
           <ApprenticeCard key={m.id} apprentice={m} />
         ))}
       </div>
