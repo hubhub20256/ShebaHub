@@ -1,0 +1,58 @@
+/* src/styles/About.css */
+
+.about-page {
+  padding: 2rem;
+  display: flex;
+  justify-content: center;
+  min-height: 80vh; /* Ensures footer is pushed down */
+  box-sizing: border-box;
+}
+
+.about-content {
+  max-width: 50rem; /* 800px */
+  width: 100%;
+  text-align: right; /* RTL alignment */
+}
+
+.about-title {
+  font-size: 2.5rem;
+  margin-bottom: 1.5rem;
+  color: #333;
+  border-bottom: 0.125rem solid #f0f0f0; /* 2px */
+  padding-bottom: 1rem;
+  font-weight: 700;
+}
+
+.about-section {
+  margin-bottom: 2rem;
+}
+
+.about-subtitle {
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+  color: #555;
+  font-weight: 600;
+}
+
+.about-text {
+  line-height: 1.6;
+  font-size: 1rem;
+  color: #666;
+}
+
+/* --- Media Queries --- */
+
+@media (max-width: 600px) {
+  .about-page {
+    padding: 1.5rem 1rem;
+  }
+
+  .about-title {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+  }
+
+  .about-subtitle {
+    font-size: 1.25rem;
+  }
+}
