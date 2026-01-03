@@ -1,0 +1,195 @@
+/* src/styles/Home.css */
+
+/* 
+ * Home Page Styles
+ * Strategy: Desktop-first approach to match original design, 
+ * with overlays for mobile responsiveness using @media queries.
+ */
+
+/* Main Page Container */
+.home-page {
+  min-height: 100vh;
+  background: #ffffff;
+  color: #0f172a;
+  /* Font family inherited from index.css mostly, but explicit here if needed */
+  font-family: system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+  overflow-x: hidden; /* Prevent horizontal scroll on small screens */
+}
+
+/* Hero Section */
+.home-hero {
+  direction: ltr;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 56px 20px;
+  display: grid;
+  grid-template-columns: 1fr 1.15fr;
+  gap: 36px;
+  align-items: center;
+}
+
+/* Left Column (Text Content) */
+.home-left {
+  /* Default styles for the left column */
+}
+
+/* Right Column (Image Helper) */
+.home-right {
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* Title */
+.home-title {
+  margin: 0 auto;
+  text-align: center;
+  font-size: 34px;
+  font-weight: 700;
+  color: #2C2C6C;
+  max-width: 100%;
+}
+
+/* Subtitle */
+.home-subtitle {
+  margin: 12px auto 0 auto;
+  text-align: center;
+  font-size: 14px;
+  line-height: 1.7;
+  color: #334155;
+  max-width: 600px;
+}
+
+/* Vision List Container */
+.home-vision-list {
+  margin-top: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* Individual Vision Row */
+.home-vision-row {
+  display: flex;
+  flex-direction: row-reverse;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+/* Vision Text Block */
+.home-vision-text-block {
+  max-width: 480px;
+}
+
+/* Vision Label ("The Problem", "The Solution", etc.) */
+.home-vision-label {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 4px;
+  color: #0f172a;
+}
+
+/* Vision Description Text */
+.home-vision-text {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.8;
+  color: #334155;
+}
+
+/* Number Badge (01, 02, 03) */
+.home-vision-num {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  font-size: 13px;
+  color: #ffffff;
+  background: #37B9A3;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+/* Hero Image */
+.home-image {
+  width: 100%;
+  max-width: 700px;
+  height: 400px;
+  object-fit: cover;
+  border-radius: 8px;
+  box-shadow: 0 16px 32px rgba(15, 23, 42, 0.12);
+}
+
+/* --- Media Queries for Responsiveness --- */
+
+/* Tablet and smaller desktops */
+@media (max-width: 900px) {
+  .home-hero {
+    grid-template-columns: 1fr; /* Stack columns vertically */
+    gap: 32px;
+    padding: 32px 16px;
+    text-align: center; /* Center text when stacked */
+  }
+
+  /* Center the image in the single column layout */
+  .home-right {
+    justify-content: center;
+    width: 100%;
+  }
+
+  .home-image {
+    max-width: 520px;
+    height: 280px;
+  }
+}
+
+/* Mobile Devices */
+@media (max-width: 600px) {
+  .home-hero {
+    padding: 24px 14px;
+  }
+
+  .home-title {
+    font-size: 26px; /* Decrease font size for mobile */
+  }
+
+  .home-subtitle {
+    font-size: 13px;
+    max-width: 100%;
+  }
+
+  .home-vision-list {
+    gap: 16px;
+    margin-top: 20px;
+  }
+
+  .home-vision-row {
+    gap: 12px;
+  }
+
+  .home-vision-text-block {
+    max-width: 100%;
+    text-align: right; /* Keep Hebrew text aligned right usually, or center if desired */
+  }
+
+  .home-vision-label {
+    font-size: 13px;
+  }
+
+  .home-vision-text {
+    font-size: 12.5px;
+    line-height: 1.75;
+  }
+
+  .home-vision-num {
+    width: 40px;
+    height: 40px;
+    font-size: 12.5px;
+    border-radius: 10px; /* Sligtly rounder relative to size */
+  }
+
+  .home-image {
+    max-width: 100%;
+    height: 240px; /* Adjust height to prevent taking up too much vertical space */
+  }
+}
