@@ -76,7 +76,7 @@ const Navbar = () => {
             מחקרים
           </Link>
           <Link to="/apprentices" className="navbar-link" onClick={closeMenu}>
-            מתמחים
+            מתלמדים
           </Link>
           <Link to="/mentors" className="navbar-link" onClick={closeMenu}>
             מנחים
