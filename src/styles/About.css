@@ -1,58 +1,64 @@
-/* src/styles/About.css */
+/* About.css */
 
-.about-page {
-  padding: 2rem;
-  display: flex;
-  justify-content: center;
-  min-height: 80vh; /* Ensures footer is pushed down */
-  box-sizing: border-box;
+.about-container {
+    direction: rtl; /* קובע את כיוון הקריאה מימין לשמאל */
+    text-align: right; /* מצמיד את הטקסט לימין */
+    font-family: system-ui, -apple-system, "Segoe UI", Arial, sans-serif; 
+    line-height: 1.8;
+    max-width: 900px;
+    margin: 40px auto;
+    padding: 20px;
+    color: #333;
 }
 
-.about-content {
-  max-width: 50rem; /* 800px */
-  width: 100%;
-  text-align: right; /* RTL alignment */
+.about-header {
+    color: #2c3e50;
+    font-size: 2.5rem;
+    font-weight: 800;
+    margin-bottom: 2rem;
+    position: relative;
+    display: inline-block;
 }
 
-.about-title {
-  font-size: 2.5rem;
-  margin-bottom: 1.5rem;
-  color: #333;
-  border-bottom: 0.125rem solid #f0f0f0; /* 2px */
-  padding-bottom: 1rem;
-  font-weight: 700;
+/* קו עיצובי מתחת לכותרת הראשית */
+.about-header::after {
+    content: '';
+    position: absolute;
+    bottom: -10px;
+    right: 0;
+    width: 60px;
+    height: 4px;
+    background-color: #0e8f7a; /* צבע סגלגל מהלוגו/עיצוב */
+    border-radius: 2px;
 }
 
 .about-section {
-  margin-bottom: 2rem;
+    margin-bottom: 3rem;
+    background: #ffffff;
+    padding: 25px;
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05); 
 }
 
 .about-subtitle {
-  font-size: 1.5rem;
-  margin-bottom: 1rem;
-  color: #555;
-  font-weight: 600;
+    color: #0e8f7a;
+    font-size: 1.6rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
 }
 
 .about-text {
-  line-height: 1.6;
-  font-size: 1rem;
-  color: #666;
+    font-size: 1.15rem;
+    margin-bottom: 15px;
 }
 
-/* --- Media Queries --- */
+.highlight-brand {
+    font-weight: 700;
+    color: #2c3e50;
+}
 
-@media (max-width: 600px) {
-  .about-page {
-    padding: 1.5rem 1rem;
-  }
-
-  .about-title {
-    font-size: 2rem;
-    margin-bottom: 1rem;
-  }
-
-  .about-subtitle {
-    font-size: 1.25rem;
-  }
+/* טיפול במילים באנגלית בתוך טקסט עברי */
+.en-text {
+    direction: ltr;
+    display: inline-block;
 }

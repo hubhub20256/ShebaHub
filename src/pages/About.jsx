@@ -1,35 +1,30 @@
-import React from "react";
-import "../styles/About.css";
+import React from 'react';
+// שים לב לנתיב המעודכן: יוצאים מ-pages ונכנסים ל-styles
+import '../styles/About.css'; 
 
 const About = () => {
   return (
-    <main className="about-page">
-      <div className="about-content">
-        <h1 className="about-title">About ShebaHub</h1>
+    <div className="about-container">
+      <h1 className="about-header">אודות Sheba-Hub</h1>
 
-        <section className="about-section">
-          <h2 className="about-subtitle">Our Mission</h2>
-          <p className="about-text">
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do
-            eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim
-            ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut
-            aliquip ex ea commodo consequat.
-          </p>
-        </section>
+      <section className="about-section">
+        <h2 className="about-subtitle">החזון שלנו</h2>
+        <p className="about-text">
+          ברוכים הבאים ל-<span className="highlight-brand">Sheba-Hub</span>, הפלטפורמה המובילה לחיבור בין עולם המחקר הרפואי לדור העתיד של החוקרים. 
+          המערכת נולדה מתוך צורך ממשי בשטח: גישור על הפער הקיים במציאת התאמה מדויקת בין מנחים מקצועיים לבין סטודנטים ומתלמדים המבקשים להשתלב בחזית המחקר.
+        </p>
+      </section>
 
-        <section className="about-section">
-          <h2 className="about-subtitle">Who We Are</h2>
-          <p className="about-text">
-            Duis aute irure dolor in reprehenderit in voluptate velit esse
-            cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat
-            cupidatat non proident, sunt in culpa qui officia deserunt mollit
-            anim id est laborum.
-          </p>
-        </section>
-      </div>
-    </main>
+      <section className="about-section">
+        <h2 className="about-subtitle">שותפות של מצוינות</h2>
+        <p className="about-text">
+          הפרויקט הוא פרי שיתוף פעולה אסטרטגי בין <span className="highlight-brand">המרכז הרפואי שיבא</span>, בהובלת צוות רופאות וחוקרות מובילות, לבין <span className="highlight-brand">המכון הטכנולוגי חולון (HIT)</span>. 
+          החיבור בין הניסיון הקליני העשיר לבין החדשנות הטכנולוגית הוא הלב הפועם של הפלטפורמה, ומבטיח סטנדרט גבוה של איכות ויעילות.
+        </p>
+      </section>
+  
+    </div>
   );
 };
 
 export default About;
-
