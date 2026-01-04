@@ -91,7 +91,7 @@ const styles = {
     textAlign: "center",
     fontSize: 34,
     fontWeight: 700,
-    color: "#1e3a8a",
+    color: "#2C2C6C",
     maxWidth: "100%",
   },
 

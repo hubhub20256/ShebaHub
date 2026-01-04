@@ -1,51 +1,56 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import "../index.css";
 import "../styles/Navbar.css";
 import ShebaNavbarLogo from "../assets/ShebaNavbarLogo.png";
 import { useAuth } from "../context/AuthContext";
-
-/**
- * ===================================================================================
- * 🚀 NAVBAR COMPONENT DOCUMENTATION
- * ===================================================================================
- * 
- * HOW IT WORKS (BEGINNER'S GUIDE):
- * 
- * 1. STATE MANAGEMENT (useState):
- *    - We need to remember if the menu is OPEN or CLOSED.
- *    - 'isMenuOpen' is our memory variable.
- *    - 'toggleMenu' flips it (Open -> Close / Close -> Open).
- *    - 'closeMenu' forces it to Close (useful when a link is clicked).
- * 
- * 2. CONDITIONAL RENDERING (The ? : User Check):
- *    - Inside the JSX, we check '{user ? ... : ...}'.
- *    - IF 'user' exists (Loggeed In) -> Show "Profile" and "Logout".
- *    - IF 'user' is null (Logged Out) -> Show "Login" and "Register".
- * 
- * 3. DYNAMIC CLASSES (CSS Connections):
- *    - When 'isMenuOpen' is true, we add the class "active" to the links container.
- *    - In Navbar.css, ".navbar-links.active" has rules to show the menu!
- *    - We also add "open" to the hamburger button to animate it into an 'X'.
- * 
- * ===================================================================================
- */
+import UserProfileIcon from "../assets/user_profile.png"
 
 const Navbar = () => {
   const { user, logout } = useAuth();
+
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+
+  const profileMenuRef = useRef(null);
 
   const toggleMenu = () => {
-    setIsMenuOpen(!isMenuOpen);
+    setIsMenuOpen((prev) => !prev);
+    setIsProfileMenuOpen(false);
   };
 
   const closeMenu = () => {
     setIsMenuOpen(false);
+    setIsProfileMenuOpen(false);
   };
+
+  const toggleProfileMenu = () => {
+    setIsProfileMenuOpen((prev) => !prev);
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (!profileMenuRef.current) return;
+      if (!profileMenuRef.current.contains(e.target)) {
+        setIsProfileMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    const handleEsc = (e) => {
+      if (e.key === "Escape") setIsProfileMenuOpen(false);
+    };
+
+    document.addEventListener("keydown", handleEsc);
+    return () => document.removeEventListener("keydown", handleEsc);
+  }, []);
 
   return (
     <nav className="navbar">
-      {/* 1. Logo Section */}
       <div className="navbar-logo-container">
         <Link to="/" onClick={closeMenu}>
           <img
@@ -56,21 +61,18 @@ const Navbar = () => {
         </Link>
       </div>
 
-      {/* 2. Hamburger Button (Mobile Only) */}
-      <button 
-        className={`hamburger-menu ${isMenuOpen ? "open" : ""}`} 
+      <button
+        className={`hamburger-menu ${isMenuOpen ? "open" : ""}`}
         onClick={toggleMenu}
         aria-label="Toggle navigation"
+        aria-expanded={isMenuOpen}
       >
         <span className="hamburger-line"></span>
         <span className="hamburger-line"></span>
         <span className="hamburger-line"></span>
       </button>
 
-      {/* 3. Navigation Links Container */}
       <div className={`navbar-links ${isMenuOpen ? "active" : ""}`}>
-        
-        {/* Main Navigation Group */}
         <div className="navbar-group">
           <Link to="/researches" className="navbar-link" onClick={closeMenu}>
             מחקרים
@@ -89,27 +91,133 @@ const Navbar = () => {
           </Link>
         </div>
 
-        {/* Auth Navigation Group */}
         <div className="navbar-group">
           {user ? (
-            /* Logged In State */
-            <>
-              <Link to={`/user/${user.id || "me"}`} className="navbar-link" onClick={closeMenu}>
-                פרופיל אישי
-              </Link>
-              <Link
-                to="/"
-                onClick={() => {
-                  logout();
-                  closeMenu();
+            <div
+              className="navbar-profile"
+              ref={profileMenuRef}
+              style={{ position: "relative" }}
+            >
+             <Link
+              to="#"
+              className="navbar-link navbar-profile-icon"
+              onClick={(e) => {
+                e.preventDefault();
+                toggleProfileMenu();
+              }}
+              aria-label="תפריט פרופיל"
+            >
+              <img
+                src={UserProfileIcon}
+                alt="פרופיל משתמש"
+                style={{
+                  width: "30px",
+                  height: "30px",
+                  objectFit: "contain",
+                  display: "block"
                 }}
-                className="navbar-link"
-              >
-                התנתקות
-              </Link>
-            </>
+              />
+
+            </Link>
+
+
+              {isProfileMenuOpen && (
+                <div
+                  className="profile-dropdown"
+                  role="menu"
+                  style={{
+                    position: "absolute",
+                    top: "calc(100% + 10px)",
+                    right: 0,
+                    minWidth: "220px",
+                    background: "#fff",
+                    border: "1px solid #E6E8F0",
+                    borderRadius: "12px",
+                    boxShadow: "0 12px 30px rgba(0,0,0,0.12)",
+                    overflow: "hidden",
+                    zIndex: 9999,
+                    textAlign: "right",
+                  }}
+                >
+                  <Link
+                    to={`/user/${user.id || "me"}`}
+                    className="navbar-link"
+                    onClick={closeMenu}
+                    role="menuitem"
+                    style={{
+                      display: "block",
+                      padding: "14px 16px",
+                      borderBottom: "1px solid #F0F2F6",
+                    }}
+                  >
+                    הפרופיל האישי
+                  </Link>
+
+                  <Link
+                     to="/research/1"
+                    className="navbar-link"
+                    onClick={closeMenu}
+                    role="menuitem"
+                    style={{
+                      display: "block",
+                      padding: "14px 16px",
+                      borderBottom: "1px solid #F0F2F6",
+                    }}
+                  >
+                    המחקרים שלי
+                  </Link>
+
+                  <Link
+                    to="/my-apprentices"
+                    className="navbar-link"
+                    onClick={closeMenu}
+                    role="menuitem"
+                    style={{
+                      display: "block",
+                      padding: "14px 16px",
+                      borderBottom: "1px solid #F0F2F6",
+                    }}
+                  >
+                    המתמחים שלי
+                  </Link>
+
+                  {/* תיקון הקישור: שם קובץ CreateResearch.jsx לא קובע את הנתיב,
+                      הנתיב נקבע ב-Router. לרוב הנתיב יהיה /create-research או /createResearch.
+                      כאן שמתי /create-research (הכי סטנדרטי). אם אצלך זה שונה, החליפי. */}
+                  <Link
+                    to="/create-research"
+                    className="navbar-link"
+                    onClick={closeMenu}
+                    role="menuitem"
+                    style={{
+                      display: "block",
+                      padding: "14px 16px",
+                      borderBottom: "1px solid #F0F2F6",
+                    }}
+                  >
+                    ליצירת מחקר
+                  </Link>
+
+                  <Link
+                    to="/"
+                    className="navbar-link"
+                    role="menuitem"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      logout();
+                      closeMenu();
+                    }}
+                    style={{
+                      display: "block",
+                      padding: "14px 16px",
+                    }}
+                  >
+                    התנתקות
+                  </Link>
+                </div>
+              )}
+            </div>
           ) : (
-            /* Logged Out State */
             <>
               <Link to="/login" className="navbar-link" onClick={closeMenu}>
                 התחברות
