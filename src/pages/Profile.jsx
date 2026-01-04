@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 
 // --- MOCK DATA FOR DISPLAY ---
 const MOCK_MENTOR = {
@@ -21,6 +21,9 @@ const MOCK_MENTOR = {
     "מחקר מקיף בנושא השפעת תרופות ביולוגיות על אי ספיקת לב (פורסם ב-Nature 2023).",
   recommendationRequest:
     "פרופ' ישראל ישראלי, מנהל מערך הלב, israel@sheba.gov.il",
+
+  // NEW: profile image
+  avatarUrl: "",
 };
 
 const MOCK_APPRENTICE = {
@@ -46,13 +49,22 @@ const MOCK_APPRENTICE = {
   specialtyGroup: "מקצועות הבסיס",
   specialty: "פנימית",
   recommendationRequest: "ד״ר דני הנדל, מנחה לפרויקט גמר, danny@technion.ac.il",
+
+  // NEW: profile image
+  avatarUrl: "",
 };
 
 const Profile = () => {
   const [userData, setUserData] = useState(MOCK_MENTOR);
 
+  // NEW: edit modal + draft (only avatar is editable for now)
+  const [isEditing, setIsEditing] = useState(false);
+  const [draft, setDraft] = useState(MOCK_MENTOR);
+  const fileInputRef = useRef(null);
+
   const toggleUser = () => {
-    setUserData(userData.role === "mentor" ? MOCK_APPRENTICE : MOCK_MENTOR);
+    setUserData((prev) => (prev.role === "mentor" ? MOCK_APPRENTICE : MOCK_MENTOR));
+    setIsEditing(false);
   };
 
   const isMentor = userData.role === "mentor";
@@ -67,6 +79,48 @@ const Profile = () => {
 
   const shouldShowSpecialty = isMentor || showApprenticeSpecialty;
 
+  // NEW: open/close/save edit
+  const openEdit = () => {
+    setDraft(userData);
+    setIsEditing(true);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const closeEdit = () => {
+    setIsEditing(false);
+  };
+
+  const saveEdit = () => {
+    setUserData(draft);
+    setIsEditing(false);
+  };
+
+  // NEW: remove avatar completely (sets to empty string)
+  const removeAvatar = () => {
+    setDraft((prev) => ({ ...prev, avatarUrl: "" }));
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  // NEW: upload image from computer and preview in avatar
+  const onPickAvatar = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      alert("נא לבחור קובץ תמונה בלבד");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      setDraft((prev) => ({
+        ...prev,
+        avatarUrl: String(reader.result), // preview as data URL
+      }));
+    };
+    reader.readAsDataURL(file);
+  };
+
   return (
     <div dir="rtl" style={styles.page}>
       {/* Dev Tool */}
@@ -79,22 +133,93 @@ const Profile = () => {
       {/* 1. Header Card (Full Width) */}
       <div style={styles.headerCard}>
         <div style={styles.avatar}>
-          {userData.firstName[0]}
-          {userData.lastName[0]}
+          {userData.avatarUrl ? (
+            <img
+              src={userData.avatarUrl}
+              alt="תמונת פרופיל"
+              style={styles.avatarImg}
+            />
+          ) : (
+            <>
+              {userData.firstName[0]}
+              {userData.lastName[0]}
+            </>
+          )}
         </div>
+
         <div style={styles.headerInfo}>
           <h1 style={styles.name}>
             {userData.firstName} {userData.lastName}
           </h1>
           <div style={styles.badgesRow}>
-            <span style={styles.roleBadge}>
-              {isMentor ? "מנחה" : "מתלמד/ת"}
-            </span>
+            <span style={styles.roleBadge}>{isMentor ? "מנחה" : "מתלמד/ת"}</span>
             <span style={styles.infoBadge}>{userData.email}</span>
           </div>
         </div>
-        <button style={styles.editBtn}>עריכת פרופיל</button>
+
+        <button style={styles.editBtn} onClick={openEdit}>
+          עריכת פרופיל
+        </button>
       </div>
+
+      {/* EDIT MODAL (Avatar only) */}
+      {isEditing && (
+        <div style={styles.modalOverlay} onClick={closeEdit}>
+          <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
+            <h3 style={styles.sectionTitle}>עריכת פרופיל</h3>
+
+            <div style={styles.modalRow}>
+              <div style={styles.modalAvatar}>
+                {draft.avatarUrl ? (
+                  <img
+                    src={draft.avatarUrl}
+                    alt="תצוגה מקדימה"
+                    style={styles.avatarImg}
+                  />
+                ) : (
+                  <>
+                    {draft.firstName?.[0]}
+                    {draft.lastName?.[0]}
+                  </>
+                )}
+              </div>
+
+              <div style={styles.modalButtonsCol}>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={onPickAvatar}
+                  style={{ display: "none" }}
+                />
+
+                {/* If image exists -> show remove. If not -> show upload */}
+                {draft.avatarUrl ? (
+                  <button style={styles.secondaryBtn} onClick={removeAvatar}>
+                    הסר תמונה
+                  </button>
+                ) : (
+                  <button
+                    style={styles.primaryBtn}
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    העלאת תמונה מהמחשב
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <div style={styles.modalActions}>
+              <button style={styles.secondaryBtn} onClick={closeEdit}>
+                סגור
+              </button>
+              <button style={styles.primaryBtn} onClick={saveEdit}>
+                שמירה
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 2. Professional Details (Wide Section - BOTH) */}
       <div style={styles.wideCard}>
@@ -143,17 +268,13 @@ const Profile = () => {
             />
             <InfoRow label="שעות שבועיות" value={userData.weeklyHours} />
             <InfoRow label="זמינות להתחלה" value={userData.startDate} />
-            <InfoRow
-              label="כלים ומיומנויות"
-              value={userData.softwareSkills}
-            />
+            <InfoRow label="כלים ומיומנויות" value={userData.softwareSkills} />
           </div>
         </div>
       )}
 
       {/* 3. Bottom Grid for the rest */}
       <div style={styles.bottomGrid}>
-        
         {/* Right Column (About, Recs, Files) */}
         <div style={styles.column}>
           <SectionCard title="אודות">
@@ -165,7 +286,7 @@ const Profile = () => {
               <p style={styles.bioText}>{userData.recommendationRequest}</p>
             </SectionCard>
           )}
-          
+
           <SectionCard title="קבצים ומסמכים">
             <div style={styles.filePlaceholder}>
               📄 קורות חיים.pdf
@@ -174,36 +295,26 @@ const Profile = () => {
           </SectionCard>
         </div>
 
-        {/* Left Column (Mentor Specifics & Research OR Intern Professional Exp) */}
+        {/* Left Column */}
         <div style={styles.column}>
-          
-          {/* MENTOR: Research Interests (Still here as a small card) */}
           {isMentor && (
             <SectionCard title="תחומי עניין ומחקר">
-               <InfoRow
-                  label="תחומי עניין"
-                  value={userData.researchInterests}
-               />
+              <InfoRow label="תחומי עניין" value={userData.researchInterests} />
             </SectionCard>
           )}
 
-          {/* MENTOR: Previous Research */}
           {isMentor && userData.previousResearchDescription && (
             <SectionCard title="מחקרים קודמים">
-              <p style={styles.bioText}>
-                {userData.previousResearchDescription}
-              </p>
+              <p style={styles.bioText}>{userData.previousResearchDescription}</p>
             </SectionCard>
           )}
 
-           {/* MENTOR: Mentoring Detail */}
-           {isMentor && userData.mentoringExperienceDetails && (
-             <SectionCard title="פירוט ניסיון בהנחיה">
-               <p style={styles.bioText}>{userData.mentoringExperienceDetails}</p>
-             </SectionCard>
+          {isMentor && userData.mentoringExperienceDetails && (
+            <SectionCard title="פירוט ניסיון בהנחיה">
+              <p style={styles.bioText}>{userData.mentoringExperienceDetails}</p>
+            </SectionCard>
           )}
 
-          {/* INTERN: Professional Exp (Remains here in the grid) */}
           {!isMentor && userData.professionalExperience && (
             <SectionCard title="ניסיון מקצועי קודם">
               <p style={styles.bioText}>{userData.professionalExperience}</p>
@@ -216,7 +327,6 @@ const Profile = () => {
 };
 
 // --- SUB-COMPONENTS ---
-
 const SectionCard = ({ title, children }) => (
   <div style={styles.card}>
     <h3 style={styles.sectionTitle}>{title}</h3>
@@ -280,6 +390,13 @@ const styles = {
     fontSize: 28,
     fontWeight: 700,
     boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+    overflow: "hidden",
+  },
+  avatarImg: {
+    width: "100%",
+    height: "100%",
+    objectFit: "cover",
+    display: "block",
   },
   headerInfo: { flex: 1 },
   name: { margin: "0 0 8px 0", fontSize: 28, fontWeight: 800 },
@@ -314,7 +431,7 @@ const styles = {
     transition: "0.2s",
   },
 
-  // 2. WIDE CARD (Professional Details & Intern Preferences)
+  // 2. WIDE CARD
   wideCard: {
     background: "white",
     borderRadius: 16,
@@ -325,8 +442,8 @@ const styles = {
   },
   gridContent: {
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))", 
-    columnGap: 40, 
+    gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))",
+    columnGap: 40,
     rowGap: 0,
   },
 
@@ -356,12 +473,8 @@ const styles = {
     lineHeight: 1,
     color: THEME_COLOR,
   },
-  cardContent: { 
-    display: "flex", 
-    flexDirection: "column", 
-    gap: 0 
-  },
-  
+  cardContent: { display: "flex", flexDirection: "column", gap: 0 },
+
   // ROWS
   infoRow: {
     display: "flex",
@@ -373,7 +486,7 @@ const styles = {
   },
   infoLabel: { fontWeight: 600, color: "#000", fontSize: 14 },
   infoValue: { fontWeight: 500, color: "#666", fontSize: 14, textAlign: "left" },
-  
+
   // TEXT
   bioText: {
     lineHeight: "1.6",
@@ -381,7 +494,7 @@ const styles = {
     color: "#555",
     whiteSpace: "pre-line",
   },
-  
+
   // FILES
   filePlaceholder: {
     display: "flex",
@@ -398,6 +511,66 @@ const styles = {
     cursor: "pointer",
     fontWeight: 600,
     fontSize: 12,
+  },
+
+  // MODAL
+  modalOverlay: {
+    position: "fixed",
+    inset: 0,
+    background: "rgba(0,0,0,0.35)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 16,
+    zIndex: 999,
+  },
+  modal: {
+    width: "min(720px, 100%)",
+    background: "white",
+    borderRadius: 16,
+    padding: 24,
+    border: "1px solid rgba(0,0,0,0.06)",
+    boxShadow: "0 24px 80px rgba(0,0,0,0.18)",
+  },
+  modalRow: { display: "flex", gap: 16, alignItems: "center" },
+  modalAvatar: {
+    width: 96,
+    height: 96,
+    borderRadius: "50%",
+    background: `linear-gradient(135deg, ${ACCENT_TEAL}, ${THEME_COLOR})`,
+    color: "white",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    fontSize: 30,
+    fontWeight: 700,
+    overflow: "hidden",
+    flexShrink: 0,
+  },
+  modalButtonsCol: { display: "flex", flexDirection: "column", gap: 10 },
+  modalActions: {
+    display: "flex",
+    justifyContent: "flex-end",
+    gap: 10,
+    marginTop: 20,
+  },
+  primaryBtn: {
+    background: ACCENT_TEAL,
+    color: "#053b33",
+    border: "none",
+    padding: "10px 14px",
+    borderRadius: 10,
+    cursor: "pointer",
+    fontWeight: 700,
+  },
+  secondaryBtn: {
+    background: "#f0f0f5",
+    color: "#333",
+    border: "none",
+    padding: "10px 14px",
+    borderRadius: 10,
+    cursor: "pointer",
+    fontWeight: 700,
   },
 };
 
