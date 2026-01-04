@@ -7,27 +7,7 @@ import { useAuth } from "../context/AuthContext";
 
 /**
  * ===================================================================================
- * 🚀 NAVBAR COMPONENT DOCUMENTATION
- * ===================================================================================
- * 
- * HOW IT WORKS (BEGINNER'S GUIDE):
- * 
- * 1. STATE MANAGEMENT (useState):
- *    - We need to remember if the menu is OPEN or CLOSED.
- *    - 'isMenuOpen' is our memory variable.
- *    - 'toggleMenu' flips it (Open -> Close / Close -> Open).
- *    - 'closeMenu' forces it to Close (useful when a link is clicked).
- * 
- * 2. CONDITIONAL RENDERING (The ? : User Check):
- *    - Inside the JSX, we check '{user ? ... : ...}'.
- *    - IF 'user' exists (Loggeed In) -> Show "Profile" and "Logout".
- *    - IF 'user' is null (Logged Out) -> Show "Login" and "Register".
- * 
- * 3. DYNAMIC CLASSES (CSS Connections):
- *    - When 'isMenuOpen' is true, we add the class "active" to the links container.
- *    - In Navbar.css, ".navbar-links.active" has rules to show the menu!
- *    - We also add "open" to the hamburger button to animate it into an 'X'.
- * 
+ * 🚀 NAVBAR COMPONENT - מעודכן
  * ===================================================================================
  */
 
@@ -57,8 +37,8 @@ const Navbar = () => {
       </div>
 
       {/* 2. Hamburger Button (Mobile Only) */}
-      <button 
-        className={`hamburger-menu ${isMenuOpen ? "open" : ""}`} 
+      <button
+        className={`hamburger-menu ${isMenuOpen ? "open" : ""}`}
         onClick={toggleMenu}
         aria-label="Toggle navigation"
       >
@@ -69,18 +49,32 @@ const Navbar = () => {
 
       {/* 3. Navigation Links Container */}
       <div className={`navbar-links ${isMenuOpen ? "active" : ""}`}>
-        
         {/* Main Navigation Group */}
         <div className="navbar-group">
-          <Link to="/researches" className="navbar-link" onClick={closeMenu}>
-            מחקרים
-          </Link>
-          <Link to="/apprentices" className="navbar-link" onClick={closeMenu}>
-            מתלמדים
-          </Link>
-          <Link to="/mentors" className="navbar-link" onClick={closeMenu}>
-            מנחים
-          </Link>
+          {/* --- שינוי: הקישורים האלה מוצגים רק אם המשתמש מחובר --- */}
+          {user && (
+            <>
+              <Link
+                to="/researches"
+                className="navbar-link"
+                onClick={closeMenu}
+              >
+                מחקרים
+              </Link>
+              <Link
+                to="/apprentices"
+                className="navbar-link"
+                onClick={closeMenu}
+              >
+                מתלמדים
+              </Link>
+              <Link to="/mentors" className="navbar-link" onClick={closeMenu}>
+                מנחים
+              </Link>
+            </>
+          )}
+
+          {/* --- הקישורים האלה מוצגים תמיד (גם לאורחים) --- */}
           <Link to="/About" className="navbar-link" onClick={closeMenu}>
             אודותינו
           </Link>
@@ -94,7 +88,11 @@ const Navbar = () => {
           {user ? (
             /* Logged In State */
             <>
-              <Link to={`/user/${user.id || "me"}`} className="navbar-link" onClick={closeMenu}>
+              <Link
+                to={`/user/${user.id || "me"}`}
+                className="navbar-link"
+                onClick={closeMenu}
+              >
                 פרופיל אישי
               </Link>
               <Link
