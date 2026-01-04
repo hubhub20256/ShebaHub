@@ -2,6 +2,7 @@ import React, { useMemo, useState } from "react";
 import ResearchCard from "../components/researchCard";
 import { FiSearch } from "react-icons/fi";
 import "../components/card.css";
+import "../styles/Researches.css";
 
 const mockResearches = [
   {
@@ -70,15 +71,15 @@ export default function Researches() {
   }, [searchQuery]);
 
   return (
-    <div className="page-wrapper" dir="rtl">
-      <h1 className="main-title">מחקרים</h1>
+    <div className="researches-page" dir="rtl">
+      <h1 className="researches-title">מחקרים</h1>
 
-      <div className="search-row">
-        <div className="search-input-wrapper">
-          <FiSearch className="search-icon" />
+      <div className="researches-search-row">
+        <div className="researches-search-wrapper">
+          <FiSearch className="researches-search-icon" />
           <input
             type="text"
-            className="search-input with-icon"
+            className="researches-search-input"
             placeholder="חיפוש לפי שם, תחום, מנחה, שעות, משך, גמולים"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -93,7 +94,7 @@ export default function Researches() {
       </div>
 
       {filteredResearches.length === 0 && (
-        <p className="no-results">לא נמצאו מחקרים תואמים.</p>
+        <p className="researches-no-results">לא נמצאו מחקרים תואמים.</p>
       )}
     </div>
   );
