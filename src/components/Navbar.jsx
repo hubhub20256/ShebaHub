@@ -75,9 +75,10 @@ const Navbar = () => {
           )}
 
           {/* --- הקישורים האלה מוצגים תמיד (גם לאורחים) --- */}
-          <Link to="/About" className="navbar-link" onClick={closeMenu}>
-            אודותינו
+          <Link to="/about" className="navbar-link" onClick={closeMenu}>
+           אודותינו
           </Link>
+
           <Link to="/" className="navbar-link" onClick={closeMenu}>
             דף בית
           </Link>
@@ -89,7 +90,7 @@ const Navbar = () => {
             /* Logged In State */
             <>
               <Link
-                to={`/user/${user.id || "me"}`}
+                to={user?.id ? `/user/${user.id}` : "/create-profile"}
                 className="navbar-link"
                 onClick={closeMenu}
               >
