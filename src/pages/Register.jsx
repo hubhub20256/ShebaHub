@@ -2,8 +2,6 @@ import React, { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import AuthLayout from "../components/AuthLayout";
 import { FormInput, FormButton, FormSelect } from "../components/forms";
-// Note: We are using inline styles from the newer version to support the avatar layout
-// instead of relying solely on "../styles/Register.css"
 
 const Register = () => {
   const navigate = useNavigate();
@@ -17,6 +15,7 @@ const Register = () => {
     confirmPassword: "",
     gender: "",
     agreed: false,
+
     // NEW: profile image (frontend only)
     avatarUrl: "",
   });
@@ -72,6 +71,7 @@ const Register = () => {
     e.preventDefault();
     if (validateForm()) {
       console.log("Form Validated & Submitted:", formData);
+
       // pass avatarUrl to create-profile
       navigate("/create-profile", { state: { avatarUrl: formData.avatarUrl } });
     } else {
@@ -223,8 +223,19 @@ const Register = () => {
   );
 };
 
-// Styles from Register1.jsx to support avatar
 const styles = {
+  radioGroup: {
+    display: "flex",
+    justifyContent: "center",
+    gap: "1.5rem",
+    marginTop: "1rem",
+  },
+  radioLabel: {
+    display: "flex",
+    alignItems: "center",
+    gap: "0.5rem",
+    cursor: "pointer",
+  },
   checkboxContainer: {
     display: "flex",
     justifyContent: "center",
