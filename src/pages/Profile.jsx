@@ -143,7 +143,7 @@ const Profile = () => {
               alt="פרופיל"
               style={{
                 width: "100%",
-                height: "100%",
+                heigגht: "100%",
                 objectFit: "cover",
                 borderRadius: "50%",
               }}
