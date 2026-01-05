@@ -22,6 +22,9 @@ const MOCK_MENTOR = {
     "מחקר מקיף בנושא השפעת תרופות ביולוגיות על אי ספיקת לב (פורסם ב-Nature 2023).",
   recommendationRequest:
     "פרופ' ישראל ישראלי, מנהל מערך הלב, israel@sheba.gov.il",
+
+  // NEW: profile image
+  avatarUrl: "",
 };
 
 const MOCK_APPRENTICE = {
@@ -47,13 +50,22 @@ const MOCK_APPRENTICE = {
   specialtyGroup: "מקצועות הבסיס",
   specialty: "פנימית",
   recommendationRequest: "ד״ר דני הנדל, מנחה לפרויקט גמר, danny@technion.ac.il",
+
+  // NEW: profile image
+  avatarUrl: "",
 };
 
 const Profile = () => {
   const [userData, setUserData] = useState(MOCK_MENTOR);
 
+  // NEW: edit modal + draft (only avatar is editable for now)
+  const [isEditing, setIsEditing] = useState(false);
+  const [draft, setDraft] = useState(MOCK_MENTOR);
+  const fileInputRef = useRef(null);
+
   const toggleUser = () => {
-    setUserData(userData.role === "mentor" ? MOCK_APPRENTICE : MOCK_MENTOR);
+    setUserData((prev) => (prev.role === "mentor" ? MOCK_APPRENTICE : MOCK_MENTOR));
+    setIsEditing(false);
   };
 
   const isMentor = userData.role === "mentor";
@@ -67,6 +79,48 @@ const Profile = () => {
         (userData.yearOfStudy === "ו'" || userData.yearOfStudy === "ז'")));
 
   const shouldShowSpecialty = isMentor || showApprenticeSpecialty;
+
+  // NEW: open/close/save edit
+  const openEdit = () => {
+    setDraft(userData);
+    setIsEditing(true);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const closeEdit = () => {
+    setIsEditing(false);
+  };
+
+  const saveEdit = () => {
+    setUserData(draft);
+    setIsEditing(false);
+  };
+
+  // NEW: remove avatar completely (sets to empty string)
+  const removeAvatar = () => {
+    setDraft((prev) => ({ ...prev, avatarUrl: "" }));
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  // NEW: upload image from computer and preview in avatar
+  const onPickAvatar = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      alert("נא לבחור קובץ תמונה בלבד");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      setDraft((prev) => ({
+        ...prev,
+        avatarUrl: String(reader.result), // preview as data URL
+      }));
+    };
+    reader.readAsDataURL(file);
+  };
 
   return (
     <div dir="rtl" className="profile-page">
@@ -96,6 +150,65 @@ const Profile = () => {
         </div>
         <button className="profile-edit-btn">עריכת פרופיל</button>
       </div>
+
+      {/* EDIT MODAL (Avatar only) */}
+      {isEditing && (
+        <div style={styles.modalOverlay} onClick={closeEdit}>
+          <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
+            <h3 style={styles.sectionTitle}>עריכת פרופיל</h3>
+
+            <div style={styles.modalRow}>
+              <div style={styles.modalAvatar}>
+                {draft.avatarUrl ? (
+                  <img
+                    src={draft.avatarUrl}
+                    alt="תצוגה מקדימה"
+                    style={styles.avatarImg}
+                  />
+                ) : (
+                  <>
+                    {draft.firstName?.[0]}
+                    {draft.lastName?.[0]}
+                  </>
+                )}
+              </div>
+
+              <div style={styles.modalButtonsCol}>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={onPickAvatar}
+                  style={{ display: "none" }}
+                />
+
+                {/* If image exists -> show remove. If not -> show upload */}
+                {draft.avatarUrl ? (
+                  <button style={styles.secondaryBtn} onClick={removeAvatar}>
+                    הסר תמונה
+                  </button>
+                ) : (
+                  <button
+                    style={styles.primaryBtn}
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    העלאת תמונה מהמחשב
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <div style={styles.modalActions}>
+              <button style={styles.secondaryBtn} onClick={closeEdit}>
+                סגור
+              </button>
+              <button style={styles.primaryBtn} onClick={saveEdit}>
+                שמירה
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 2. Professional Details (Wide Section - BOTH) */}
       <div className="profile-wide-card">
@@ -144,10 +257,7 @@ const Profile = () => {
             />
             <InfoRow label="שעות שבועיות" value={userData.weeklyHours} />
             <InfoRow label="זמינות להתחלה" value={userData.startDate} />
-            <InfoRow
-              label="כלים ומיומנויות"
-              value={userData.softwareSkills}
-            />
+            <InfoRow label="כלים ומיומנויות" value={userData.softwareSkills} />
           </div>
         </div>
       )}
@@ -166,7 +276,7 @@ const Profile = () => {
               <p className="profile-bio-text">{userData.recommendationRequest}</p>
             </SectionCard>
           )}
-          
+
           <SectionCard title="קבצים ומסמכים">
             <div className="profile-file-placeholder">
               📄 קורות חיים.pdf
@@ -181,14 +291,10 @@ const Profile = () => {
           {/* MENTOR: Research Interests (Still here as a small card) */}
           {isMentor && (
             <SectionCard title="תחומי עניין ומחקר">
-               <InfoRow
-                  label="תחומי עניין"
-                  value={userData.researchInterests}
-               />
+              <InfoRow label="תחומי עניין" value={userData.researchInterests} />
             </SectionCard>
           )}
 
-          {/* MENTOR: Previous Research */}
           {isMentor && userData.previousResearchDescription && (
             <SectionCard title="מחקרים קודמים">
               <p className="profile-bio-text">
@@ -204,7 +310,6 @@ const Profile = () => {
              </SectionCard>
           )}
 
-          {/* INTERN: Professional Exp (Remains here in the grid) */}
           {!isMentor && userData.professionalExperience && (
             <SectionCard title="ניסיון מקצועי קודם">
               <p className="profile-bio-text">{userData.professionalExperience}</p>
@@ -217,7 +322,6 @@ const Profile = () => {
 };
 
 // --- SUB-COMPONENTS ---
-
 const SectionCard = ({ title, children }) => (
   <div className="profile-card">
     <h3 className="profile-section-title">{title}</h3>
