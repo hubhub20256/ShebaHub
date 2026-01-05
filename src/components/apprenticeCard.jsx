@@ -30,7 +30,10 @@ export default function ApprenticesCard({ apprentice }) {
         <aside className="apprenticeCard__side">
           <div className="apprenticeCard__labels">
             <div><strong>מין:</strong> {apprentice.gender}</div>
-            <div><strong>דואר אלקטרוני:</strong> {apprentice.email}</div>
+            <div className="card-email-group">
+              <strong>דואר אלקטרוני:</strong>
+              <span>{apprentice.email}</span>
+            </div>
             <div><strong>תחילת שנת הלימודים:</strong> {apprentice.school_beginner_year}</div>
             <div><strong>מוסד לימודים:</strong> {apprentice.Educational_institution}</div>
             <div><strong>שלב בהכשרה הרפואית:</strong> {apprentice.medical_level}</div>

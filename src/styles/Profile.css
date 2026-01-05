@@ -1,0 +1,268 @@
+/* src/styles/Profile.css */
+
+:root {
+  --profile-theme-color: #2c2c6c;
+  --profile-accent-teal: #6cd5bf;
+  --profile-accent-pink: #ef67a0;
+}
+
+.profile-page {
+  max-width: 56.25rem; /* 900px */
+  margin: 0 auto;
+  padding: 2.5rem 1rem; /* 40px 16px */
+  font-family: "Rubik", system-ui, sans-serif;
+  color: var(--profile-theme-color);
+}
+
+.profile-dev-toggle {
+  text-align: center;
+  margin-bottom: 1.25rem; /* 20px */
+}
+
+.profile-toggle-btn {
+  background: #eee;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 1.25rem; /* 20px */
+  cursor: pointer;
+  font-size: 0.75rem; /* 12px */
+}
+
+/* 1. HEADER */
+.profile-header-card {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 1.5rem; /* 24px */
+  background: white;
+  padding: 2rem; /* 32px */
+  border-radius: 1rem; /* 16px */
+  box-shadow: 0 0.75rem 2.5rem rgba(0, 0, 0, 0.03);
+  margin-bottom: 1.5rem; /* 24px */
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  position: relative;
+}
+
+.profile-avatar {
+  width: 5rem; /* 80px */
+  height: 5rem;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--profile-accent-teal), var(--profile-theme-color));
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.75rem; /* 28px */
+  font-weight: 700;
+  box-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, 0.1);
+  flex-shrink: 0;
+}
+
+.profile-header-info {
+  flex: 1;
+}
+
+.profile-name {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.75rem; /* 28px */
+  font-weight: 800;
+}
+
+.profile-badges-row {
+  display: flex;
+  gap: 0.625rem; /* 10px */
+  flex-wrap: wrap;
+}
+
+.profile-role-badge {
+  background: var(--profile-accent-pink);
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 1.25rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.profile-info-badge {
+  background: #f0f0f5;
+  color: #666;
+  padding: 0.25rem 0.75rem;
+  border-radius: 1.25rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  word-break: break-all; /* Ensure long emails don't overflow */
+}
+
+.profile-edit-btn {
+  position: absolute;
+  top: 2rem;
+  left: 2rem;
+  background: white;
+  border: 1px solid var(--profile-accent-teal);
+  color: var(--profile-accent-teal);
+  padding: 0.5rem 1.25rem;
+  border-radius: 1.25rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.2s;
+  font-size: 0.9rem;
+}
+
+/* 2. WIDE CARD */
+.profile-wide-card {
+  background: white;
+  border-radius: 1rem;
+  padding: 1.5rem; /* 24px */
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 0.25rem 1.25rem rgba(0, 0, 0, 0.02);
+  margin-bottom: 1.5rem;
+}
+
+.profile-grid-content {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(15.625rem, 1fr)); /* min 250px */
+  column-gap: 2.5rem; /* 40px */
+  row-gap: 0;
+}
+
+/* 3. BOTTOM GRID */
+.profile-bottom-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(21.875rem, 1fr)); /* min 350px */
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.profile-column {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* GENERIC CARD */
+.profile-card {
+  background: white;
+  border-radius: 1rem;
+  padding: 1.5rem;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 0.25rem 1.25rem rgba(0, 0, 0, 0.02);
+}
+
+.profile-section-title {
+  font-size: 1rem; /* 16px */
+  font-weight: 700;
+  margin-bottom: 1rem;
+  border-right: 0.25rem solid var(--profile-accent-teal);
+  padding-right: 0.625rem;
+  line-height: 1;
+  color: var(--profile-theme-color);
+  margin-top: 0;
+}
+
+.profile-card-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+/* ROWS */
+.profile-info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #f5f5f5;
+  padding: 0.625rem 0; /* 10px 0 */
+  min-height: 2rem;
+}
+
+.profile-info-label {
+  font-weight: 600;
+  color: #000;
+  font-size: 0.875rem; /* 14px */
+  flex-shrink: 0;
+  margin-left: 1rem;
+}
+
+.profile-info-value {
+  font-weight: 500;
+  color: #666;
+  font-size: 0.875rem; /* 14px */
+  text-align: left;
+}
+
+/* TEXT */
+.profile-bio-text {
+  line-height: 1.6;
+  font-size: 0.875rem; /* 14px */
+  color: #555;
+  white-space: pre-line;
+  margin: 0;
+}
+
+/* FILES */
+.profile-file-placeholder {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #f9f9fc;
+  padding: 0.625rem 0.875rem;
+  border-radius: 0.5rem;
+  font-size: 0.8125rem; /* 13px */
+  font-weight: 500;
+}
+
+.profile-download-link {
+  color: var(--profile-accent-teal);
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.75rem; /* 12px */
+}
+
+/* --- RESPONSIVE / MOBILE --- */
+@media (max-width: 600px) {
+  .profile-page {
+    padding: 1.5rem 1rem;
+  }
+
+  /* Header becomes vertical */
+  .profile-header-card {
+    flex-direction: column;
+    text-align: center;
+    padding: 1.5rem;
+    gap: 1rem;
+  }
+
+  .profile-header-info {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .profile-avatar {
+    width: 4rem; /* 64px */
+    height: 4rem;
+    font-size: 1.5rem;
+  }
+
+  .profile-badges-row {
+    justify-content: center;
+  }
+
+  /* Position Edit button relatively to avoid overlap */
+  .profile-edit-btn {
+    position: static;
+    margin-top: 1rem;
+    width: 100%;
+    text-align: center;
+  }
+
+  /* Grids become single column */
+  .profile-grid-content {
+    grid-template-columns: 1fr;
+  }
+
+  .profile-bottom-grid {
+    grid-template-columns: 1fr;
+  }
+}

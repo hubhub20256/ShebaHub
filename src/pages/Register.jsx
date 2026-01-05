@@ -2,6 +2,7 @@ import React, { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import AuthLayout from "../components/AuthLayout";
 import { FormInput, FormButton, FormSelect } from "../components/forms";
+import "../styles/Register.css";
 
 const Register = () => {
   const navigate = useNavigate();
@@ -93,61 +94,7 @@ const Register = () => {
       footerLinkText="להתחברות"
       footerPath="/login"
     >
-      <form
-        onSubmit={handleSubmit}
-        style={{ display: "flex", flexDirection: "column", gap: "0.2rem" }}
-      >
-        {/* Avatar uploader (circle like profile) */}
-        <div style={avatarStyles.wrap}>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            onChange={onPickAvatar}
-            style={{ display: "none" }}
-          />
-
-          <button
-            type="button"
-            onClick={() => {
-              if (fileInputRef.current) fileInputRef.current.value = "";
-              fileInputRef.current?.click();
-            }}
-            style={avatarStyles.circleBtn}
-            aria-label="העלאת תמונת פרופיל"
-            title="העלאת תמונת פרופיל"
-          >
-            {formData.avatarUrl ? (
-              <img
-                src={formData.avatarUrl}
-                alt="תמונת פרופיל"
-                style={avatarStyles.img}
-              />
-            ) : (
-              <span style={avatarStyles.initials}>{initials || " "}</span>
-            )}
-
-            <span style={avatarStyles.badge} aria-hidden="true">
-              📷
-            </span>
-          </button>
-
-          <div style={avatarStyles.textWrap}>
-            <div style={avatarStyles.title}>תמונת פרופיל</div>
-            <div style={avatarStyles.sub}>לחצי על העיגול כדי להעלות תמונה מהמחשב</div>
-
-            {formData.avatarUrl ? (
-              <button
-                type="button"
-                onClick={clearAvatar}
-                style={avatarStyles.removeBtn}
-              >
-                הסרה
-              </button>
-            ) : null}
-          </div>
-        </div>
-
+      <form onSubmit={handleSubmit} className="register-form">
         <FormInput
           name="firstName"
           placeholder="שם פרטי"
@@ -198,9 +145,8 @@ const Register = () => {
             { value: "other", label: "אחר" },
           ]}
         />
-
-        <div style={styles.checkboxContainer}>
-          <label style={styles.checkboxLabel}>
+        <div className="register-checkbox-container">
+          <label className="register-checkbox-label">
             הסכמה לתנאי שימוש
             <input
               type="checkbox"
@@ -212,7 +158,7 @@ const Register = () => {
         </div>
 
         {errors.agreed && (
-          <span style={{ color: "red", textAlign: "center", fontSize: "0.8rem" }}>
+          <span className="register-error">
             {errors.agreed}
           </span>
         )}
@@ -221,110 +167,6 @@ const Register = () => {
       </form>
     </AuthLayout>
   );
-};
-
-const styles = {
-  radioGroup: {
-    display: "flex",
-    justifyContent: "center",
-    gap: "1.5rem",
-    marginTop: "1rem",
-  },
-  radioLabel: {
-    display: "flex",
-    alignItems: "center",
-    gap: "0.5rem",
-    cursor: "pointer",
-  },
-  checkboxContainer: {
-    display: "flex",
-    justifyContent: "center",
-    marginTop: "1rem",
-  },
-  checkboxLabel: {
-    display: "flex",
-    flexDirection: "row-reverse",
-    alignItems: "center",
-    gap: "0.5rem",
-    cursor: "pointer",
-  },
-};
-
-const avatarStyles = {
-  wrap: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 14,
-    marginBottom: 10,
-    marginTop: 6,
-  },
-  circleBtn: {
-    width: 86,
-    height: 86,
-    borderRadius: "50%",
-    border: "none",
-    padding: 0,
-    cursor: "pointer",
-    background: "linear-gradient(135deg, #6cd5bf, #2C2C6C)",
-    boxShadow: "0 10px 24px rgba(0,0,0,0.10)",
-    position: "relative",
-    overflow: "hidden",
-    display: "grid",
-    placeItems: "center",
-  },
-  img: {
-    width: "100%",
-    height: "100%",
-    objectFit: "cover",
-    display: "block",
-  },
-  initials: {
-    color: "white",
-    fontWeight: 800,
-    fontSize: 28,
-    letterSpacing: 1,
-  },
-  badge: {
-    position: "absolute",
-    bottom: 4,
-    right: 6,
-    width: 26,
-    height: 26,
-    borderRadius: "50%",
-    background: "white",
-    display: "grid",
-    placeItems: "center",
-    fontSize: 13,
-    boxShadow: "0 4px 10px rgba(0,0,0,0.15)",
-  },
-  textWrap: {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "flex-start",
-    gap: 4,
-  },
-  title: {
-    fontWeight: 800,
-    color: "#2C2C6C",
-    fontSize: 14,
-  },
-  sub: {
-    color: "#666",
-    fontSize: 12,
-  },
-  removeBtn: {
-    marginTop: 4,
-    border: "none",
-    background: "transparent",
-    color: "#ef67a0",
-    cursor: "pointer",
-    fontWeight: 700,
-    padding: 0,
-    fontSize: 12,
-    textDecoration: "underline",
-    alignSelf: "flex-start",
-  },
 };
 
 export default Register;
