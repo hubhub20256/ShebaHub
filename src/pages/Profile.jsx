@@ -21,6 +21,8 @@ const MOCK_MENTOR = {
     "מחקר מקיף בנושא השפעת תרופות ביולוגיות על אי ספיקת לב (פורסם ב-Nature 2023).",
   recommendationRequest:
     "פרופ' ישראל ישראלי, מנהל מערך הלב, israel@sheba.gov.il",
+
+  // NEW: profile image
   avatarUrl: "",
 };
 
@@ -47,13 +49,15 @@ const MOCK_APPRENTICE = {
   specialtyGroup: "מקצועות הבסיס",
   specialty: "פנימית",
   recommendationRequest: "ד״ר דני הנדל, מנחה לפרויקט גמר, danny@technion.ac.il",
+
+  // NEW: profile image
   avatarUrl: "",
 };
 
 const Profile = () => {
   const [userData, setUserData] = useState(MOCK_MENTOR);
-  
-  // EDIT STATE
+
+  // NEW: edit modal + draft (only avatar is editable for now)
   const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState(MOCK_MENTOR);
   const fileInputRef = useRef(null);
@@ -75,7 +79,7 @@ const Profile = () => {
 
   const shouldShowSpecialty = isMentor || showApprenticeSpecialty;
 
-  // --- EDIT FUNCTIONS ---
+  // NEW: open/close/save edit
   const openEdit = () => {
     setDraft(userData);
     setIsEditing(true);
@@ -91,11 +95,13 @@ const Profile = () => {
     setIsEditing(false);
   };
 
+  // NEW: remove avatar completely (sets to empty string)
   const removeAvatar = () => {
     setDraft((prev) => ({ ...prev, avatarUrl: "" }));
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
+  // NEW: upload image from computer and preview in avatar
   const onPickAvatar = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -109,7 +115,7 @@ const Profile = () => {
     reader.onload = () => {
       setDraft((prev) => ({
         ...prev,
-        avatarUrl: String(reader.result),
+        avatarUrl: String(reader.result), // preview as data URL
       }));
     };
     reader.readAsDataURL(file);
@@ -124,7 +130,7 @@ const Profile = () => {
         </button>
       </div>
 
-      {/* 1. Header Card */}
+      {/* 1. Header Card (Full Width) */}
       <div style={styles.headerCard}>
         <div style={styles.avatar}>
           {userData.avatarUrl ? (
@@ -187,6 +193,7 @@ const Profile = () => {
                   style={{ display: "none" }}
                 />
 
+                {/* If image exists -> show remove. If not -> show upload */}
                 {draft.avatarUrl ? (
                   <button style={styles.secondaryBtn} onClick={removeAvatar}>
                     הסר תמונה
@@ -214,7 +221,7 @@ const Profile = () => {
         </div>
       )}
 
-      {/* 2. Professional Details */}
+      {/* 2. Professional Details (Wide Section - BOTH) */}
       <div style={styles.wideCard}>
         <h3 style={styles.sectionTitle}>פרטים מקצועיים</h3>
         <div style={styles.gridContent}>
@@ -249,7 +256,7 @@ const Profile = () => {
         </div>
       </div>
 
-      {/* 2.5. Research Preferences & Availability (Intern Only) */}
+      {/* 2.5. Research Preferences & Availability (Wide Section - ONLY INTERN) */}
       {!isMentor && (
         <div style={styles.wideCard}>
           <h3 style={styles.sectionTitle}>העדפות מחקר וזמינות</h3>
@@ -266,8 +273,9 @@ const Profile = () => {
         </div>
       )}
 
-      {/* 3. Bottom Grid */}
+      {/* 3. Bottom Grid for the rest */}
       <div style={styles.bottomGrid}>
+        {/* Right Column (About, Recs, Files) */}
         <div style={styles.column}>
           <SectionCard title="אודות">
             <p style={styles.bioText}>{userData.personalAcademicDescription}</p>
@@ -287,6 +295,7 @@ const Profile = () => {
           </SectionCard>
         </div>
 
+        {/* Left Column */}
         <div style={styles.column}>
           {isMentor && (
             <SectionCard title="תחומי עניין ומחקר">
@@ -354,6 +363,8 @@ const styles = {
     cursor: "pointer",
     fontSize: 12,
   },
+
+  // 1. HEADER
   headerCard: {
     display: "flex",
     flexDirection: "row",
@@ -419,6 +430,8 @@ const styles = {
     cursor: "pointer",
     transition: "0.2s",
   },
+
+  // 2. WIDE CARD
   wideCard: {
     background: "white",
     borderRadius: 16,
@@ -433,6 +446,8 @@ const styles = {
     columnGap: 40,
     rowGap: 0,
   },
+
+  // 3. BOTTOM GRID
   bottomGrid: {
     display: "grid",
     gridTemplateColumns: "repeat(auto-fit, minmax(350px, 1fr))",
@@ -440,6 +455,8 @@ const styles = {
     alignItems: "start",
   },
   column: { display: "flex", flexDirection: "column", gap: 24 },
+
+  // GENERIC CARD STYLES
   card: {
     background: "white",
     borderRadius: 16,
@@ -457,6 +474,8 @@ const styles = {
     color: THEME_COLOR,
   },
   cardContent: { display: "flex", flexDirection: "column", gap: 0 },
+
+  // ROWS
   infoRow: {
     display: "flex",
     justifyContent: "space-between",
@@ -467,12 +486,16 @@ const styles = {
   },
   infoLabel: { fontWeight: 600, color: "#000", fontSize: 14 },
   infoValue: { fontWeight: 500, color: "#666", fontSize: 14, textAlign: "left" },
+
+  // TEXT
   bioText: {
     lineHeight: "1.6",
     fontSize: 14,
     color: "#555",
     whiteSpace: "pre-line",
   },
+
+  // FILES
   filePlaceholder: {
     display: "flex",
     justifyContent: "space-between",
@@ -489,6 +512,8 @@ const styles = {
     fontWeight: 600,
     fontSize: 12,
   },
+
+  // MODAL
   modalOverlay: {
     position: "fixed",
     inset: 0,
