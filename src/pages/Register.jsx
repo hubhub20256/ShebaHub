@@ -1,12 +1,11 @@
-import React, { useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom"; 
 import AuthLayout from "../components/AuthLayout";
 import { FormInput, FormButton, FormSelect } from "../components/forms";
 import "../styles/Register.css";
 
 const Register = () => {
   const navigate = useNavigate();
-  const fileInputRef = useRef(null);
 
   const [formData, setFormData] = useState({
     firstName: "",
@@ -16,11 +15,7 @@ const Register = () => {
     confirmPassword: "",
     gender: "",
     agreed: false,
-
-    // NEW: profile image (frontend only)
-    avatarUrl: "",
   });
-
   const [errors, setErrors] = useState({});
 
   const handleChange = (e) => {
@@ -30,23 +25,6 @@ const Register = () => {
       ...prev,
       [name]: type === "checkbox" ? checked : value,
     }));
-  };
-
-  const onPickAvatar = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (!file.type.startsWith("image/")) return;
-
-    const reader = new FileReader();
-    reader.onload = () => {
-      setFormData((prev) => ({ ...prev, avatarUrl: String(reader.result) }));
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const clearAvatar = () => {
-    setFormData((prev) => ({ ...prev, avatarUrl: "" }));
-    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const validateForm = () => {
@@ -72,19 +50,17 @@ const Register = () => {
     e.preventDefault();
     if (validateForm()) {
       console.log("Form Validated & Submitted:", formData);
-
-      // pass avatarUrl to create-profile
-      navigate("/create-profile", { state: { avatarUrl: formData.avatarUrl } });
+      navigate("/create-profile"); 
     } else {
       console.log("Validation Failed");
     }
   };
 
-  const description = <>ברוכה הבאה</>;
-
-  const initials = `${(formData.firstName || "").trim()[0] || ""}${
-    (formData.lastName || "").trim()[0] || ""
-  }`;
+  const description = (
+    <>
+      ברוכה הבאה
+    </>
+  );
 
   return (
     <AuthLayout
@@ -156,13 +132,11 @@ const Register = () => {
             />
           </label>
         </div>
-
         {errors.agreed && (
           <span className="register-error">
             {errors.agreed}
           </span>
         )}
-
         <FormButton>הרשמה</FormButton>
       </form>
     </AuthLayout>
