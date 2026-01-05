@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+// import React, { useState } from "react";
 import "../styles/Profile.css";
+import React, { useState, useRef } from "react"; // הוספנו את useRef כאן!
 
 // --- MOCK DATA FOR DISPLAY ---
 const MOCK_MENTOR = {
@@ -53,7 +54,10 @@ const Profile = () => {
   const [userData, setUserData] = useState(MOCK_MENTOR);
 
   const toggleUser = () => {
-    setUserData(userData.role === "mentor" ? MOCK_APPRENTICE : MOCK_MENTOR);
+    setUserData((prev) =>
+      prev.role === "mentor" ? MOCK_APPRENTICE : MOCK_MENTOR
+    );
+    setIsEditing(false);
   };
 
   const isMentor = userData.role === "mentor";
@@ -80,8 +84,23 @@ const Profile = () => {
       {/* 1. Header Card (Full Width) */}
       <div className="profile-header-card">
         <div className="profile-avatar">
-          {userData.firstName[0]}
-          {userData.lastName[0]}
+          {userData.avatarUrl ? (
+            <img
+              src={userData.avatarUrl}
+              alt="פרופיל"
+              style={{
+                width: "100%",
+                heigגht: "100%",
+                objectFit: "cover",
+                borderRadius: "50%",
+              }}
+            />
+          ) : (
+            <>
+              {userData.firstName[0]}
+              {userData.lastName[0]}
+            </>
+          )}
         </div>
         <div className="profile-header-info">
           <h1 className="profile-name">
@@ -94,7 +113,9 @@ const Profile = () => {
             <span className="profile-info-badge">{userData.email}</span>
           </div>
         </div>
-        <button className="profile-edit-btn">עריכת פרופיל</button>
+        <button className="profile-edit-btn" onClick={openEdit}>
+          עריכת פרופיל
+        </button>
       </div>
 
       {/* 2. Professional Details (Wide Section - BOTH) */}
@@ -125,7 +146,10 @@ const Profile = () => {
 
           {shouldShowSpecialty && (
             <>
-              <InfoRow label="קטגוריית התמחות" value={userData.specialtyGroup} />
+              <InfoRow
+                label="קטגוריית התמחות"
+                value={userData.specialtyGroup}
+              />
               <InfoRow label="התמחות" value={userData.specialty} />
             </>
           )}
@@ -154,16 +178,19 @@ const Profile = () => {
 
       {/* 3. Bottom Grid for the rest */}
       <div className="profile-bottom-grid">
-        
         {/* Right Column (About, Recs, Files) */}
         <div className="profile-column">
           <SectionCard title="אודות">
-            <p className="profile-bio-text">{userData.personalAcademicDescription}</p>
+            <p className="profile-bio-text">
+              {userData.personalAcademicDescription}
+            </p>
           </SectionCard>
 
           {userData.recommendationRequest && (
             <SectionCard title="ממליצים / חוות דעת">
-              <p className="profile-bio-text">{userData.recommendationRequest}</p>
+              <p className="profile-bio-text">
+                {userData.recommendationRequest}
+              </p>
             </SectionCard>
           )}
           
@@ -177,7 +204,6 @@ const Profile = () => {
 
         {/* Left Column (Mentor Specifics & Research OR Intern Professional Exp) */}
         <div className="profile-column">
-          
           {/* MENTOR: Research Interests (Still here as a small card) */}
           {isMentor && (
             <SectionCard title="תחומי עניין ומחקר">
@@ -197,17 +223,21 @@ const Profile = () => {
             </SectionCard>
           )}
 
-           {/* MENTOR: Mentoring Detail */}
-           {isMentor && userData.mentoringExperienceDetails && (
-             <SectionCard title="פירוט ניסיון בהנחיה">
-               <p className="profile-bio-text">{userData.mentoringExperienceDetails}</p>
-             </SectionCard>
+          {/* MENTOR: Mentoring Detail */}
+          {isMentor && userData.mentoringExperienceDetails && (
+            <SectionCard title="פירוט ניסיון בהנחיה">
+              <p className="profile-bio-text">
+                {userData.mentoringExperienceDetails}
+              </p>
+            </SectionCard>
           )}
 
           {/* INTERN: Professional Exp (Remains here in the grid) */}
           {!isMentor && userData.professionalExperience && (
             <SectionCard title="ניסיון מקצועי קודם">
-              <p className="profile-bio-text">{userData.professionalExperience}</p>
+              <p className="profile-bio-text">
+                {userData.professionalExperience}
+              </p>
             </SectionCard>
           )}
         </div>
@@ -231,5 +261,94 @@ const InfoRow = ({ label, value }) => (
     <span className="profile-info-value">{value}</span>
   </div>
 );
+
+// --- STYLES FOR THE MODAL ---
+const THEME_COLOR = "#2C2C6C";
+const ACCENT_TEAL = "#6cd5bf";
+const ACCENT_PINK = "#ef67a0";
+
+const styles = {
+  modalOverlay: {
+    position: "fixed",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 1000,
+  },
+  modal: {
+    background: "white",
+    padding: "2rem",
+    borderRadius: "1rem",
+    width: "90%",
+    maxWidth: "500px",
+    boxShadow: "0 10px 25px rgba(0,0,0,0.1)",
+    position: "relative",
+  },
+  sectionTitle: {
+    fontSize: "1.25rem",
+    fontWeight: "700",
+    marginBottom: "1.5rem",
+    color: THEME_COLOR,
+    borderRight: `4px solid ${ACCENT_PINK}`,
+    paddingRight: "10px",
+  },
+  modalRow: {
+    display: "flex",
+    alignItems: "center",
+    gap: "20px",
+    marginBottom: "20px",
+  },
+  modalAvatar: {
+    width: "80px",
+    height: "80px",
+    borderRadius: "50%",
+    background: "#f0f0f5",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    fontSize: "1.5rem",
+    fontWeight: "bold",
+    overflow: "hidden",
+  },
+  avatarImg: {
+    width: "100%",
+    height: "100%",
+    objectFit: "cover",
+  },
+  modalButtonsCol: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "10px",
+  },
+  modalActions: {
+    display: "flex",
+    justifyContent: "flex-end",
+    gap: "10px",
+    marginTop: "20px",
+  },
+  primaryBtn: {
+    padding: "10px 20px",
+    borderRadius: "20px",
+    background: THEME_COLOR,
+    color: "white",
+    border: "none",
+    cursor: "pointer",
+    fontWeight: "600",
+  },
+  secondaryBtn: {
+    padding: "10px 20px",
+    borderRadius: "20px",
+    background: "white",
+    color: "#666",
+    border: "1px solid #ddd",
+    cursor: "pointer",
+    fontWeight: "600",
+  },
+};
 
 export default Profile;
