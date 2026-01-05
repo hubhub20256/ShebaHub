@@ -32,7 +32,10 @@ export default function MentorsCard({ mentor }) {
     
           <div className="mentorCard__labels">
             <div><strong>מין:</strong> {mentor.gender}</div>
-            <div><strong>דואר אלקטרוני:</strong> {mentor.email}</div>
+            <div className="card-email-group">
+              <strong>דואר אלקטרוני:</strong>
+              <span>{mentor.email}</span>
+            </div>
             <div><strong>תחום התמחות:</strong> {mentor.specialty}</div>
             <div><strong>תארים:</strong> {mentor.degrees}</div>
             <div><strong>מוסד לימודים:</strong> {mentor.Educational_institution}</div>
