@@ -219,13 +219,22 @@ SIMPLE_JWT = {
     'TOKEN_TYPE_CLAIM': 'token_type',
 }
 
-# CORS settings
-# In production, only allow specific frontend origins
-CORS_ALLOWED_ORIGINS = env.list(
-    'CORS_ALLOWED_ORIGINS',
-    default=['http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:5173', 'http://127.0.0.1:5173']
-)
-CORS_ALLOW_CREDENTIALS = True
+# =========================
+# CORS
+# =========================
+
+CORS_ALLOW_CREDENTIALS = True  # ok for JWT; needed if you ever use cookies
+
+if IS_PRODUCTION:
+    # Production: allow ONLY real frontend domain(s) from env
+    CORS_ALLOWED_ORIGINS = env.list("CORS_ALLOWED_ORIGINS", default=[])
+else:
+    # Development: allow localhost/127.0.0.1 on ANY port (Vite may switch ports)
+    CORS_ALLOWED_ORIGIN_REGEXES = [
+        r"^http://localhost:\d+$",
+        r"^http://127\.0\.0\.1:\d+$",
+    ]
+
 
 # NEVER use CORS_ALLOW_ALL_ORIGINS=True in production!
 # CORS_ALLOW_ALL_ORIGINS is intentionally not set

@@ -21,6 +21,25 @@ if exist venv goto :venv_exists
 if errorlevel 1 goto :venv_fail
 :venv_exists
 
+echo [2/5] Creating virtual environment...
+if exist venv goto :venv_exists
+%PY_CMD% -m venv venv
+if errorlevel 1 goto :venv_fail
+:venv_exists
+
+echo [2.5/5] Creating .env from .env.example if missing...
+if not exist .env (
+  if exist .env.example (
+    copy /Y .env.example .env >nul
+    echo Created .env
+  ) else (
+    echo WARNING: .env.example not found, skipping.
+  )
+) else (
+  echo .env already exists - skipping.
+)
+
+
 echo [3/5] Installing dependencies...
 venv\Scripts\python.exe -m pip install --upgrade pip
 if errorlevel 1 goto :pip_fail

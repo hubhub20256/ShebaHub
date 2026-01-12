@@ -20,10 +20,11 @@ urlpatterns = [
     path("admin/", admin.site.urls),
 
     # API v1 endpoints
-    path("api/v1/auth/", include("apps.accounts.urls")),
-    path("api/v1/profiles/", include("apps.profiles.urls")),
-    path("api/v1/research/", include("apps.research.urls")),
-    path("api/v1/reference-data/", include(reference_urlpatterns)),
+    path("api/auth/", include("apps.accounts.urls")),
+    path("api/profiles/", include("apps.profiles.urls")),
+    path("api/research/", include("apps.research.urls")),
+    path("api/reference-data/", include(reference_urlpatterns)),
+
 
     # API Documentation (Swagger/OpenAPI)
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
