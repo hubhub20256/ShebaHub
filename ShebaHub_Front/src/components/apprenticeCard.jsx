@@ -1,0 +1,45 @@
+import "./card.css";
+
+export default function ApprenticesCard({ apprentice }) {
+  return (
+    <section className="apprenticeCard" dir="rtl">
+  
+      <header className="apprenticeCard__header">
+        <div className="apprenticeCard__avatar">
+          {apprentice.profileImage && (
+            <img
+              src={apprentice.profileImage}
+              alt={`${apprentice.name || "apprentice"} avatar`}
+              style={{ width: "100%", height: "100%", objectFit: "cover" }}
+            />
+          )}
+        </div>
+        <h2 className="apprenticeCard__title">{apprentice.name}</h2>
+      </header>
+
+
+      <div className="apprenticeCard__content">
+        <div className="apprenticeCard__boxes">
+          <div className="apprenticeCard__box" />
+          <div className="apprenticeCard__box" />
+          <div className="apprenticeCard__box" />
+          <div className="apprenticeCard__box" />
+          <div className="apprenticeCard__box" />
+        </div>
+
+        <aside className="apprenticeCard__side">
+          <div className="apprenticeCard__labels">
+            <div><strong>מין:</strong> {apprentice.gender}</div>
+            <div className="card-email-group">
+              <strong>דואר אלקטרוני:</strong>
+              <span>{apprentice.email}</span>
+            </div>
+            <div><strong>תחילת שנת הלימודים:</strong> {apprentice.school_beginner_year}</div>
+            <div><strong>מוסד לימודים:</strong> {apprentice.Educational_institution}</div>
+            <div><strong>שלב בהכשרה הרפואית:</strong> {apprentice.medical_level}</div>
+          </div>
+        </aside>
+      </div>
+    </section>
+  );
+}

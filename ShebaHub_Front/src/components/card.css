@@ -1,0 +1,327 @@
+/* ===== Base Cards (Mentor / Apprentice / Research) ===== */
+
+.apprenticeCard,
+.mentorCard,
+.researchCard {
+  border: 2px solid #0e8f7a;
+  border-radius: 14px;
+  background: white;
+  padding: 12px;
+  box-sizing: border-box;
+  width: 100%;
+  box-shadow: 0 3px 5px rgba(0, 0, 0, 0.06);
+}
+
+/* ===== Card Header ===== */
+
+.mentorCard__header,
+.apprenticeCard__header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 10px;
+}
+
+/* ===== Titles ===== */
+
+.mentorCard__title,
+.apprenticeCard__title {
+  font-weight: 800;
+  font-size: 1.2rem;
+  margin: 0;
+  color: #2c3e50;
+}
+
+/* ===== Avatars (Mentor / Apprentice only) ===== */
+
+.mentorCard__avatar,
+.apprenticeCard__avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+}
+
+.mentorCard__img,
+.apprenticeCard__img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border: 3px solid #0e8f7a;
+  flex-shrink: 0;
+}
+
+/* ===== Card Content ===== */
+
+.mentorCard__content,
+.apprenticeCard__content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ===== Labels / Fields ===== */
+
+.mentorCard__labels,
+.apprenticeCard__labels {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.mentorCard__labels strong,
+.apprenticeCard__labels strong {
+  color: #000000;
+  margin-left: 8px;
+  display: inline-block;
+  font-size: 17px;
+}
+
+/* ===== Groups ===== */
+.card-email-group {
+  /* Return to standard block flow to match other rows alignment */
+  display: block;
+  margin-bottom: 4px;
+}
+
+.card-email-group span {
+  word-break: break-word; /* Prevent overflow on desktop/mobile */
+  overflow-wrap: anywhere;
+}
+
+/* ===== Cards Grid ===== */
+
+.cards-grid {
+  display: grid;
+  gap: 20px;
+  justify-content: center;
+  margin: 0 auto;
+  width: 100%;
+  max-width: 1200px;
+}
+
+@media (min-width: 768px) {
+  .cards-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 26px;
+    padding: 20px;
+  }
+}
+
+/* ===== Mobile Tweaks ===== */
+
+@media (max-width: 600px) {
+  /* Reduce outer card padding */
+  .apprenticeCard,
+  .mentorCard,
+  .researchCard {
+    padding: 10px;
+  }
+
+  /* Compact header */
+  .mentorCard__header,
+  .apprenticeCard__header {
+    gap: 10px;
+    padding-bottom: 8px;
+  }
+  
+  /* Smaller Avatar */
+  .mentorCard__avatar,
+  .apprenticeCard__avatar {
+    width: 60px;
+    height: 60px;
+  }
+
+  .mentorCard__title,
+  .apprenticeCard__title {
+    font-size: 1.1rem;
+  }
+
+  .mentorCard__labels,
+  .apprenticeCard__labels {
+    font-size: 13.5px;
+    gap: 4px;
+  }
+
+  .mentorCard__labels strong,
+  .apprenticeCard__labels strong {
+    font-size: 14px;
+  }
+
+  .card-email-group span {
+    display: block;
+    width: 100%;
+  }
+}
+
+/* ===== Page Title ===== */
+
+.main-title {
+  text-align: center;
+  width: 100%;
+  margin-bottom: 30px;
+  font-size: 2.2rem;
+  color: #2c3e50;
+}
+
+/* ===== Search ===== */
+
+.search-row {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  margin: 0 auto 20px auto;
+}
+
+.search-input-wrapper {
+  position: relative;
+  width: 100%;
+  max-width: 520px;
+}
+
+.search-input {
+  width: 100%;
+  height: 44px;
+  padding: 0 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  outline: none;
+  font-size: 14px;
+  background: #ffffff;
+}
+
+.search-input.with-icon {
+  padding-right: 40px;
+}
+
+.search-input:focus {
+  border-color: #1e3a8a;
+}
+
+.search-icon {
+  position: absolute;
+  top: 50%;
+  right: 14px;
+  transform: translateY(-50%);
+  color: #94a3b8;
+  font-size: 18px;
+  pointer-events: none;
+}
+
+/* ===== No Results ===== */
+
+.no-results {
+  text-align: center;
+  margin-top: 18px;
+  color: #334155;
+  font-size: 14px;
+}
+
+/* =========================================================
+   Research Card (Project-style) — only for researches
+   Requires ResearchCard JSX to use:
+   researchCard__title, researchCard__fields, researchCard__field,
+   researchCard__description, researchCard__footer
+   ========================================================= */
+
+.researchCard {
+  border: 1.5px solid #0e8f7a;
+  border-radius: 16px;
+  background: #ffffff;
+  padding: 14px 16px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.04);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.researchCard__title {
+  text-align: center;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0;
+}
+
+.researchCard__fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+}
+
+.researchCard__field {
+  background: #e6f6f3;
+  color: #0e8f7a;
+  font-size: 0.8rem;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-weight: 600;
+}
+
+.researchCard__description {
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: #374151;
+  text-align: right;
+  margin: 0;
+}
+
+.researchCard__footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-size: 0.8rem;
+  color: #475569;
+  border-top: 1px solid #eee;
+  padding-top: 8px;
+}
+
+@media (max-width: 600px) {
+  .researchCard__title {
+    font-size: 1.1rem;
+  }
+
+  .researchCard__description {
+    font-size: 0.9rem;
+  }
+
+  .researchCard__footer {
+    font-size: 0.78rem;
+  }
+}
+
+/* ===== Research details (stacked fields) ===== */
+/* ===== Research details (label + value inline, black) ===== */
+
+.researchCard__details {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.researchCard__detail {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.researchCard__label {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #000000;
+  white-space: nowrap;
+}
+
+.researchCard__value {
+  font-size: 0.95rem;
+  color: #000000;
+  line-height: 1.5;
+}

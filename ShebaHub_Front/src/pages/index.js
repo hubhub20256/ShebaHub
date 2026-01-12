@@ -1,0 +1,13 @@
+export { default as Home } from "./Home";
+export { default as Search } from "./Search";
+export { default as Research } from "./Research";
+export { default as Profile } from "./Profile";
+export { default as About } from "./About";
+export { default as Mentors } from "./Mentors";
+export { default as Researches } from "./Researches";
+export { default as Apprentices } from "./Apprentices";
+export { default as Register } from "./Register";
+export { default as Login } from "./Login";
+export { default as CreateProfile } from "./CreateProfile";
+export { default as CreateResearch} from "./CreateResearch";
+export { default as MyResearches } from "./MyResearches";

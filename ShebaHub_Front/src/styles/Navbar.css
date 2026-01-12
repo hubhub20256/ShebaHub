@@ -1,0 +1,173 @@
+/* 
+ * ===================================================================================
+ * 📘 NAVBAR STYLING DOCUMENTATION
+ * ===================================================================================
+ * 
+ * HOW IT WORKS (BEGINNER'S GUIDE):
+ * 
+ * 1. LAYOUT (FLEXBOX):
+ *    - We use 'display: flex' on the .navbar to line items up.
+ *    - 'justify-content: space-between' pushes the Logo to the left, and Auth links to the right.
+ *    - On Desktop, we use a trick: 'display: contents' on the .navbar-links wrapper. 
+ *      This makes the wrapper "invisible", allowing the Logo, Main Links, and Auth Links to be 
+ *      treated as 3 separate items by the main container, centering the Main Links perfectly.
+ * 
+ * 2. RESPONSIVE DESIGN (MOBILE MENU):
+ *    - The @media (max-width: 768px) block contains rules that ONLY apply to small screens.
+ *    - On Mobile, we hide the desktop layout and show a Hamburger Icon (3 lines).
+ *    - When clicked, we show the menu by animating its 'max-height' from 0 (invisible) to 500px.
+ * 
+ * 3. "PUSH" EFFECT:
+ *    - We use 'position: relative' and standard flow (not absolute) for the mobile menu.
+ *    - This ensures that when the menu opens, it "pushes" the rest of the page content down,
+ *      instead of floating on top of it.
+ * 
+ * ===================================================================================
+ */
+
+/* --- Main Layout --- */
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap; 
+  padding: 1rem 2rem;
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #ddd;
+  position: relative;
+  z-index: 1000;
+}
+
+.navbar-logo-container {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.navbar-logo-image {
+  height: 50px;
+  width: auto;
+  object-fit: contain;
+}
+
+/* --- Navigation Links (Desktop) --- */
+.navbar-links {
+  display: contents; /* Allows children to participate in the main grid/flex layout */
+}
+
+.navbar-group {
+  display: flex;
+  gap: 1.5rem;
+  align-items: center;
+}
+
+.navbar-link {
+  text-decoration: none;
+  color: #333;
+  font-weight: 500;
+  font-size: 1rem;
+  transition: color 0.2s ease;
+  white-space: nowrap;
+}
+
+.navbar-link:hover {
+  color: #0056b3;
+}
+
+/* --- Hamburger Menu Icon (Default: Hidden) --- */
+.hamburger-menu {
+  display: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  flex-direction: column;
+  gap: 5px;
+  padding: 0.5rem;
+  z-index: 1001;
+}
+
+.hamburger-line {
+  width: 25px;
+  height: 3px;
+  background-color: #333;
+  border-radius: 2px;
+  transition: all 0.3s ease;
+}
+
+/* --- Mobile Rules (<768px) --- */
+@media (max-width: 768px) {
+  
+  .mobile-actions {
+    display: flex;
+    align-items: center;
+    gap: 15px; 
+  }
+
+  .mobile-actions .navbar-profile-icon img {
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    object-fit: cover;
+    display: block;
+    cursor: pointer;
+  }
+  .hamburger-menu {
+    display: flex;
+  }
+
+  .navbar-links {
+    display: flex;
+    width: 100%;
+    margin-left: 0;
+    
+    /* Menu Appearance */
+    background-color: #f8f9fa;
+    border-top: 1px solid transparent; 
+    box-shadow: none;
+    
+    /* Animation Properties */
+    flex-direction: column;
+    align-items: center;
+    padding: 0;
+    max-height: 0; /* Hidden by default */
+    overflow: hidden;
+    gap: 0;
+    transition: max-height 0.4s ease-in-out, border-color 0.4s;
+  }
+
+  .navbar-links.active {
+    max-height: 500px; /* Open state */
+    padding: 1rem 0;
+    border-top-color: #eee;
+  }
+
+  /* Vertical Stacking for Groups/Links */
+  .navbar-group {
+    flex-direction: column;
+    width: 100%;
+    gap: 0;
+  }
+
+  .navbar-link {
+    display: block;
+    padding: 0.8rem 0;
+    width: 100%;
+    text-align: center;
+    border-bottom: 1px solid #eee;
+  }
+  
+  .navbar-group:last-child .navbar-link:last-child {
+    border-bottom: none;
+  }
+
+  /* Hamburger to 'X' Animation */
+  .hamburger-menu.open .hamburger-line:nth-child(1) {
+    transform: rotate(45deg) translate(5px, 6px);
+  }
+  .hamburger-menu.open .hamburger-line:nth-child(2) {
+    opacity: 0;
+  }
+  .hamburger-menu.open .hamburger-line:nth-child(3) {
+    transform: rotate(-45deg) translate(5px, -6px);
+  }
+}
