@@ -53,6 +53,33 @@ const mockApprentices = [
   },
 ];
 
+/**
+ * Mock data for pending applicants (people who applied but not yet approved).
+ * Same structure as apprentices for card compatibility.
+ */
+const mockApplicants = [
+  {
+    name: "נועם אברהם",
+    id: 101,
+    gender: "זכר",
+    email: "noam.a@student-demo.com",
+    school_beginner_year: "2022",
+    medical_level: "סטודנט שנה 2",
+    Educational_institution: "אוניברסיטת חיפה",
+    profileImage: img2,
+  },
+  {
+    name: "שירה גולדמן",
+    id: 102,
+    gender: "נקבה",
+    email: "shira.g@med-apply.org",
+    school_beginner_year: "2021",
+    medical_level: "סטודנט שנה 4",
+    Educational_institution: "אוניברסיטת תל אביב - הפקולטה לרפואה",
+    profileImage: img1,
+  },
+];
+
 const researchData = {
   id: 1,
   researchName: "שימוש בבינה מלאכותית לזיהוי מוקדם של מחלות לב",
@@ -76,6 +103,7 @@ const researchData = {
   dataType: "רטרוספקטיבי",
   contractFileName: "Research_Contract_v2.pdf",
   apprentices: mockApprentices, // Attach mock apprentices to the mock research
+  applicants: mockApplicants,   // Attach mock applicants
 };
 
 export default function Research() {
@@ -95,6 +123,7 @@ export default function Research() {
   const [isMentor, setIsMentor] = useState(false);
   const [roleChecked, setRoleChecked] = useState(false);
   const [isApprenticesOpen, setIsApprenticesOpen] = useState(false);
+  const [isApplicantsOpen, setIsApplicantsOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -234,6 +263,20 @@ export default function Research() {
     return []; // It's an empty array, so we show none.
   }, [data]);
 
+  /**
+   * Safe list of pending applicants.
+   * Same fallback pattern as activeApprentices.
+   */
+  const activeApplicants = useMemo(() => {
+    if (Array.isArray(data?.applicants) && data.applicants.length > 0) {
+      return data.applicants;
+    }
+    if (!data?.applicants) {
+      return mockApplicants;
+    }
+    return [];
+  }, [data]);
+
 
   const handleEditClick = () => {
     if (isReal && id && myResearches.some((r) => String(r.id) === String(id))) {
@@ -246,6 +289,19 @@ export default function Research() {
   const handleToggleReal = () => {
     setUseReal((v) => !v);
     setRealError(null);
+  };
+
+  // --- Applicant Actions (Placeholder) ---
+  const handleApproveApplicant = (applicantId) => {
+    console.log(`Approved applicant ID: ${applicantId}`);
+    // TODO: Wire to API: researchAPI.approveApplicant(id, applicantId)
+    alert(`אישרת מועמד ${applicantId}`);
+  };
+
+  const handleDeclineApplicant = (applicantId) => {
+    console.log(`Declined applicant ID: ${applicantId}`);
+    // TODO: Wire to API: researchAPI.declineApplicant(id, applicantId)
+    alert(`דחית מועמד ${applicantId}`);
   };
 
   const handleDownloadContract = async () => {
@@ -454,6 +510,7 @@ export default function Research() {
           </div>
         </div>
 
+        {/* --- Accepted Apprentices Section --- */}
         {activeApprentices.length > 0 && (
           <div style={{ marginTop: 32 }}>
             <div 
@@ -469,7 +526,7 @@ export default function Research() {
                
                <div style={{ 
                  transition: 'transform 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
-                 transform: isApprenticesOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                 transform: isApprenticesOpen ? 'rotate(0deg)' : 'rotate(180deg)',
                  display: 'flex',
                  marginTop: 4,
                  color: '#6b7280'
@@ -490,6 +547,66 @@ export default function Research() {
                 {activeApprentices.map((student) => (
                   <div key={student.id} onClick={() => setSelectedApprentice(student)}>
                     <ApprenticeCard apprentice={student} />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* --- Pending Applicants Section (Mentor Only) --- */}
+        {canEditThis && activeApplicants.length > 0 && (
+          <div style={{ marginTop: 32 }}>
+            <div 
+              className="accordion-header"
+              onClick={() => setIsApplicantsOpen(!isApplicantsOpen)}
+            >
+               <h3 style={{...styles.sectionTitle, marginBottom: 0}}>
+                 מועמדים ממתינים
+                 <span style={{ fontWeight: 400, color: '#9ca3af', marginRight: 8, fontSize: '0.9em' }}>
+                   ({activeApplicants.length})
+                 </span>
+               </h3>
+               
+               <div style={{ 
+                 transition: 'transform 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
+                 transform: isApplicantsOpen ? 'rotate(0deg)' : 'rotate(180deg)',
+                 display: 'flex',
+                 marginTop: 4,
+                 color: '#6b7280'
+               }}>
+                 <ChevronIcon />
+               </div>
+            </div>
+
+            <div 
+              style={{
+                maxHeight: isApplicantsOpen ? '2000px' : '0',
+                opacity: isApplicantsOpen ? 1 : 0,
+                overflow: 'hidden',
+                transition: 'all 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
+              }}
+            >
+              <div className="apprentices-grid compact-view" style={{ marginTop: 16 }}>
+                {activeApplicants.map((applicant) => (
+                  <div key={applicant.id} className="applicant-card-wrapper">
+                    <div onClick={() => setSelectedApprentice(applicant)}>
+                      <ApprenticeCard apprentice={applicant} />
+                    </div>
+                    <div className="applicant-actions">
+                      <button 
+                        className="btn-approve" 
+                        onClick={(e) => { e.stopPropagation(); handleApproveApplicant(applicant.id); }}
+                      >
+                        ✓ אשר
+                      </button>
+                      <button 
+                        className="btn-decline" 
+                        onClick={(e) => { e.stopPropagation(); handleDeclineApplicant(applicant.id); }}
+                      >
+                        ✗ דחה
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -654,6 +771,44 @@ export default function Research() {
            border-color: #d1d5db;
            transform: translateY(-1px);
            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+
+        /* Action Buttons for Applicants */
+        .applicant-card-wrapper {
+          display: flex;
+          flex-direction: column;
+        }
+        .applicant-actions {
+          display: flex;
+          gap: 8px;
+          margin-top: 12px;
+          padding: 0 8px;
+        }
+        .applicant-actions button {
+          flex: 1;
+          padding: 10px 16px;
+          border-radius: 8px;
+          font-weight: 600;
+          font-size: 14px;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          border: none;
+        }
+        .btn-approve {
+          background-color: #10b981;
+          color: white;
+        }
+        .btn-approve:hover {
+          background-color: #059669;
+          transform: translateY(-1px);
+        }
+        .btn-decline {
+          background-color: #ef4444;
+          color: white;
+        }
+        .btn-decline:hover {
+          background-color: #dc2626;
+          transform: translateY(-1px);
         }
       `}</style>
     </div>
