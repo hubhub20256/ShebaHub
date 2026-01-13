@@ -35,15 +35,21 @@ After running the server, access:
 
 ## Run locally
 
-### Windows
+### All OS (Windows / Linux / macOS)
 
 1) Run the setup script (optional)
 ```bash
 git clone https://github.com/yonatanel-Dev/shebahub-backend.git
 cd shebahub-backend
-setup.bat
-venv\Scripts\python.exe manage.py runserver
+python setup.py
 ```
+
+Run server:
+```bash
+venv/bin/python manage.py runserver  # Linux/macOS
+venv\\Scripts\\python.exe manage.py runserver  # Windows
+```
+
 Open the API documentation in your browser:
 http://localhost:8000/api/docs/
 
