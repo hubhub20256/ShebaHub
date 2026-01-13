@@ -167,7 +167,9 @@ export default function Research() {
     }
     if (isMentor) navigate("/create-research");
   };
-
+const canEditThis = isReal && myResearches.some((r) => String(r.id) === String(id));
+// A user can apply if they are NOT the mentor who owns this research
+const canApply = !canEditThis;
   const handleToggleReal = () => {
     setUseReal((v) => !v);
     setRealError(null);
@@ -202,7 +204,6 @@ export default function Research() {
     navigate(`/research/${nextId}`, { state: { source: "real" } });
   };
 
-  const canEditThis = isReal && myResearches.some((r) => String(r.id) === String(id));
   const showEditButton = isMentor && (!isReal || canEditThis);
   const showMockToggle = isMentor;
 
@@ -371,9 +372,14 @@ export default function Research() {
             <SidebarItem label="שעות שבועיות" value={data.weeklyHours ? `${data.weeklyHours} שעות` : ""} />
             <SidebarItem label="גודל צוות" value={data.teamSize ? `${data.teamSize} מתלמדים` : ""} />
             <SidebarItem label="סוג נתונים" value={data.dataType} />
-
+            
             <div style={{ marginTop: 24 }}>
-              <button style={styles.primaryBtn}>הגש מועמדות למחקר</button>
+              {canApply ? (
+                <button style={styles.primaryBtn} onClick={() => alert("נשלחה הודעה למנהל המחקר!")}>
+                  הגש מועמדות למחקר
+                </button>
+              ) : null 
+              }
             </div>
           </div>
         </div>
