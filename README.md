@@ -26,7 +26,7 @@ A platform connecting students and mentors. This repository contains **both** th
 ### 1) Clone
 
 ```bash
-git clone -b backend-and-frontend-functionality https://github.com/yonatanel-Dev/shebahub-backend.git Sheba_Hub
+git clone https://github.com/yonatanel-Dev/shebahub-backend.git Sheba_Hub
 cd Sheba_Hub
 ```
 
