@@ -10,6 +10,7 @@
   box-sizing: border-box;
   width: 100%;
   box-shadow: 0 3px 5px rgba(0, 0, 0, 0.06);
+  position: relative;
 }
 
 /* ===== Card Header ===== */
@@ -84,13 +85,12 @@
 
 /* ===== Groups ===== */
 .card-email-group {
-  /* Return to standard block flow to match other rows alignment */
   display: block;
   margin-bottom: 4px;
 }
 
 .card-email-group span {
-  word-break: break-word; /* Prevent overflow on desktop/mobile */
+  word-break: break-word;
   overflow-wrap: anywhere;
 }
 
@@ -116,21 +116,18 @@
 /* ===== Mobile Tweaks ===== */
 
 @media (max-width: 600px) {
-  /* Reduce outer card padding */
   .apprenticeCard,
   .mentorCard,
   .researchCard {
     padding: 10px;
   }
 
-  /* Compact header */
   .mentorCard__header,
   .apprenticeCard__header {
     gap: 10px;
     padding-bottom: 8px;
   }
-  
-  /* Smaller Avatar */
+
   .mentorCard__avatar,
   .apprenticeCard__avatar {
     width: 60px;
@@ -159,7 +156,7 @@
   }
 }
 
-/* ===== Page Title ===== */
+/* ===== Page Title & Search ===== */
 
 .main-title {
   text-align: center;
@@ -168,8 +165,6 @@
   font-size: 2.2rem;
   color: #2c3e50;
 }
-
-/* ===== Search ===== */
 
 .search-row {
   width: 100%;
@@ -213,8 +208,6 @@
   pointer-events: none;
 }
 
-/* ===== No Results ===== */
-
 .no-results {
   text-align: center;
   margin-top: 18px;
@@ -223,105 +216,154 @@
 }
 
 /* =========================================================
-   Research Card (Project-style) — only for researches
-   Requires ResearchCard JSX to use:
-   researchCard__title, researchCard__fields, researchCard__field,
-   researchCard__description, researchCard__footer
+   Research Card - התיקון הסופי והמעודכן
    ========================================================= */
 
 .researchCard {
-  border: 1.5px solid #0e8f7a;
-  border-radius: 16px;
-  background: #ffffff;
-  padding: 14px 16px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.04);
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+  width: 100%;
+  background: white;
+  
+  /* פס צבעוני עליון מוטמע במסגרת */
+  border: 1px solid rgba(15, 23, 42, 0.10);
+  border-top: 6px solid #0284c7; 
+  
+  border-radius: 24px;
+  padding: 24px;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+  transition: transform 200ms ease, box-shadow 200ms ease, border-color 200ms ease;
+  position: relative;
+  overflow: visible; /* חשוב כדי שהמלל המלא יצוף בחוץ */
+}
+
+.researchCard:hover {
+  transform: translateY(-4px);
+  border-top-color: #0e8f7a;
+  box-shadow: 0 18px 50px rgba(15, 23, 42, 0.12);
 }
 
 .researchCard__title {
-  text-align: center;
-  font-size: 1.3rem;
-  font-weight: 700;
-  color: #1f2937;
-  margin: 0;
+  margin: 10px 0 14px 0;
+  font-size: 24px;
+  font-weight: 900;
+  line-height: 1.25;
+  color: #0f172a;
+  text-align: right;
 }
 
+.researchCard__title a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* האליפסות */
 .researchCard__fields {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 10px;
+  margin: 0 0 16px 0;
   justify-content: center;
 }
 
 .researchCard__field {
-  background: #e6f6f3;
-  color: #0e8f7a;
-  font-size: 0.8rem;
-  padding: 4px 10px;
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 14px;
   border-radius: 999px;
-  font-weight: 600;
+  font-size: 13px;
+  font-weight: 800;
+  color: #075985;
+  background: rgba(2, 132, 199, 0.10);
+  border: 1px solid rgba(2, 132, 199, 0.18);
 }
 
 .researchCard__description {
-  font-size: 0.95rem;
-  line-height: 1.6;
-  color: #374151;
+  margin: 0 0 18px 0;
+  font-size: 16px;
+  line-height: 1.85;
+  color: rgba(15, 23, 42, 0.82);
   text-align: right;
-  margin: 0;
 }
 
-.researchCard__footer {
-  display: flex;
-  justify-content: space-between;
-  gap: 10px;
-  flex-wrap: wrap;
-  font-size: 0.8rem;
-  color: #475569;
-  border-top: 1px solid #eee;
-  padding-top: 8px;
-}
-
-@media (max-width: 600px) {
-  .researchCard__title {
-    font-size: 1.1rem;
-  }
-
-  .researchCard__description {
-    font-size: 0.9rem;
-  }
-
-  .researchCard__footer {
-    font-size: 0.78rem;
-  }
-}
-
-/* ===== Research details (stacked fields) ===== */
-/* ===== Research details (label + value inline, black) ===== */
-
+/* סידור השדות בשני טורים */
 .researchCard__details {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-top: 10px;
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(15, 23, 42, 0.10);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px 18px;
 }
 
 .researchCard__detail {
   display: flex;
-  align-items: baseline;
-  gap: 6px;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding: 10px 12px;
+  border-radius: 16px;
+  background: rgba(15, 23, 42, 0.03);
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  position: relative;
 }
 
+/* כותרות שדות בולטות ובשחור */
 .researchCard__label {
-  font-size: 0.9rem;
-  font-weight: 700;
+  font-size: 13.5px;
+  font-weight: 900;
   color: #000000;
   white-space: nowrap;
 }
 
 .researchCard__value {
-  font-size: 0.95rem;
-  color: #000000;
+  font-size: 14.5px;
+  color: rgba(15, 23, 42, 0.80);
+  line-height: 1.6;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  cursor: default;
+}
+
+/* המלל המלא שמופיע במעבר עכבר (Tooltip) */
+.researchCard__value::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: 135%;
+  right: 0;
+  background: #1e293b;
+  color: #ffffff;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 13px;
   line-height: 1.5;
+  white-space: normal;
+  width: max-content;
+  max-width: 280px;
+  z-index: 9999;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(8px);
+  transition: all 0.25s ease;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+}
+
+.researchCard__value:hover::after {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* הסתרת בועה כשאין תוכן */
+.researchCard__value:not([data-tooltip])::after,
+.researchCard__value[data-tooltip=""]::after {
+  display: none;
+}
+
+@media (max-width: 760px) {
+  .researchCard__details {
+    grid-template-columns: 1fr;
+  }
+  .researchCard__value::after {
+    display: none;
+  }
 }

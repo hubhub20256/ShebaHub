@@ -11,9 +11,10 @@ export default function ResearchCard({ research, isReal = false }) {
 
   const fields = Array.isArray(research.fields) ? research.fields : [];
   const mentors = Array.isArray(research.mentors) ? research.mentors : [];
-  const to = {
-    pathname: `/research/${research.id}`,
-  };
+
+  const to = { pathname: `/research/${research.id}` };
+
+  const tooltip = (val) => String(val ?? "").trim();
 
   return (
     <div className="researchCard" dir="rtl">
@@ -35,49 +36,65 @@ export default function ResearchCard({ research, isReal = false }) {
         ))}
       </div>
 
-      <p className="researchCard__description">
-        {research.description}
-      </p>
+      <p className="researchCard__description">{research.description}</p>
 
       <div className="researchCard__details">
         <div className="researchCard__detail">
           <span className="researchCard__label">מנחים:</span>
-          <span className="researchCard__value">
+          <span
+            className="researchCard__value"
+            data-tooltip={tooltip(mentors.join(", "))}
+          >
             {mentors.join(", ")}
           </span>
         </div>
 
         <div className="researchCard__detail">
           <span className="researchCard__label">מספר מתלמדים:</span>
-          <span className="researchCard__value">
+          <span
+            className="researchCard__value"
+            data-tooltip={tooltip(research.apprenticesCount)}
+          >
             {research.apprenticesCount}
           </span>
         </div>
 
         <div className="researchCard__detail">
           <span className="researchCard__label">תחילת מחקר:</span>
-          <span className="researchCard__value">
+          <span
+            className="researchCard__value"
+            data-tooltip={tooltip(formatDate(research.startDate))}
+          >
             {formatDate(research.startDate)}
           </span>
         </div>
 
         <div className="researchCard__detail">
           <span className="researchCard__label">היקף שעות זמינות:</span>
-          <span className="researchCard__value">
+          <span
+            className="researchCard__value"
+            data-tooltip={tooltip(research.hoursScope)}
+          >
             {research.hoursScope}
           </span>
         </div>
 
         <div className="researchCard__detail">
           <span className="researchCard__label">משך המחקר:</span>
-          <span className="researchCard__value">
+          <span
+            className="researchCard__value"
+            data-tooltip={tooltip(research.duration)}
+          >
             {research.duration}
           </span>
         </div>
 
         <div className="researchCard__detail">
           <span className="researchCard__label">גמולים:</span>
-          <span className="researchCard__value">
+          <span
+            className="researchCard__value"
+            data-tooltip={tooltip(research.rewards)}
+          >
             {research.rewards}
           </span>
         </div>
