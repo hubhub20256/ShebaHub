@@ -74,6 +74,7 @@ export default function Researches() {
     hoursScope: r.weeklyHours ? `${r.weeklyHours} שעות בשבוע` : "",
     duration: r.durationWeeks ? `${r.durationWeeks} שבועות` : "",
     rewards: r.compensation || "",
+    status: r.status || "",
   });
 
   useEffect(() => {
