@@ -118,9 +118,6 @@ const ProfileMenu = ({ closeParentMenu, onOpen, isOpen }) => {
 
             {isMentor && (
               <>
-                <Link to="/my-apprentices" className="navbar-link" onClick={closeParentMenu} style={{ padding: "10px 20px", display: "block" }}>
-                  המתמחים שלי
-                </Link>
                 <Link to="/create-research" className="navbar-link" onClick={closeParentMenu} style={{ padding: "10px 20px", display: "block" }}>
                   ליצירת מחקר
                 </Link>

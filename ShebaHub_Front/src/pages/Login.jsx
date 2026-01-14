@@ -101,7 +101,7 @@ const Login = () => {
 
   return (
     <AuthLayout
-      title="שמחים לראותך שוב!"
+      title="התחברות"
       subtitle=""
       footerText="עדיין אין לך חשבון?"
       footerLinkText="הרשמה"

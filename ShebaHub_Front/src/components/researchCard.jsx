@@ -1,23 +1,33 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import "./card.css";
+// Ensure your CSS classes are also in Researches.css or card.css
+import "../styles/Researches.css"; 
 
 export default function ResearchCard({ research, isReal = false }) {
+  // Helper to format dates
   const formatDate = (dateStr) => {
     if (!dateStr) return "";
     const [year, month, day] = dateStr.split("-");
     return `${day}/${month}/${year}`;
   };
 
+  // Ensure arrays exist to avoid .map errors
   const fields = Array.isArray(research.fields) ? research.fields : [];
   const mentors = Array.isArray(research.mentors) ? research.mentors : [];
 
   const to = { pathname: `/research/${research.id}` };
-
   const tooltip = (val) => String(val ?? "").trim();
 
   return (
     <div className="researchCard" dir="rtl">
+      {/* 1. The Dynamic Status Badge */}
+      <div className="status-badge-container">
+        <span className="research-status-badge">
+          {research.status || "בהקפאה"}
+        </span>
+      </div>
+
       <h3 className="researchCard__title">
         <Link
           to={to}

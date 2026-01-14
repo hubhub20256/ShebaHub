@@ -5,6 +5,14 @@
  * Strategy: Desktop-first approach to match original design, 
  * with overlays for mobile responsiveness using @media queries.
  */
+.home-body,
+.home-body #root,
+.home-body main,
+.home-body .app,
+.home-body .layout {
+  background: #fff !important;
+  margin: 0;
+}
 
 /* Main Page Container */
 .home-page {

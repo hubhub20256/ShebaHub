@@ -1,7 +1,13 @@
+import { useEffect } from "react";
 import homePagePic from "../assets/homePagePic.png";
 import "../styles/Home.css";
 
 const Home = () => {
+  useEffect(() => {
+    document.body.classList.add("home-body");
+    return () => document.body.classList.remove("home-body");
+  }, []);
+
   return (
     <main className="home-page">
       <section className="home-hero">

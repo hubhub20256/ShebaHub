@@ -106,7 +106,7 @@ export default function MyResearches() {
       )}
 
       {!checkingRole && isMentor && !loading && !error && cards.length === 0 && (
-        <p className="researches-no-results">אין לך מחקרים עדיין.</p>
+        <p className="researches-no-results" >אין לך מחקרים עדיין. לך לעמוד "ליצירת מחקר".</p>
       )}
 
       {!checkingRole && isMentor && cards.length > 0 && (
