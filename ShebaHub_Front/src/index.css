@@ -4,10 +4,21 @@
   line-height: 1.5;
   font-weight: 400;
 
-  /* Professional Color Palette */
+  /* משתנים למצב יום (ברירת מחדל) */
   --primary-color: #0056b3; /* Sheba-like Blue */
   --bg-color: #f4f7f6;
   --text-color: #333;
+  --card-bg: #ffffff; /* הוספתי רקע לכרטיסים/אלמנטים */
+  --border-color: #e0e0e0; /* הוספתי צבע לגבולות */
+}
+
+/* משתנים למצב לילה */
+[data-theme="dark"] {
+  --primary-color: #4da3ff; /* כחול בהיר יותר שמתאים לרקע כהה */
+  --bg-color: #121212; /* רקע כהה מאוד */
+  --text-color: #e0e0e0; /* טקסט בהיר */
+  --card-bg: #1e1e1e; /* רקע כרטיסים כהה */
+  --border-color: #333333; /* גבולות כהים */
 }
 
 body {
@@ -17,6 +28,8 @@ body {
   background-color: var(--bg-color);
   color: var(--text-color);
   min-height: 100vh;
+  /* אפקט מעבר חלק בשינוי צבעים */
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 /* Make links look professional */
@@ -31,4 +44,162 @@ h2,
 h3 {
   margin-top: 0;
 }
+/* הוספה לקובץ src/index.css */
 
+#root {
+  min-height: 100vh;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  width: 100%;
+  isolation: isolate; /* מונע זליגה של רקעים אחרים */
+}
+
+/* ========================================= */
+/* SHEBAHUB DARK MODE OVERRIDES             */
+/* ========================================================== */
+/* תיקון אגרסיבי למצב לילה - הופך הכל לשקוף כדי שיראו את הרקע */
+/* ========================================================== */
+
+/* 1. מוודא שהשורש של האתר תופס את כל הגובה וצבוע בכהה */
+html,
+body,
+#root {
+  min-height: 100vh;
+  margin: 0;
+  background-color: var(--bg-color) !important;
+}
+
+/* 2. כשהאתר במצב לילה - תכריח את כל הקונטיינרים הפנימיים להיות שקופים */
+[data-theme="dark"] .home-page,
+[data-theme="dark"] .home-hero,
+[data-theme="dark"] .home-left,
+[data-theme="dark"] .home-right,
+[data-theme="dark"] main,
+[data-theme="dark"] section,
+[data-theme="dark"] div > main {
+  background-color: transparent !important;
+  color: var(--text-color) !important;
+}
+
+/* 3. מחזיר את הצבע רק לקופסאות הקטנות שצריכות אותו (כמו הכרטיסים עם המספרים 01, 02) */
+[data-theme="dark"] .home-vision-text-block {
+  background-color: var(--card-bg) !important;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5); /* צל מודגש יותר ללילה */
+}
+
+/* 4. מוודא שכל הטקסטים בצבע הנכון */
+[data-theme="dark"] h1,
+[data-theme="dark"] h2,
+[data-theme="dark"] h3,
+[data-theme="dark"] p,
+[data-theme="dark"] span {
+  color: var(--text-color) !important;
+}
+/* ====================================================== */
+/* תיקון ספציפי לדפי התחברות, הרשמה ודף הבית             */
+/* ====================================================== */
+
+/* ================================================================= */
+/* SHEBAHUB DARK MODE - FINAL FIX (Overriding Home.css & Auth)      */
+/* ================================================================= */
+
+/* 1. תיקון "הדריסה האלימה" של דף הבית (Home.css) */
+/* אנחנו משתמשים בסלקטור ארוך כדי לנצח בחשיבות (Specificity) */
+[data-theme="dark"] body.home-body,
+[data-theme="dark"] body.home-body #root,
+[data-theme="dark"] body.home-body main,
+[data-theme="dark"] body.home-body .app,
+[data-theme="dark"] body.home-body .layout,
+[data-theme="dark"] .home-page {
+  background-color: var(--bg-color) !important;
+  background: var(--bg-color) !important;
+  color: var(--text-color) !important;
+}
+
+/* 2. תיקון הטקסטים בדף הבית שצבועים בכחול כהה/אפור */
+[data-theme="dark"] .home-title,
+[data-theme="dark"] .home-subtitle,
+[data-theme="dark"] .home-vision-label,
+[data-theme="dark"] .home-vision-text,
+[data-theme="dark"] .home-vision-row,
+[data-theme="dark"] .home-vision-text-block {
+  color: var(--text-color) !important;
+  background-color: transparent !important;
+}
+
+/* 3. תיקון דפי הרשמה והתחברות (Auth Pages) */
+/* צובע את הטופס באפור כהה ואת האינפוטים */
+[data-theme="dark"] .auth-layout,       /* מניח שזה שם הקלאס של ה-Layout */
+[data-theme="dark"] .register-form,
+[data-theme="dark"] form {
+  background-color: transparent !important;
+  color: var(--text-color) !important;
+}
+
+/* קופסה שעוטפת את הטפסים (בדרך כלל יש לה צבע רקע לבן) */
+[data-theme="dark"] .card,
+[data-theme="dark"] .shadow-md,
+[data-theme="dark"] .bg-white {
+  background-color: var(--card-bg) !important;
+  color: var(--text-color) !important;
+  border: 1px solid #333;
+}
+
+/* 4. תיקון שדות הקלט (Input Fields) בטפסים */
+[data-theme="dark"] input:not([type="checkbox"]),
+[data-theme="dark"] select,
+[data-theme="dark"] textarea {
+  background-color: #2b2b2b !important;
+  color: #fff !important;
+  border-color: #555 !important;
+}
+
+[data-theme="dark"] input::placeholder {
+  color: #aaa !important;
+}
+
+/* 5. תיקון לצ'קבוקס שיראה טוב */
+[data-theme="dark"] .register-checkbox-label {
+  color: var(--text-color) !important;
+}
+
+/* ======================================================= */
+/* תיקון כרטיסיות מחקר (Research Cards) למצב לילה         */
+/* ======================================================= */
+
+/* 1. רקע הכרטיסייה עצמה */
+[data-theme="dark"] .researchCard {
+  background-color: var(--card-bg) !important; /* אפור כהה */
+  color: var(--text-color) !important; /* טקסט בהיר */
+  border: 1px solid #333 !important; /* מסגרת עדינה */
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5) !important; /* צל כהה */
+}
+
+/* 2. כותרת הכרטיסייה (הלינק) */
+[data-theme="dark"] .researchCard__title a {
+  color: #61dafb !important; /* תכלת בהיר שיבלוט על הרקע הכהה */
+}
+
+/* 3. תגיות התחום (העיגולים הקטנים כמו "נוירולוגיה") */
+[data-theme="dark"] .researchCard__field {
+  background-color: #333333 !important;
+  color: #e0e0e0 !important;
+  border: 1px solid #555 !important;
+}
+
+/* 4. התוויות הקטנות (למשל: "מנחים:", "תחילת מחקר:") */
+[data-theme="dark"] .researchCard__label {
+  color: #aaaaaa !important; /* אפור בהיר, לא לבן בוהק */
+  font-weight: normal;
+}
+
+/* 5. הערכים עצמם (הטקסט שליד התווית) */
+[data-theme="dark"] .researchCard__value,
+[data-theme="dark"] .researchCard__description {
+  color: #ffffff !important;
+}
+
+/* 6. תיקון לאפור הרקע בתוך הערכים (אם יש להם רקע נפרד) */
+[data-theme="dark"] .researchCard__detail {
+  background-color: transparent !important;
+}
