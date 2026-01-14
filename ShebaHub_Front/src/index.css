@@ -103,7 +103,7 @@ body,
 /* SHEBAHUB DARK MODE - FINAL FIX (Overriding Home.css & Auth)      */
 /* ================================================================= */
 
-/* 1. תיקון "הדריסה האלימה" של דף הבית (Home.css) */
+/* 1. תיקוןהדריסה של דף הבית (Home.css) */
 /* אנחנו משתמשים בסלקטור ארוך כדי לנצח בחשיבות (Specificity) */
 [data-theme="dark"] body.home-body,
 [data-theme="dark"] body.home-body #root,
@@ -202,4 +202,89 @@ body,
 /* 6. תיקון לאפור הרקע בתוך הערכים (אם יש להם רקע נפרד) */
 [data-theme="dark"] .researchCard__detail {
   background-color: transparent !important;
+}
+
+/* ======================================================= */
+/* תיקון טפסי הרשמה והתחברות (AuthLayout)                 */
+/* ======================================================= */
+
+/* 1. הקופסה הלבנה של הטופס (הכרטיס במרכז) */
+[data-theme="dark"] .auth-card {
+  background-color: var(--card-bg) !important; /* צבע אפור כהה */
+  color: var(--text-color) !important; /* טקסט בהיר */
+  border: 1px solid #333 !important; /* מסגרת עדינה */
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5) !important; /* צל מודגש יותר */
+}
+
+/* 2. הכותרת של הטופס ("הרשמה" / "התחברות") */
+[data-theme="dark"] .auth-title {
+  color: var(--text-color) !important;
+}
+
+/* 3. תת-כותרת ("ברוכה הבאה") */
+[data-theme="dark"] .auth-subtitle {
+  color: #aaaaaa !important; /* אפור בהיר */
+}
+
+/* 4. הלינק התחתון ("להתחברות" / "להרשמה") */
+[data-theme="dark"] .auth-link {
+  color: #4da3ff !important; /* תכלת יפה */
+}
+
+/* 5. הטקסט שליד הלינק התחתון */
+[data-theme="dark"] .auth-footer {
+  color: var(--text-color) !important;
+}
+
+/* ======================================================= */
+/* תיקון סופי לרקע הלבן בעמודי הרשמה/התחברות              */
+/* ======================================================= */
+
+[data-theme="dark"] .auth-page {
+  background-color: var(--bg-color) !important; /* משנה את הרקע הלבן לשחור */
+  min-height: 100vh; /* מוודא שזה תופס את כל הגובה */
+}
+
+/* ======================================================= */
+/* תיקון כרטיסיות מתלמדים (Apprentices) ומנחים (Mentors)  */
+/* ======================================================= */
+
+/* 1. טיפול ברקע הכרטיסייה עצמה (שיהיה אפור כהה ולא לבן) */
+[data-theme="dark"] .apprenticeCard,
+[data-theme="dark"] .mentorCard,
+[data-theme="dark"] .mentorsCard {
+  /* למקרה שהשם הוא ברבים בקוד */
+  background-color: var(--card-bg) !important;
+  border: 1px solid #333 !important;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5) !important;
+}
+
+/* 2. הופך את כל הטקסטים בתוך הכרטיסיות האלו ללבן */
+[data-theme="dark"] .apprenticeCard span,
+[data-theme="dark"] .apprenticeCard div,
+[data-theme="dark"] .apprenticeCard p,
+[data-theme="dark"] .mentorCard span,
+[data-theme="dark"] .mentorCard div,
+[data-theme="dark"] .mentorCard p,
+[data-theme="dark"] .mentorsCard span,
+[data-theme="dark"] .mentorsCard div,
+[data-theme="dark"] .mentorsCard p {
+  color: #ffffff !important;
+}
+
+/* 3. טיפול ספציפי בקישורים (כמו האימייל) - שיהיו בתכלת */
+[data-theme="dark"] .apprenticeCard a,
+[data-theme="dark"] .mentorCard a,
+[data-theme="dark"] .mentorsCard a {
+  color: #61dafb !important;
+  text-decoration: none;
+}
+
+/* 4. אופציונלי: אם הכותרות (כמו "מין:", "דואר אלקטרוני:") מוגדרות כ-Label */
+/* נצבע אותן באפור בהיר כדי להבדיל מהתשובה עצמה */
+[data-theme="dark"] .apprenticeCard strong,
+[data-theme="dark"] .apprenticeCard b,
+[data-theme="dark"] .mentorCard strong,
+[data-theme="dark"] .mentorCard b {
+  color: #cccccc !important;
 }
