@@ -2,6 +2,11 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { profilesAPI, researchAPI } from "../services/api";
 import { useAuth } from "../context/AuthContext";
+import ApprenticeCard from "../components/apprenticeCard";
+import Modal from "../components/Modal";
+import img1 from "../assets/student1.png";
+import img2 from "../assets/student2.png";
+import img3 from "../assets/student3.png";
 
 // --- Theme Constants ---
 const THEME_COLOR = "#2C2C6C";
@@ -10,6 +15,71 @@ const ACCENT_PINK = "#ef67a0";
 const BG_GRAY = "#f8f9fa";
 
 // --- Mock Data ---
+
+/**
+ * Mock data for apprentices.
+ * Used when the backend response does not contain actual apprentice data.
+ */
+const mockApprentices = [
+  {
+    name: "דנה כהן",
+    id: 1,
+    gender: "נקבה",
+    email: "dana.k@med-example.com",
+    school_beginner_year: "2019",
+    medical_level: "סטודנט שנה 3",
+    Educational_institution: "אוניברסיטת תל אביב - הפקולטה לרפואה",
+    profileImage: img1,
+  },
+  {
+    name: "יותם לוי",
+    id: 2,
+    gender: "זכר",
+    email: "yotam.lev@hospital-demo.co.il",
+    school_beginner_year: "2015",
+    medical_level: "סטאזר",
+    Educational_institution: "האוניברסיטה העברית והדסה עין כרם",
+    profileImage: img2,
+  },
+  {
+    name: "מיכל שמש",
+    id: 3,
+    gender: "נקבה",
+    email: "michal.s@clinic-test.org",
+    school_beginner_year: "20214",
+    medical_level: "מתמחה בביורפואה",
+    Educational_institution: "אוניברסיטת בן-גוריון בנגב",
+    profileImage: img3,
+  },
+];
+
+/**
+ * Mock data for pending applicants (people who applied but not yet approved).
+ * Same structure as apprentices for card compatibility.
+ */
+const mockApplicants = [
+  {
+    name: "נועם אברהם",
+    id: 101,
+    gender: "זכר",
+    email: "noam.a@student-demo.com",
+    school_beginner_year: "2022",
+    medical_level: "סטודנט שנה 2",
+    Educational_institution: "אוניברסיטת חיפה",
+    profileImage: img2,
+  },
+  {
+    name: "שירה גולדמן",
+    id: 102,
+    gender: "נקבה",
+    email: "shira.g@med-apply.org",
+    school_beginner_year: "2021",
+    medical_level: "סטודנט שנה 4",
+    Educational_institution: "אוניברסיטת תל אביב - הפקולטה לרפואה",
+    profileImage: img1,
+  },
+];
+
 const researchData = {
   id: 1,
   researchName: "שימוש בבינה מלאכותית לזיהוי מוקדם של מחלות לב",
@@ -32,6 +102,8 @@ const researchData = {
   helsinkiApproval: "H-2023-9988",
   dataType: "רטרוספקטיבי",
   contractFileName: "Research_Contract_v2.pdf",
+  apprentices: mockApprentices, // Attach mock apprentices to the mock research
+  applicants: mockApplicants,   // Attach mock applicants
 };
 
 export default function Research() {
@@ -45,10 +117,13 @@ export default function Research() {
   const isReal = useReal;
   const [realResearch, setRealResearch] = useState(null);
   const [myResearches, setMyResearches] = useState([]);
+  const [selectedApprentice, setSelectedApprentice] = useState(null);
   const [realLoading, setRealLoading] = useState(false);
   const [realError, setRealError] = useState(null);
   const [isMentor, setIsMentor] = useState(false);
   const [roleChecked, setRoleChecked] = useState(false);
+  const [isApprenticesOpen, setIsApprenticesOpen] = useState(false);
+  const [isApplicantsOpen, setIsApplicantsOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -160,6 +235,49 @@ export default function Research() {
       .filter(Boolean);
   }, [data]);
 
+  /**
+   * Determine key logic values
+   */
+  const canEditThis = isReal && myResearches.some((r) => String(r.id) === String(id));
+  const showEditButton = isMentor && (!isReal || canEditThis);
+  const showMockToggle = isMentor;
+
+  /**
+   * Safe list of apprentices.
+   * If `data.apprentices` is missing (common with real API data initially),
+   * fall back to `mockApprentices` so the UI isn't empty.
+   */
+  const activeApprentices = useMemo(() => {
+    // If we have an array of apprentices in the data, use it.
+    // Otherwise, default to the mock set.
+    if (Array.isArray(data?.apprentices) && data.apprentices.length > 0) {
+      return data.apprentices;
+    }
+    // If it's real data but the field is missing/empty, we might want to show nothing?
+    // The requirement says: "show mock data unless there is real one, in that case, show the real one"
+    // Since our backend doesn't return `apprentices` field yet, `data.apprentices` will be undefined.
+    // So we fall back to mock.
+    if (!data?.apprentices) {
+      return mockApprentices;
+    }
+    return []; // It's an empty array, so we show none.
+  }, [data]);
+
+  /**
+   * Safe list of pending applicants.
+   * Same fallback pattern as activeApprentices.
+   */
+  const activeApplicants = useMemo(() => {
+    if (Array.isArray(data?.applicants) && data.applicants.length > 0) {
+      return data.applicants;
+    }
+    if (!data?.applicants) {
+      return mockApplicants;
+    }
+    return [];
+  }, [data]);
+
+
   const handleEditClick = () => {
     if (isReal && id && myResearches.some((r) => String(r.id) === String(id))) {
       navigate(`/research/${id}/edit`, { state: { source: "real" } });
@@ -167,12 +285,23 @@ export default function Research() {
     }
     if (isMentor) navigate("/create-research");
   };
-const canEditThis = isReal && myResearches.some((r) => String(r.id) === String(id));
-// A user can apply if they are NOT the mentor who owns this research
-const canApply = !canEditThis;
+
   const handleToggleReal = () => {
     setUseReal((v) => !v);
     setRealError(null);
+  };
+
+  // --- Applicant Actions (Placeholder) ---
+  const handleApproveApplicant = (applicantId) => {
+    console.log(`Approved applicant ID: ${applicantId}`);
+    // TODO: Wire to API: researchAPI.approveApplicant(id, applicantId)
+    alert(`אישרת מועמד ${applicantId}`);
+  };
+
+  const handleDeclineApplicant = (applicantId) => {
+    console.log(`Declined applicant ID: ${applicantId}`);
+    // TODO: Wire to API: researchAPI.declineApplicant(id, applicantId)
+    alert(`דחית מועמד ${applicantId}`);
   };
 
   const handleDownloadContract = async () => {
@@ -204,8 +333,6 @@ const canApply = !canEditThis;
     navigate(`/research/${nextId}`, { state: { source: "real" } });
   };
 
-  const showEditButton = isMentor && (!isReal || canEditThis);
-  const showMockToggle = isMentor;
 
   if (isReal && realLoading) {
     return (
@@ -354,6 +481,8 @@ const canApply = !canEditThis;
                 )}
               </div>
             )}
+
+
           </div>
 
           <div style={styles.sidebar}>
@@ -372,24 +501,139 @@ const canApply = !canEditThis;
             <SidebarItem label="שעות שבועיות" value={data.weeklyHours ? `${data.weeklyHours} שעות` : ""} />
             <SidebarItem label="גודל צוות" value={data.teamSize ? `${data.teamSize} מתלמדים` : ""} />
             <SidebarItem label="סוג נתונים" value={data.dataType} />
-            
-            <div style={{ marginTop: 24 }}>
-              {canApply ? (
-                <button style={styles.primaryBtn} onClick={() => alert("נשלחה הודעה למנהל המחקר!")}>
-                  הגש מועמדות למחקר
-                </button>
-              ) : null 
-              }
-            </div>
+
+            {!canEditThis && (
+              <div style={{ marginTop: 24 }}>
+                <button style={styles.primaryBtn}>הגש מועמדות למחקר</button>
+              </div>
+            )}
           </div>
         </div>
+
+        {/* --- Accepted Apprentices Section --- */}
+        {activeApprentices.length > 0 && (
+          <div style={{ marginTop: 32 }}>
+            <div 
+              className="accordion-header"
+              onClick={() => setIsApprenticesOpen(!isApprenticesOpen)}
+            >
+               <h3 style={{...styles.sectionTitle, marginBottom: 0}}>
+                 מתלמדים שהתקבלו
+                 <span style={{ fontWeight: 400, color: '#9ca3af', marginRight: 8, fontSize: '0.9em' }}>
+                   ({activeApprentices.length})
+                 </span>
+               </h3>
+               
+               <div style={{ 
+                 transition: 'transform 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
+                 transform: isApprenticesOpen ? 'rotate(0deg)' : 'rotate(180deg)',
+                 display: 'flex',
+                 marginTop: 4,
+                 color: '#6b7280'
+               }}>
+                 <ChevronIcon />
+               </div>
+            </div>
+
+            <div 
+              style={{
+                maxHeight: isApprenticesOpen ? '2000px' : '0',
+                opacity: isApprenticesOpen ? 1 : 0,
+                overflow: 'hidden',
+                transition: 'all 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
+              }}
+            >
+              <div className="apprentices-grid compact-view" style={{ marginTop: 16 }}>
+                {activeApprentices.map((student) => (
+                  <div key={student.id} onClick={() => setSelectedApprentice(student)}>
+                    <ApprenticeCard apprentice={student} />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* --- Pending Applicants Section (Mentor Only) --- */}
+        {canEditThis && activeApplicants.length > 0 && (
+          <div style={{ marginTop: 32 }}>
+            <div 
+              className="accordion-header"
+              onClick={() => setIsApplicantsOpen(!isApplicantsOpen)}
+            >
+               <h3 style={{...styles.sectionTitle, marginBottom: 0}}>
+                 מועמדים ממתינים
+                 <span style={{ fontWeight: 400, color: '#9ca3af', marginRight: 8, fontSize: '0.9em' }}>
+                   ({activeApplicants.length})
+                 </span>
+               </h3>
+               
+               <div style={{ 
+                 transition: 'transform 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
+                 transform: isApplicantsOpen ? 'rotate(0deg)' : 'rotate(180deg)',
+                 display: 'flex',
+                 marginTop: 4,
+                 color: '#6b7280'
+               }}>
+                 <ChevronIcon />
+               </div>
+            </div>
+
+            <div 
+              style={{
+                maxHeight: isApplicantsOpen ? '2000px' : '0',
+                opacity: isApplicantsOpen ? 1 : 0,
+                overflow: 'hidden',
+                transition: 'all 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
+              }}
+            >
+              <div className="apprentices-grid compact-view" style={{ marginTop: 16 }}>
+                {activeApplicants.map((applicant) => (
+                  <div key={applicant.id} className="applicant-card-wrapper">
+                    <div onClick={() => setSelectedApprentice(applicant)}>
+                      <ApprenticeCard apprentice={applicant} />
+                    </div>
+                    <div className="applicant-actions">
+                      <button 
+                        className="btn-approve" 
+                        onClick={(e) => { e.stopPropagation(); handleApproveApplicant(applicant.id); }}
+                      >
+                        ✓ אשר
+                      </button>
+                      <button 
+                        className="btn-decline" 
+                        onClick={(e) => { e.stopPropagation(); handleDeclineApplicant(applicant.id); }}
+                      >
+                        ✗ דחה
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
+      {/* --- Details Modal --- */}
+      <Modal
+        isOpen={!!selectedApprentice}
+        onClose={() => setSelectedApprentice(null)}
+        transparent={true}
+      >
+        {selectedApprentice && (
+          /* Render full card (without compact-view class context) so it shows all fields */
+          <div className="modal-card-wrapper">
+             <ApprenticeCard apprentice={selectedApprentice} />
+          </div>
+        )}
+      </Modal>
+
       <style>{`
-        .research-layout { 
-          display: grid; 
-          gap: 32px; 
-          grid-template-columns: 1fr; 
+        .research-layout {
+          display: grid;
+          gap: 32px;
+          grid-template-columns: 1fr;
         }
         .main-card {
           padding: 20px !important;
@@ -403,6 +647,80 @@ const canApply = !canEditThis;
           grid-template-columns: 1fr;
           gap: 16px;
         }
+
+        /* Apprentices Responsive Grid */
+        .apprentices-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+          gap: 16px;
+          margin-top: 8px;
+        }
+
+        /* --- Compact View Overrides (Local Only) --- */
+        .compact-view {
+          /* Force 1 column on mobile - completely override parent grid */
+          display: grid !important;
+          grid-template-columns: 1fr !important;
+          gap: 1rem !important;
+          justify-items: stretch !important;
+          align-items: stretch !important;
+        }
+
+        /* Force card to stretch to fill entire grid cell */
+        .compact-view > * {
+          width: 100% !important;
+          justify-self: stretch !important;
+        }
+
+        .compact-view .apprenticeCard {
+          width: 100% !important;
+          max-width: none !important;
+          min-width: 0 !important;
+          padding: 1.5rem; 
+          min-height: auto;
+          box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.04);
+          border-width: 1px; 
+          box-sizing: border-box;
+          display: block !important;
+          cursor: pointer;
+          transition: all 0.2s ease-in-out;
+        }
+
+        .compact-view .apprenticeCard:hover {
+          transform: translateY(-4px);
+          box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.1) !important;
+        }
+
+        /* Hide unwanted fields: Gender (1st), Email (class), Start Year (3rd) */
+        .compact-view .card-email-group,
+        .compact-view .apprenticeCard__labels > div:nth-of-type(1), /* Gender */
+        .compact-view .apprenticeCard__labels > div:nth-of-type(3)  /* Start Year */ {
+          display: none;
+        }
+        
+        /* Compact Header */
+        .compact-view .apprenticeCard__header {
+          padding-bottom: 1rem;
+          margin-bottom: 1rem;
+          gap: 1rem;
+        }
+        .compact-view .apprenticeCard__avatar {
+          width: 4.5rem;
+          height: 4.5rem;
+        }
+        .compact-view .apprenticeCard__title {
+          font-size: 1.2rem;
+        }
+
+        /* Compact Labels */
+        .compact-view .apprenticeCard__labels {
+          gap: 0.5rem;
+          font-size: 0.95rem;
+        }
+        .compact-view .apprenticeCard__labels strong {
+          font-size: 1rem;
+        }
+
         @media (min-width: 768px) {
           .research-layout { 
             grid-template-columns: 2fr 1fr; 
@@ -414,6 +732,83 @@ const canApply = !canEditThis;
           .details-grid {
             grid-template-columns: 1fr 1fr;
           }
+          /* Force 3 columns for compact view on desktop */
+          .compact-view {
+            grid-template-columns: repeat(3, 1fr) !important;
+            gap: 1rem !important;
+            justify-items: stretch !important;
+            align-items: stretch !important;
+          }
+        }
+
+        /* --- Modal Card Styling --- */
+        .modal-card-wrapper .apprenticeCard {
+          border: 1px solid rgba(0,0,0,0.06) !important;
+          box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
+          border-radius: 20px !important;
+          background: white;
+          width: 100%;
+          min-width: 320px;
+          max-width: 500px;
+          /* overflow: hidden; Removed to prevent scrollbars */
+        }
+        
+        /* Accordion Header Style */
+        .accordion-header {
+           cursor: pointer;
+           display: flex;
+           align-items: center;
+           justify-content: space-between;
+           padding: 16px 24px;
+           background-color: white;
+           border: 1px solid rgba(0,0,0,0.06);
+           border-radius: 12px;
+           transition: all 0.2s ease;
+           box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+        }
+        .accordion-header:hover {
+           background-color: #f8f9fa;
+           border-color: #d1d5db;
+           transform: translateY(-1px);
+           box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+
+        /* Action Buttons for Applicants */
+        .applicant-card-wrapper {
+          display: flex;
+          flex-direction: column;
+        }
+        .applicant-actions {
+          display: flex;
+          gap: 8px;
+          margin-top: 12px;
+          padding: 0 8px;
+        }
+        .applicant-actions button {
+          flex: 1;
+          padding: 10px 16px;
+          border-radius: 8px;
+          font-weight: 600;
+          font-size: 14px;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          border: none;
+        }
+        .btn-approve {
+          background-color: #10b981;
+          color: white;
+        }
+        .btn-approve:hover {
+          background-color: #059669;
+          transform: translateY(-1px);
+        }
+        .btn-decline {
+          background-color: #ef4444;
+          color: white;
+        }
+        .btn-decline:hover {
+          background-color: #dc2626;
+          transform: translateY(-1px);
         }
       `}</style>
     </div>
@@ -457,6 +852,22 @@ const EditIcon = () => (
   >
     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
     <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+  </svg>
+);
+
+const ChevronIcon = () => (
+  <svg 
+    width="20" 
+    height="20" 
+    viewBox="0 0 24 24" 
+    fill="none" 
+    stroke="currentColor" 
+    strokeWidth="3" 
+    strokeLinecap="round" 
+    strokeLinejoin="round"
+    color="#2C2C6C"
+  >
+    <path d="M6 9l6 6 6-6" />
   </svg>
 );
 
