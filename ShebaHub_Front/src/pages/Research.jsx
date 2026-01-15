@@ -463,19 +463,13 @@ export default function Research() {
             )}
 
             {showEditButton && (
-              <>
+            
                 <button onClick={handleEditClick} style={styles.editButton}>
                   <EditIcon />
                   עריכה
                 </button>
-                <button
-                  style={styles.deleteButton}
-                  onClick={handleDeleteResearch} 
-                >
-                  <DeleteIcon />
-                  מחיקת המחקר
-                </button>
-              </>
+             
+              
             )}
           </div>
         </div>
@@ -724,6 +718,18 @@ export default function Research() {
             </div>
           </div>
         )}
+
+
+        <div style={styles.bottomActionsContainer}>
+           <button 
+             style={styles.deleteButton} 
+             onClick={handleDeleteResearch}
+           >
+             <DeleteIcon />
+             מחיקת המחקר
+           </button>
+        </div>
+     
       </div>
 
       {/* --- Details Modal --- */}
@@ -1187,5 +1193,15 @@ const styles = {
     transition: "0.2s",
     whiteSpace: "nowrap",
     marginRight: 8, // רווח קטן מכפתור העריכה
+  },
+
+  bottomActionsContainer: {
+    display: "flex",          // משתמשים ב-Flexbox
+    justifyContent: "center", // מרכוז אופקי
+    alignItems: "center",     // מרכוז אנכי
+    marginTop: "40px",        // רווח מהתוכן שמעל
+    paddingTop: "20px",       // רווח פנימי
+    borderTop: "1px solid #eee", // קו עדין מפריד (אופציונלי, נותן תחושת סדר)
+    width: "100%",            // תופס את כל רוחב הכרטיס כדי שיוכל למרכז
   },
 };
