@@ -84,9 +84,9 @@ const researchData = {
   id: 1,
   researchName: "שימוש בבינה מלאכותית לזיהוי מוקדם של מחלות לב",
   description:
-    'מחקר זה מתמקד בפיתוח אלגוריתמים מתקדמים של למידת מכונה (Machine Learning) לצורך ניתוח נתוני אקג.',
+    "מחקר זה מתמקד בפיתוח אלגוריתמים מתקדמים של למידת מכונה (Machine Learning) לצורך ניתוח נתוני אקג.",
   researchArea: "קרדיולוגיה, מדעי הנתונים",
-  mentors: 'פרופ\' דניאל כהן, ד"ר רונית לוי',
+  mentors: "פרופ' דניאל כהן, ד\"ר רונית לוי",
   teamSize: 4,
   startDate: "2023-11-01",
   weeklyHours: 10,
@@ -103,7 +103,7 @@ const researchData = {
   dataType: "רטרוספקטיבי",
   contractFileName: "Research_Contract_v2.pdf",
   apprentices: mockApprentices, // Attach mock apprentices to the mock research
-  applicants: mockApplicants,   // Attach mock applicants
+  applicants: mockApplicants, // Attach mock applicants
 };
 
 export default function Research() {
@@ -188,7 +188,8 @@ export default function Research() {
         const data = await researchAPI.getResearch(id);
         if (!cancelled) setRealResearch(data);
       } catch (err) {
-        if (!cancelled) setRealError(err?.data?.detail || "לא הצלחתי לטעון את המחקר");
+        if (!cancelled)
+          setRealError(err?.data?.detail || "לא הצלחתי לטעון את המחקר");
       } finally {
         if (!cancelled) setRealLoading(false);
       }
@@ -238,7 +239,8 @@ export default function Research() {
   /**
    * Determine key logic values
    */
-  const canEditThis = isReal && myResearches.some((r) => String(r.id) === String(id));
+  const canEditThis =
+    isReal && myResearches.some((r) => String(r.id) === String(id));
   const showEditButton = isMentor && (!isReal || canEditThis);
   const showMockToggle = isMentor;
 
@@ -277,13 +279,30 @@ export default function Research() {
     return [];
   }, [data]);
 
-
   const handleEditClick = () => {
     if (isReal && id && myResearches.some((r) => String(r.id) === String(id))) {
       navigate(`/research/${id}/edit`, { state: { source: "real" } });
       return;
     }
     if (isMentor) navigate("/create-research");
+  };
+
+  // handle delete research
+  const handleDeleteResearch = () => {
+    console.log(" מנסה למחוק מחקר...");
+
+    console.log("Research ID to delete:", id);
+
+    const confirmDelete = window.confirm(
+      `האם אתה בטוח שברצונך למחוק את מחקר מספר ${id}?`
+    );
+
+    if (confirmDelete) {
+      console.log("Action: User confirmed deletion of ID:", id);
+      alert(`נשלחה בקשת מחיקה עבור מחקר מספר: ${id}`);
+    } else {
+      console.log("Action: User cancelled deletion.");
+    }
   };
 
   const handleToggleReal = () => {
@@ -298,20 +317,19 @@ export default function Research() {
     alert(`אישרת מועמד ${applicantId}`);
   };
 
-
   const handleApplyToResearch = () => {
-  // נבדוק קודם אם יש משתמש מחובר כדי למנוע שגיאות
-  if (user && user.id) {
-    console.log("Applying for research...");
-    console.log("User ID of applicant:", user.id);
-    console.log("Research ID:", id); // ה-id של המחקר הנוכחי שמגיע מה-URL
-    
-    alert(`הגשת מועמדות נשלחה עבור משתמש מספר: ${user.id}`);
-  } else {
-    console.log("Error: No user found");
-    alert("עליך להיות מחובר כדי להגיש מועמדות");
-  }
-};
+    // נבדוק קודם אם יש משתמש מחובר כדי למנוע שגיאות
+    if (user && user.id) {
+      console.log("Applying for research...");
+      console.log("User ID of applicant:", user.id);
+      console.log("Research ID:", id); // ה-id של המחקר הנוכחי שמגיע מה-URL
+
+      alert(`הגשת מועמדות נשלחה עבור משתמש מספר: ${user.id}`);
+    } else {
+      console.log("Error: No user found");
+      alert("עליך להיות מחובר כדי להגיש מועמדות");
+    }
+  };
 
   const handleDeclineApplicant = (applicantId) => {
     console.log(`Declined applicant ID: ${applicantId}`);
@@ -348,7 +366,6 @@ export default function Research() {
     navigate(`/research/${nextId}`, { state: { source: "real" } });
   };
 
-
   if (isReal && realLoading) {
     return (
       <div style={styles.page} dir="rtl">
@@ -364,7 +381,9 @@ export default function Research() {
       <div style={styles.page} dir="rtl">
         <div style={styles.header}>
           <div style={styles.title}>שגיאה</div>
-          <div style={{ marginTop: 10, color: "#b91c1c", fontWeight: 700 }}>{realError}</div>
+          <div style={{ marginTop: 10, color: "#b91c1c", fontWeight: 700 }}>
+            {realError}
+          </div>
         </div>
       </div>
     );
@@ -391,7 +410,12 @@ export default function Research() {
         <div className="action-bar" style={styles.actionBar}>
           <div
             className="status-group"
-            style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}
+            style={{
+              display: "flex",
+              gap: 10,
+              alignItems: "center",
+              flexWrap: "wrap",
+            }}
           >
             <span style={styles.statusBadge}>{data.status}</span>
             <span style={styles.idBadge}>ID: {data.helsinkiApproval}</span>
@@ -439,16 +463,32 @@ export default function Research() {
             )}
 
             {showEditButton && (
-              <button onClick={handleEditClick} style={styles.editButton}>
-                <EditIcon />
-                עריכה
-              </button>
+              <>
+                <button onClick={handleEditClick} style={styles.editButton}>
+                  <EditIcon />
+                  עריכה
+                </button>
+                <button
+                  style={styles.deleteButton}
+                  onClick={handleDeleteResearch} 
+                >
+                  <DeleteIcon />
+                  מחיקת המחקר
+                </button>
+              </>
             )}
           </div>
         </div>
 
         <div className="research-layout">
-          <div style={{ display: "flex", flexDirection: "column", gap: 24, minWidth: 0 }}>
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: 24,
+              minWidth: 0,
+            }}
+          >
             <Section title="תיאור המחקר">
               <p style={styles.text}>{data.description}</p>
             </Section>
@@ -486,7 +526,10 @@ export default function Research() {
                   <div style={styles.fileAction}>לחץ להורדת חוזה</div>
                 </div>
                 {data.contractUrl ? (
-                  <button onClick={handleDownloadContract} style={styles.downloadBtn}>
+                  <button
+                    onClick={handleDownloadContract}
+                    style={styles.downloadBtn}
+                  >
                     הורדה
                   </button>
                 ) : (
@@ -496,8 +539,6 @@ export default function Research() {
                 )}
               </div>
             )}
-
-
           </div>
 
           <div style={styles.sidebar}>
@@ -510,18 +551,34 @@ export default function Research() {
             <SidebarItem label="מנחים" value={data.mentors} />
             <SidebarItem
               label="תאריך התחלה"
-              value={data.startDate ? new Date(data.startDate).toLocaleDateString("he-IL") : ""}
+              value={
+                data.startDate
+                  ? new Date(data.startDate).toLocaleDateString("he-IL")
+                  : ""
+              }
             />
-            <SidebarItem label="משך המחקר" value={data.durationWeeks ? `${data.durationWeeks} שבועות` : ""} />
-            <SidebarItem label="שעות שבועיות" value={data.weeklyHours ? `${data.weeklyHours} שעות` : ""} />
-            <SidebarItem label="גודל צוות" value={data.teamSize ? `${data.teamSize} מתלמדים` : ""} />
+            <SidebarItem
+              label="משך המחקר"
+              value={data.durationWeeks ? `${data.durationWeeks} שבועות` : ""}
+            />
+            <SidebarItem
+              label="שעות שבועיות"
+              value={data.weeklyHours ? `${data.weeklyHours} שעות` : ""}
+            />
+            <SidebarItem
+              label="גודל צוות"
+              value={data.teamSize ? `${data.teamSize} מתלמדים` : ""}
+            />
             <SidebarItem label="סוג נתונים" value={data.dataType} />
 
             {!canEditThis && (
               <div style={{ marginTop: 24 }}>
-                <button style={styles.primaryBtn}
-                onClick={handleApplyToResearch}
-                >הגש מועמדות למחקר</button>
+                <button
+                  style={styles.primaryBtn}
+                  onClick={handleApplyToResearch}
+                >
+                  הגש מועמדות למחקר
+                </button>
               </div>
             )}
           </div>
@@ -530,39 +587,56 @@ export default function Research() {
         {/* --- Accepted Apprentices Section --- */}
         {activeApprentices.length > 0 && (
           <div style={{ marginTop: 32 }}>
-            <div 
+            <div
               className="accordion-header"
               onClick={() => setIsApprenticesOpen(!isApprenticesOpen)}
             >
-               <h3 style={{...styles.sectionTitle, marginBottom: 0}}>
-                 מתלמדים שהתקבלו
-                 <span style={{ fontWeight: 400, color: '#9ca3af', marginRight: 8, fontSize: '0.9em' }}>
-                   ({activeApprentices.length})
-                 </span>
-               </h3>
-               
-               <div style={{ 
-                 transition: 'transform 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
-                 transform: isApprenticesOpen ? 'rotate(0deg)' : 'rotate(180deg)',
-                 display: 'flex',
-                 marginTop: 4,
-                 color: '#6b7280'
-               }}>
-                 <ChevronIcon />
-               </div>
+              <h3 style={{ ...styles.sectionTitle, marginBottom: 0 }}>
+                מתלמדים שהתקבלו
+                <span
+                  style={{
+                    fontWeight: 400,
+                    color: "#9ca3af",
+                    marginRight: 8,
+                    fontSize: "0.9em",
+                  }}
+                >
+                  ({activeApprentices.length})
+                </span>
+              </h3>
+
+              <div
+                style={{
+                  transition: "transform 0.5s cubic-bezier(0.4, 0, 0.2, 1)",
+                  transform: isApprenticesOpen
+                    ? "rotate(0deg)"
+                    : "rotate(180deg)",
+                  display: "flex",
+                  marginTop: 4,
+                  color: "#6b7280",
+                }}
+              >
+                <ChevronIcon />
+              </div>
             </div>
 
-            <div 
+            <div
               style={{
-                maxHeight: isApprenticesOpen ? '2000px' : '0',
+                maxHeight: isApprenticesOpen ? "2000px" : "0",
                 opacity: isApprenticesOpen ? 1 : 0,
-                overflow: 'hidden',
-                transition: 'all 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
+                overflow: "hidden",
+                transition: "all 0.6s cubic-bezier(0.4, 0, 0.2, 1)",
               }}
             >
-              <div className="apprentices-grid compact-view" style={{ marginTop: 16 }}>
+              <div
+                className="apprentices-grid compact-view"
+                style={{ marginTop: 16 }}
+              >
                 {activeApprentices.map((student) => (
-                  <div key={student.id} onClick={() => setSelectedApprentice(student)}>
+                  <div
+                    key={student.id}
+                    onClick={() => setSelectedApprentice(student)}
+                  >
                     <ApprenticeCard apprentice={student} />
                   </div>
                 ))}
@@ -574,52 +648,72 @@ export default function Research() {
         {/* --- Pending Applicants Section (Mentor Only) --- */}
         {canEditThis && activeApplicants.length > 0 && (
           <div style={{ marginTop: 32 }}>
-            <div 
+            <div
               className="accordion-header"
               onClick={() => setIsApplicantsOpen(!isApplicantsOpen)}
             >
-               <h3 style={{...styles.sectionTitle, marginBottom: 0}}>
-                 מועמדים ממתינים
-                 <span style={{ fontWeight: 400, color: '#9ca3af', marginRight: 8, fontSize: '0.9em' }}>
-                   ({activeApplicants.length})
-                 </span>
-               </h3>
-               
-               <div style={{ 
-                 transition: 'transform 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
-                 transform: isApplicantsOpen ? 'rotate(0deg)' : 'rotate(180deg)',
-                 display: 'flex',
-                 marginTop: 4,
-                 color: '#6b7280'
-               }}>
-                 <ChevronIcon />
-               </div>
+              <h3 style={{ ...styles.sectionTitle, marginBottom: 0 }}>
+                מועמדים ממתינים
+                <span
+                  style={{
+                    fontWeight: 400,
+                    color: "#9ca3af",
+                    marginRight: 8,
+                    fontSize: "0.9em",
+                  }}
+                >
+                  ({activeApplicants.length})
+                </span>
+              </h3>
+
+              <div
+                style={{
+                  transition: "transform 0.5s cubic-bezier(0.4, 0, 0.2, 1)",
+                  transform: isApplicantsOpen
+                    ? "rotate(0deg)"
+                    : "rotate(180deg)",
+                  display: "flex",
+                  marginTop: 4,
+                  color: "#6b7280",
+                }}
+              >
+                <ChevronIcon />
+              </div>
             </div>
 
-            <div 
+            <div
               style={{
-                maxHeight: isApplicantsOpen ? '2000px' : '0',
+                maxHeight: isApplicantsOpen ? "2000px" : "0",
                 opacity: isApplicantsOpen ? 1 : 0,
-                overflow: 'hidden',
-                transition: 'all 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
+                overflow: "hidden",
+                transition: "all 0.6s cubic-bezier(0.4, 0, 0.2, 1)",
               }}
             >
-              <div className="apprentices-grid compact-view" style={{ marginTop: 16 }}>
+              <div
+                className="apprentices-grid compact-view"
+                style={{ marginTop: 16 }}
+              >
                 {activeApplicants.map((applicant) => (
                   <div key={applicant.id} className="applicant-card-wrapper">
                     <div onClick={() => setSelectedApprentice(applicant)}>
                       <ApprenticeCard apprentice={applicant} />
                     </div>
                     <div className="applicant-actions">
-                      <button 
-                        className="btn-approve" 
-                        onClick={(e) => { e.stopPropagation(); handleApproveApplicant(applicant.id); }}
+                      <button
+                        className="btn-approve"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleApproveApplicant(applicant.id);
+                        }}
                       >
                         ✓ אשר
                       </button>
-                      <button 
-                        className="btn-decline" 
-                        onClick={(e) => { e.stopPropagation(); handleDeclineApplicant(applicant.id); }}
+                      <button
+                        className="btn-decline"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeclineApplicant(applicant.id);
+                        }}
                       >
                         ✗ דחה
                       </button>
@@ -641,7 +735,7 @@ export default function Research() {
         {selectedApprentice && (
           /* Render full card (without compact-view class context) so it shows all fields */
           <div className="modal-card-wrapper">
-             <ApprenticeCard apprentice={selectedApprentice} />
+            <ApprenticeCard apprentice={selectedApprentice} />
           </div>
         )}
       </Modal>
@@ -872,15 +966,33 @@ const EditIcon = () => (
   </svg>
 );
 
+const DeleteIcon = () => (
+  <svg
+    width="14"
+    height="14"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    style={{ marginLeft: 6 }}
+  >
+    <path d="M3 6h18"></path>
+    <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+    <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+  </svg>
+);
+
 const ChevronIcon = () => (
-  <svg 
-    width="20" 
-    height="20" 
-    viewBox="0 0 24 24" 
-    fill="none" 
-    stroke="currentColor" 
-    strokeWidth="3" 
-    strokeLinecap="round" 
+  <svg
+    width="20"
+    height="20"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="3"
+    strokeLinecap="round"
     strokeLinejoin="round"
     color="#2C2C6C"
   >
@@ -900,7 +1012,13 @@ const styles = {
   },
   header: { textAlign: "center", marginBottom: 24 },
   title: { fontSize: 24, fontWeight: 800, marginBottom: 8, lineHeight: 1.2 },
-  titleUnderline: { width: 50, height: 4, background: ACCENT_TEAL, margin: "0 auto", borderRadius: 2 },
+  titleUnderline: {
+    width: 50,
+    height: 4,
+    background: ACCENT_TEAL,
+    margin: "0 auto",
+    borderRadius: 2,
+  },
 
   card: {
     border: "1px solid rgba(0,0,0,0.06)",
@@ -921,7 +1039,9 @@ const styles = {
 
   actionBar: {
     display: "flex",
-    justifyContent: "space-between",
+    justifyContent: "center", 
+    flexWrap: "wrap",        
+    gap: 20,                  
     alignItems: "center",
     marginBottom: 24,
     paddingBottom: 16,
@@ -958,16 +1078,49 @@ const styles = {
   },
 
   text: { lineHeight: 1.6, color: "#444", fontSize: 15, margin: 0 },
-  infoBox: { background: BG_GRAY, padding: 16, borderRadius: 12, border: "1px solid #eee" },
-  infoTitle: { fontSize: 14, fontWeight: 700, margin: "0 0 8px 0", color: THEME_COLOR },
+  infoBox: {
+    background: BG_GRAY,
+    padding: 16,
+    borderRadius: 12,
+    border: "1px solid #eee",
+  },
+  infoTitle: {
+    fontSize: 14,
+    fontWeight: 700,
+    margin: "0 0 8px 0",
+    color: THEME_COLOR,
+  },
   divider: { height: 1, background: "#ddd", margin: "16px 0" },
 
   tagsContainer: { display: "flex", flexWrap: "wrap", gap: 8 },
-  skillTag: { background: "white", border: "1px solid #ddd", padding: "4px 12px", borderRadius: 20, fontSize: 13, color: "#555" },
+  skillTag: {
+    background: "white",
+    border: "1px solid #ddd",
+    padding: "4px 12px",
+    borderRadius: 20,
+    fontSize: 13,
+    color: "#555",
+  },
 
-  sidebar: { background: "#fdfdfd", padding: 20, borderRadius: 12, border: "1px solid #eee" },
-  sidebarHeaderTitle: { fontSize: 16, fontWeight: 700, marginBottom: 16, color: THEME_COLOR },
-  sidebarItem: { display: "flex", justifyContent: "space-between", marginBottom: 12, fontSize: 14, gap: 10 },
+  sidebar: {
+    background: "#fdfdfd",
+    padding: 20,
+    borderRadius: 12,
+    border: "1px solid #eee",
+  },
+  sidebarHeaderTitle: {
+    fontSize: 16,
+    fontWeight: 700,
+    marginBottom: 16,
+    color: THEME_COLOR,
+  },
+  sidebarItem: {
+    display: "flex",
+    justifyContent: "space-between",
+    marginBottom: 12,
+    fontSize: 14,
+    gap: 10,
+  },
   sidebarLabel: { color: "#666", flexShrink: 0 },
   sidebarValue: { fontWeight: 600, color: THEME_COLOR, textAlign: "left" },
 
@@ -987,7 +1140,12 @@ const styles = {
   },
   fileIcon: { fontSize: 20 },
   fileInfo: { flex: 1, minWidth: "150px" },
-  fileName: { fontWeight: 600, fontSize: 13, color: THEME_COLOR, wordBreak: "break-all" },
+  fileName: {
+    fontWeight: 600,
+    fontSize: 13,
+    color: THEME_COLOR,
+    wordBreak: "break-all",
+  },
   fileAction: { fontSize: 11, color: ACCENT_TEAL },
   downloadBtn: {
     padding: "6px 12px",
@@ -1013,5 +1171,21 @@ const styles = {
     border: "none",
     boxShadow: "0 4px 12px rgba(44, 44, 108, 0.2)",
     transition: "0.2s",
+  },
+
+  deleteButton: {
+    display: "flex",
+    alignItems: "center",
+    padding: "6px 14px",
+    borderRadius: 20,
+    border: "none",
+    background: "#000000", // שחור
+    color: "#ffffff", // לבן
+    fontSize: 13,
+    fontWeight: "600",
+    cursor: "pointer",
+    transition: "0.2s",
+    whiteSpace: "nowrap",
+    marginRight: 8, // רווח קטן מכפתור העריכה
   },
 };
