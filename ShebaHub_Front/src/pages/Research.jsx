@@ -298,6 +298,21 @@ export default function Research() {
     alert(`אישרת מועמד ${applicantId}`);
   };
 
+
+  const handleApplyToResearch = () => {
+  // נבדוק קודם אם יש משתמש מחובר כדי למנוע שגיאות
+  if (user && user.id) {
+    console.log("Applying for research...");
+    console.log("User ID of applicant:", user.id);
+    console.log("Research ID:", id); // ה-id של המחקר הנוכחי שמגיע מה-URL
+    
+    alert(`הגשת מועמדות נשלחה עבור משתמש מספר: ${user.id}`);
+  } else {
+    console.log("Error: No user found");
+    alert("עליך להיות מחובר כדי להגיש מועמדות");
+  }
+};
+
   const handleDeclineApplicant = (applicantId) => {
     console.log(`Declined applicant ID: ${applicantId}`);
     // TODO: Wire to API: researchAPI.declineApplicant(id, applicantId)
@@ -504,7 +519,9 @@ export default function Research() {
 
             {!canEditThis && (
               <div style={{ marginTop: 24 }}>
-                <button style={styles.primaryBtn}>הגש מועמדות למחקר</button>
+                <button style={styles.primaryBtn}
+                onClick={handleApplyToResearch}
+                >הגש מועמדות למחקר</button>
               </div>
             )}
           </div>
