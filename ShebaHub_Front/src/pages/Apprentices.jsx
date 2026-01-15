@@ -20,6 +20,7 @@ const mockApprentices = [
     medical_level: "סטודנט שנה 3",
     Educational_institution: "אוניברסיטת תל אביב - הפקולטה לרפואה",
     profileImage: img1,
+    availability: "זמינה למחקר קליני",
   },
   {
     name: "יותם לוי",
@@ -30,6 +31,7 @@ const mockApprentices = [
     medical_level: "סטאזר",
     Educational_institution: "האוניברסיטה העברית והדסה עין כרם",
     profileImage: img2,
+    availability: "זמינה למחקר קליני",
   },
   {
     name: "מיכל שמש",
@@ -40,6 +42,7 @@ const mockApprentices = [
     medical_level: "מתמחה בביורפואה",
     Educational_institution: "אוניברסיטת בן-גוריון בנגב",
     profileImage: img3,
+    availability: "זמינה למחקר קליני",
   },
 ];
 
@@ -116,7 +119,16 @@ export default function Apprentices() {
 
   return (
     <div className="apprentices-page" dir="rtl">
-      <h1 className="apprentices-title">מתלמדים</h1>
+
+      <div className="page-intro-wrapper">
+          <div className="page-intro-card">
+            <h1 className="page-intro-title">הכירו את שותפי המחקר הבאים שלכם</h1>            
+            <p className="page-intro-description">
+              כאן תוכלו למצוא את דור העתיד של החוקרים בשיבא. המאגר מציג סטודנטים לרפואה 
+              ומתלמדים המשתלבים בפרויקטים מחקריים במחלקות השונות.
+            </p>
+          </div>
+        </div>
 
       <div style={{ display: "flex", justifyContent: "center", marginBottom: 14 }}>
         <button
@@ -156,11 +168,12 @@ export default function Apprentices() {
         </div>
       </div>
 
-      <div className="cards-grid">
-        {filteredApprentices.slice(0, 20).map((a) => (
-          <ApprenticeCard key={a.id} apprentice={a} />
-        ))}
-      </div>
+      {/* שינוי כאן: הוספת ה-Class הייעודי */}
+    <div className="cards-grid apprentices-layout">
+      {filteredApprentices.slice(0, 20).map((a) => (
+        <ApprenticeCard key={a.id} apprentice={a} />
+      ))}
+    </div>
 
       {filteredApprentices.length === 0 && (
         <p className="apprentices-no-results">לא נמצאו תוצאות.</p>
