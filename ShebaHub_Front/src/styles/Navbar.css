@@ -204,3 +204,8 @@
     transform: rotate(-45deg) translate(5px, -6px);
   }
 }
+/* Force navbar links order to be RIGHT -> LEFT */
+.navbar-group {
+  display: flex;
+  flex-direction: row-reverse;
+}
