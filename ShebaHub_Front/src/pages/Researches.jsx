@@ -136,7 +136,17 @@ export default function Researches() {
 
   return (
     <div className="researches-page" dir="rtl">
-      <h1 className="researches-title">מחקרים</h1>
+      <div className="page-intro-card">
+        <h1 className="page-intro-title">זירת המחקר של שיבא: פרויקטים, מחקרים והזדמנויות</h1>
+        
+        <div className="page-intro-separator"></div>
+        
+        <p className="page-intro-description">
+          לפניכם מאגר המחקרים הפעילים והעתידיים בבית החולים. כאן תוכלו להיחשף לחזית העשייה המדעית, 
+          לעיין בפרטי המחקרים במחלקות השונות ולמצוא פרויקטים המחפשים שותפים או ליווי מחקרי.
+        </p>
+      </div>
+
 
       <div style={{ display: "flex", justifyContent: "center", marginBottom: 14 }}>
         <button
