@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import ResearchCard from "../components/researchCard";
 import { researchAPI } from "../services/api";
 import { useAuth } from "../context/AuthContext";
+import MyResearchesApprentice from "./MyResearchesApprentice";
 
 export default function MyResearches() {
   const { user } = useAuth();
@@ -94,10 +95,10 @@ export default function MyResearches() {
 
       {checkingRole && <p className="researches-no-results">טוען...</p>}
 
-      {!checkingRole && !isMentor && (
-        <p className="researches-no-results">לא רשום לאף מחקר כרגע.</p>
-      )}
+      {/* 👇 מתלמד - הכל עבר לקובץ חדש */}
+      {!checkingRole && !isMentor && <MyResearchesApprentice />}
 
+      {/* 👇 מנחה - נשאר בדיוק כמו שהיה */}
       {!checkingRole && isMentor && loading && (
         <p className="researches-no-results">טוען את המחקרים שלך...</p>
       )}
@@ -106,7 +107,9 @@ export default function MyResearches() {
       )}
 
       {!checkingRole && isMentor && !loading && !error && cards.length === 0 && (
-        <p className="researches-no-results" >אין לך מחקרים עדיין. לך לעמוד "ליצירת מחקר".</p>
+        <p className="researches-no-results">
+          אין לך מחקרים עדיין. לך לעמוד "ליצירת מחקר".
+        </p>
       )}
 
       {!checkingRole && isMentor && cards.length > 0 && (
