@@ -6,6 +6,44 @@ import ShebaNavbarLogo from "../assets/ShebaNavbarLogo.png";
 import { useAuth } from "../context/AuthContext";
 import UserProfileIcon from "../assets/user_profile.png";
 import useMediaQuery from "../hooks/useMediaQuery";
+import { FaSun, FaMoon } from "react-icons/fa"; // אייקונים ליום ולילה
+
+// ==========================================
+// 0. THEME TOGGLE COMPONENT (NEW)
+// ==========================================
+const ThemeToggle = () => {
+  const [theme, setTheme] = useState(localStorage.getItem("theme") || "light");
+
+  useEffect(() => {
+    // עדכון ה-HTML והזיכרון המקומי בכל פעם שהמשתנה משתנה
+    document.documentElement.setAttribute("data-theme", theme);
+    localStorage.setItem("theme", theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme((prev) => (prev === "light" ? "dark" : "light"));
+  };
+
+  return (
+    <button
+      onClick={toggleTheme}
+      style={{
+        background: "transparent",
+        border: "none",
+        cursor: "pointer",
+        fontSize: "1.2rem",
+        color: "var(--text-color)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        marginLeft: "10px", // רווח קטן מהאלמנטים האחרים
+      }}
+      title="שינוי מצב תצוגה"
+    >
+      {theme === "light" ? <FaMoon /> : <FaSun style={{ color: "orange" }} />}
+    </button>
+  );
+};
 
 // ==========================================
 // 1. REUSABLE PROFILE COMPONENT
@@ -13,7 +51,6 @@ import useMediaQuery from "../hooks/useMediaQuery";
 const ProfileMenu = ({ closeParentMenu, onOpen, isOpen }) => {
   const { user, logout } = useAuth();
   const [isMentor, setIsMentor] = useState(false);
-  // If 'isOpen' is controlled by parent, use it. Otherwise use local state.
   const [localIsOpen, setLocalIsOpen] = useState(false);
   const isControlled = isOpen !== undefined;
   const showMenu = isControlled ? isOpen : localIsOpen;
@@ -23,13 +60,12 @@ const ProfileMenu = ({ closeParentMenu, onOpen, isOpen }) => {
   const toggleOpen = (e) => {
     e.preventDefault();
     if (isControlled) {
-      onOpen(!showMenu); // Tell parent to toggle
+      onOpen(!showMenu);
     } else {
       setLocalIsOpen(!localIsOpen);
     }
   };
 
-  // Close when clicking outside
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (menuRef.current && !menuRef.current.contains(e.target)) {
@@ -43,24 +79,17 @@ const ProfileMenu = ({ closeParentMenu, onOpen, isOpen }) => {
 
   useEffect(() => {
     let cancelled = false;
-
     const check = async () => {
       if (!user) {
         if (!cancelled) setIsMentor(false);
         return;
       }
-
-      // Prefer local flag if present
       if (typeof user.has_mentor_profile === "boolean") {
         if (!cancelled) setIsMentor(user.has_mentor_profile);
         return;
       }
-
-      // Fallback: if the flag isn't present in localStorage user
-      // (older sessions), keep mentor-only links hidden.
       if (!cancelled) setIsMentor(false);
     };
-
     check();
     return () => {
       cancelled = true;
@@ -68,12 +97,25 @@ const ProfileMenu = ({ closeParentMenu, onOpen, isOpen }) => {
   }, [user]);
 
   return (
-    <div className="navbar-profile" ref={menuRef} style={{ position: "relative" }}>
-      <Link to="#" className="navbar-link navbar-profile-icon" onClick={toggleOpen}>
+    <div
+      className="navbar-profile"
+      ref={menuRef}
+      style={{ position: "relative" }}
+    >
+      <Link
+        to="#"
+        className="navbar-link navbar-profile-icon"
+        onClick={toggleOpen}
+      >
         <img
           src={UserProfileIcon}
           alt="User Profile"
-          style={{ width: "35px", height: "35px", objectFit: "contain", borderRadius: "50%" }}
+          style={{
+            width: "35px",
+            height: "35px",
+            objectFit: "contain",
+            borderRadius: "50%",
+          }}
         />
       </Link>
 
@@ -85,57 +127,78 @@ const ProfileMenu = ({ closeParentMenu, onOpen, isOpen }) => {
             top: "calc(100% + 15px)",
             right: -10,
             minWidth: "220px",
-            background: "#fff",
-            border: "1px solid #E6E8F0",
+            background: "var(--card-bg)", // שימוש במשתנה החדש
+            border: "1px solid var(--border-color)", // שימוש במשתנה החדש
             borderRadius: "12px",
             boxShadow: "0 12px 30px rgba(0,0,0,0.15)",
             zIndex: 9999,
             textAlign: "right",
-            // --- ADD THESE LINES BELOW ---
-            display: "flex",         // Makes the container a flexbox
-            flexDirection: "column", // Stacks children vertically
-            padding: "10px 0",       // Adds breathing room top/bottom
-            overflow: "hidden"       // Keeps corners rounded
-            // -----------------------------
+            display: "flex",
+            flexDirection: "column",
+            padding: "10px 0",
+            overflow: "hidden",
           }}
         >
-          {/* I removed the extra "dropdown-links-container" div to keep it simple. 
-              The Flex styles above will now apply directly to these Links. */}
-            
-            <Link 
-              to={`/user/${user.id || "me"}`} 
-              className="navbar-link" 
-              onClick={closeParentMenu}
-              // Optional: Add padding to links so they are easier to click
-              style={{ padding: "10px 20px", display: "block" }} 
-            >
-              הפרופיל האישי
-            </Link>
-            
-            <Link to="/my-researches" className="navbar-link" onClick={closeParentMenu} style={{ padding: "10px 20px", display: "block" }}>
-              המחקרים שלי
-            </Link>
+          <Link
+            to={`/user/${user.id || "me"}`}
+            className="navbar-link"
+            onClick={closeParentMenu}
+            style={{
+              padding: "10px 20px",
+              display: "block",
+              color: "var(--text-color)",
+            }}
+          >
+            הפרופיל האישי
+          </Link>
 
-            {isMentor && (
-              <>
-                <Link to="/create-research" className="navbar-link" onClick={closeParentMenu} style={{ padding: "10px 20px", display: "block" }}>
-                  ליצירת מחקר
-                </Link>
-              </>
-            )}
-            
-            <Link
-              to="/"
-              className="navbar-link"
-              onClick={(e) => {
-                e.preventDefault();
-                logout();
-                if (closeParentMenu) closeParentMenu();
-              }}
-              style={{ color: "red", padding: "10px 20px", display: "block", borderTop: "1px solid #eee" }}
-            >
-              התנתקות
-            </Link>
+          <Link
+            to="/my-researches"
+            className="navbar-link"
+            onClick={closeParentMenu}
+            style={{
+              padding: "10px 20px",
+              display: "block",
+              color: "var(--text-color)",
+            }}
+          >
+            המחקרים שלי
+          </Link>
+
+          {isMentor && (
+            <>
+              <Link
+                to="/create-research"
+                className="navbar-link"
+                onClick={closeParentMenu}
+                style={{
+                  padding: "10px 20px",
+                  display: "block",
+                  color: "var(--text-color)",
+                }}
+              >
+                ליצירת מחקר
+              </Link>
+            </>
+          )}
+
+          <Link
+            to="/"
+            className="navbar-link"
+            onClick={(e) => {
+              e.preventDefault();
+              logout();
+              if (closeParentMenu) closeParentMenu();
+            }}
+            style={{
+              color: "red",
+              padding: "10px 20px",
+              display: "block",
+              borderTop: "1px solid var(--border-color)",
+            }}
+          >
+            התנתקות
+          </Link>
         </div>
       )}
     </div>
@@ -149,7 +212,13 @@ const DesktopNavbar = () => {
   const { user } = useAuth();
 
   return (
-    <nav className="navbar desktop-view">
+    <nav
+      className="navbar desktop-view"
+      style={{
+        backgroundColor: "var(--bg-color)",
+        borderBottom: "1px solid var(--border-color)",
+      }}
+    >
       <div className="navbar-logo-container">
         <Link to="/">
           <img src={ShebaNavbarLogo} alt="Logo" className="navbar-logo-image" />
@@ -157,12 +226,45 @@ const DesktopNavbar = () => {
       </div>
 
       <div className="navbar-links">
+        {/* הוספת כפתור מצב לילה */}
+        <ThemeToggle />
+
         <div className="navbar-group">
-          <Link to="/researches" className="navbar-link">מחקרים</Link>
-          <Link to="/apprentices" className="navbar-link">מתלמדים</Link>
-          <Link to="/mentors" className="navbar-link">מנחים</Link>
-          <Link to="/About" className="navbar-link">אודותינו</Link>
-          <Link to="/" className="navbar-link">דף בית</Link>
+          <Link
+            to="/researches"
+            className="navbar-link"
+            style={{ color: "var(--text-color)" }}
+          >
+            מחקרים
+          </Link>
+          <Link
+            to="/apprentices"
+            className="navbar-link"
+            style={{ color: "var(--text-color)" }}
+          >
+            מתלמדים
+          </Link>
+          <Link
+            to="/mentors"
+            className="navbar-link"
+            style={{ color: "var(--text-color)" }}
+          >
+            מנחים
+          </Link>
+          <Link
+            to="/About"
+            className="navbar-link"
+            style={{ color: "var(--text-color)" }}
+          >
+            אודותינו
+          </Link>
+          <Link
+            to="/"
+            className="navbar-link"
+            style={{ color: "var(--text-color)" }}
+          >
+            דף בית
+          </Link>
         </div>
 
         <div className="navbar-group">
@@ -170,8 +272,20 @@ const DesktopNavbar = () => {
             <ProfileMenu />
           ) : (
             <>
-              <Link to="/login" className="navbar-link">התחברות</Link>
-              <Link to="/register" className="navbar-link">הרשמה</Link>
+              <Link
+                to="/login"
+                className="navbar-link"
+                style={{ color: "var(--text-color)" }}
+              >
+                התחברות
+              </Link>
+              <Link
+                to="/register"
+                className="navbar-link"
+                style={{ color: "var(--text-color)" }}
+              >
+                הרשמה
+              </Link>
             </>
           )}
         </div>
@@ -181,24 +295,22 @@ const DesktopNavbar = () => {
 };
 
 // ==========================================
-// 3. MOBILE VIEW (UPDATED)
+// 3. MOBILE VIEW
 // ==========================================
 const MobileNavbar = () => {
   const { user } = useAuth();
-  
-  // State for the two menus
+
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
 
-  // Toggle Logic: Opening one closes the other
   const toggleHamburger = () => {
     setIsMenuOpen(!isMenuOpen);
-    if (!isMenuOpen) setIsProfileOpen(false); // Close profile if opening menu
+    if (!isMenuOpen) setIsProfileOpen(false);
   };
 
   const toggleProfile = (newState) => {
     setIsProfileOpen(newState);
-    if (newState) setIsMenuOpen(false); // Close menu if opening profile
+    if (newState) setIsMenuOpen(false);
   };
 
   const closeAll = () => {
@@ -207,51 +319,123 @@ const MobileNavbar = () => {
   };
 
   return (
-    <nav className="navbar mobile-view">
+    <nav
+      className="navbar mobile-view"
+      style={{
+        backgroundColor: "var(--bg-color)",
+        borderBottom: "1px solid var(--border-color)",
+      }}
+    >
       <div className="navbar-logo-container">
         <Link to="/" onClick={closeAll}>
           <img src={ShebaNavbarLogo} alt="Logo" className="navbar-logo-image" />
         </Link>
       </div>
 
-      {/* RIGHT SIDE CONTROLS: Profile + Hamburger */}
       <div className="mobile-actions">
-        
-        {/* 1. Profile Icon (Only if logged in) */}
+        {/* כפתור מצב לילה למובייל */}
+        <ThemeToggle />
+
         {user && (
-          <ProfileMenu 
-            isOpen={isProfileOpen} 
-            onOpen={toggleProfile} 
-            closeParentMenu={closeAll} 
+          <ProfileMenu
+            isOpen={isProfileOpen}
+            onOpen={toggleProfile}
+            closeParentMenu={closeAll}
           />
         )}
 
-        {/* 2. Hamburger Icon */}
         <button
           className={`hamburger-menu ${isMenuOpen ? "open" : ""}`}
           onClick={toggleHamburger}
+          style={{ color: "var(--text-color)" }}
         >
-          <span className="hamburger-line"></span>
-          <span className="hamburger-line"></span>
-          <span className="hamburger-line"></span>
+          <span
+            className="hamburger-line"
+            style={{ backgroundColor: "var(--text-color)" }}
+          ></span>
+          <span
+            className="hamburger-line"
+            style={{ backgroundColor: "var(--text-color)" }}
+          ></span>
+          <span
+            className="hamburger-line"
+            style={{ backgroundColor: "var(--text-color)" }}
+          ></span>
         </button>
       </div>
 
-      {/* MAIN SLIDING MENU (Links Only) */}
-      <div className={`navbar-links ${isMenuOpen ? "active" : ""}`}>
+      <div
+        className={`navbar-links ${isMenuOpen ? "active" : ""}`}
+        style={{ backgroundColor: "var(--bg-color)" }}
+      >
         <div className="navbar-group">
-          <Link to="/researches" className="navbar-link" onClick={closeAll}>מחקרים</Link>
-          <Link to="/apprentices" className="navbar-link" onClick={closeAll}>מתלמדים</Link>
-          <Link to="/mentors" className="navbar-link" onClick={closeAll}>מנחים</Link>
-          <Link to="/About" className="navbar-link" onClick={closeAll}>אודותינו</Link>
-          <Link to="/" className="navbar-link" onClick={closeAll}>דף בית</Link>
+          <Link
+            to="/researches"
+            className="navbar-link"
+            onClick={closeAll}
+            style={{ color: "var(--text-color)" }}
+          >
+            מחקרים
+          </Link>
+          <Link
+            to="/apprentices"
+            className="navbar-link"
+            onClick={closeAll}
+            style={{ color: "var(--text-color)" }}
+          >
+            מתלמדים
+          </Link>
+          <Link
+            to="/mentors"
+            className="navbar-link"
+            onClick={closeAll}
+            style={{ color: "var(--text-color)" }}
+          >
+            מנחים
+          </Link>
+          <Link
+            to="/About"
+            className="navbar-link"
+            onClick={closeAll}
+            style={{ color: "var(--text-color)" }}
+          >
+            אודותינו
+          </Link>
+          <Link
+            to="/"
+            className="navbar-link"
+            onClick={closeAll}
+            style={{ color: "var(--text-color)" }}
+          >
+            דף בית
+          </Link>
         </div>
 
-        {/* Login links if NOT logged in (if logged in, profile is in header) */}
         {!user && (
-          <div className="navbar-group" style={{ borderTop: "1px solid #eee", width: "100%", padding: "10px 0" }}>
-             <Link to="/login" className="navbar-link" onClick={closeAll}>התחברות</Link>
-             <Link to="/register" className="navbar-link" onClick={closeAll}>הרשמה</Link>
+          <div
+            className="navbar-group"
+            style={{
+              borderTop: "1px solid var(--border-color)",
+              width: "100%",
+              padding: "10px 0",
+            }}
+          >
+            <Link
+              to="/login"
+              className="navbar-link"
+              onClick={closeAll}
+              style={{ color: "var(--text-color)" }}
+            >
+              התחברות
+            </Link>
+            <Link
+              to="/register"
+              className="navbar-link"
+              onClick={closeAll}
+              style={{ color: "var(--text-color)" }}
+            >
+              הרשמה
+            </Link>
           </div>
         )}
       </div>
