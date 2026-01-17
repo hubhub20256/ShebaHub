@@ -16,7 +16,6 @@
 
 /* Main Page Container */
 .home-page {
-  min-height: 100vh;
   background: #ffffff;
   color: #0f172a;
   /* Font family inherited from index.css mostly, but explicit here if needed */

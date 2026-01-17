@@ -1,4 +1,10 @@
 /* src/index.css */
+:*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
 :root {
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
@@ -241,8 +247,8 @@ body,
 /* ======================================================= */
 
 [data-theme="dark"] .auth-page {
-  background-color: var(--bg-color) !important; /* משנה את הרקע הלבן לשחור */
-  min-height: 100vh; /* מוודא שזה תופס את כל הגובה */
+  background-color: var(--bg-color) !important;
+  min-height: unset !important;
 }
 
 /* ======================================================= */

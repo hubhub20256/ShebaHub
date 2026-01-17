@@ -169,9 +169,10 @@
   }
 
   .navbar-links.active {
-    max-height: 500px; /* Open state */
+    max-height: calc(100vh - 64px); /* Open state (fit viewport under navbar) */
     padding: 1rem 0;
     border-top-color: #eee;
+    overflow-y: auto;
   }
 
   /* Vertical Stacking for Groups/Links */
