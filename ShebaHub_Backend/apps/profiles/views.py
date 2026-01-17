@@ -40,6 +40,8 @@ from .serializers import (
     ReferenceSerializer,
     PublicMentorSerializer,
     PublicStudentSerializer,
+    PublicMentorDetailSerializer,
+    PublicStudentDetailSerializer,
 )
 from rest_framework.parsers import MultiPartParser, FormParser
 
@@ -70,13 +72,19 @@ def public_mentor_detail(request, mentor_id):
     try:
         mentor = (
             MentorProfile.objects
-            .select_related('user', 'specialty', 'institution')
-            .prefetch_related('degrees')
+            .select_related(
+                'user',
+                'academicRank',
+                'specialtyGroup',
+                'specialty',
+                'institution',
+            )
+            .prefetch_related('degrees', 'researchInterests', 'documents', 'recommendations')
             .get(id=mentor_id)
         )
     except MentorProfile.DoesNotExist:
         return Response({'detail': 'Mentor not found.'}, status=status.HTTP_404_NOT_FOUND)
-    return Response(PublicMentorSerializer(mentor, context={'request': request}).data)
+    return Response(PublicMentorDetailSerializer(mentor, context={'request': request}).data)
 
 
 @api_view(['GET'])
@@ -96,12 +104,22 @@ def public_student_detail(request, student_id):
     try:
         student = (
             StudentProfile.objects
-            .select_related('user', 'apprenticeStage', 'institution')
+            .select_related(
+                'user',
+                'apprenticeStage',
+                'institution',
+                'specialtyGroup',
+                'specialty',
+                'workType',
+                'participationMode',
+                'compensationPreference',
+            )
+            .prefetch_related('degrees', 'documents', 'recommendations')
             .get(id=student_id)
         )
     except StudentProfile.DoesNotExist:
         return Response({'detail': 'Student not found.'}, status=status.HTTP_404_NOT_FOUND)
-    return Response(PublicStudentSerializer(student, context={'request': request}).data)
+    return Response(PublicStudentDetailSerializer(student, context={'request': request}).data)
 
 
 # =============================================================================
@@ -249,17 +267,7 @@ def student_profile_me(request):
             context={'request': request}
         )
         
-        # Debug: print what was received
-        print("=== DEBUG: Received data ===")
-        print(request.data)
-        for k, v in request.data.items():
-            print(f"  {k}: {repr(v)} (type: {type(v).__name__})")
-        print("=== END DEBUG ===")
-        
         if not serializer.is_valid():
-            print("=== DEBUG: Validation errors ===")
-            print(serializer.errors)
-            print("=== END DEBUG ===")
             return Response(
                 {
                     'code': 'VALIDATION_ERROR',

@@ -256,7 +256,22 @@ export default function Mentors() {
     return () => { isMounted = false; };
   }, [showReal, realMentors.length]);
 
-  const activeList = showReal ? realMentors : mockMentors;
+  const mappedRealMentors = useMemo(() => {
+    return (Array.isArray(realMentors) ? realMentors : []).map((m) => ({
+      id: m.id,
+      name: m.name || "",
+      gender: m.genderDisplay || m.gender || "",
+      email: m.email || "",
+      specialty: m.specialty || "",
+      degrees: Array.isArray(m.degrees)
+        ? m.degrees.filter(Boolean).join(", ")
+        : (m.degrees || ""),
+      Educational_institution: m.institution || "",
+      profileImage: m.avatarUrl || null,
+    }));
+  }, [realMentors]);
+
+  const activeList = showReal ? mappedRealMentors : mockMentors;
 
   const filteredMentors = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();

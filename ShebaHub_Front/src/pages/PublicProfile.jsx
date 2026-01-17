@@ -66,10 +66,11 @@ function InfoRow({ label, value }) {
   );
 }
 
-const API_BASE_URL = "http://127.0.0.1:8000/api/v1";
+const API_BASE_URL = "http://127.0.0.1:8000/api";
 
 function PublicProfile() {
-  const { userId } = useParams();
+  const { id } = useParams();
+  const profileId = id;
   const navigate = useNavigate();
   const [profileData, setProfileData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -79,7 +80,7 @@ function PublicProfile() {
     let isMounted = true;
 
     async function loadProfile() {
-      if (!userId) {
+      if (!profileId) {
         setError("מזהה משתמש חסר");
         setIsLoading(false);
         return;
@@ -92,14 +93,14 @@ function PublicProfile() {
         // ניסיון לטעון פרופיל מתלמד
         let profile = null;
         try {
-          profile = await profilesAPI.getStudentProfile(userId);
+          profile = await profilesAPI.getStudent(profileId);
           if (isMounted && profile) {
             setProfileData({ ...profile, role: "apprentice" });
           }
         } catch (err) {
           // אם לא נמצא פרופיל מתלמד, ננסה מנטור
           try {
-            profile = await profilesAPI.getMentorProfile(userId);
+            profile = await profilesAPI.getMentor(profileId);
             if (isMounted && profile) {
               setProfileData({ ...profile, role: "mentor" });
             }
@@ -126,7 +127,7 @@ function PublicProfile() {
     return () => {
       isMounted = false;
     };
-  }, [userId]);
+  }, [profileId]);
 
   async function downloadDocument(doc) {
     if (!doc?.id) return;
@@ -232,8 +233,8 @@ function PublicProfile() {
       <div className="profile-wide-card">
         <h3 className="profile-section-title">פרטים מקצועיים</h3>
         <div className="profile-grid-content">
-          <InfoRow label="מוסד לימודי" value={getHebrewName(profileData, "institution_detail")} />
-          <InfoRow label="תארי" value={formatDegrees(profileData)} />
+          <InfoRow label="מוסד לימודים" value={getHebrewName(profileData, "institution_detail")} />
+          <InfoRow label="תארים" value={formatDegrees(profileData)} />
           <InfoRow label="מקום עבודה" value={profileData.workplace || "-"} />
 
           {isMentor ? (

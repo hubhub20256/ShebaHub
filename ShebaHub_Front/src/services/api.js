@@ -272,7 +272,7 @@ export const profilesAPI = {
   },
   
   // Get specific mentor by ID (public)
-  getMentor: (id) => apiRequest(`/profiles/mentors/${id}/`, { auth: false }),
+  getMentor: (id) => apiRequest(`/profiles/mentors/${id}/`, { auth: true }),
   
   // List all students (public)
   listStudents: (params = {}) => {
@@ -281,7 +281,7 @@ export const profilesAPI = {
   },
   
   // Get specific student by ID (public)
-  getStudent: (id) => apiRequest(`/profiles/students/${id}/`, { auth: false }),
+  getStudent: (id) => apiRequest(`/profiles/students/${id}/`, { auth: true }),
 };
 
 // ============== RESEARCH API ==============
@@ -329,6 +329,17 @@ export const researchAPI = {
   listResearches: () => apiRequest('/research/', { auth: false }),
   getResearch: (id) => apiRequest(`/research/${id}/`, { auth: false }),
 
+  // Authenticated read: approved applicants list (for real research view)
+  listApprovedApplicants: (id) => apiRequest(`/research/${id}/approved-applicants/`),
+
+  // Current user: researches they joined (approved applications)
+  listJoinedResearches: () => apiRequest('/research/joined/'),
+
+  // Student: apply/cancel + check status
+  applyToResearch: (id) => apiRequest(`/research/${id}/apply/`, { method: 'POST' }),
+  cancelMyApplication: (id) => apiRequest(`/research/${id}/cancel/`, { method: 'POST' }),
+  getMyApplication: (id) => apiRequest(`/research/${id}/my-application/`),
+
   // Mentor-only: manage own researches
   listMyResearches: () => apiRequest('/research/me/'),
   getMyResearch: (id) => apiRequest(`/research/me/${id}/`),
@@ -351,6 +362,14 @@ export const researchAPI = {
   },
 
   deleteMyResearch: (id) => apiRequest(`/research/me/${id}/`, { method: 'DELETE' }),
+
+  // Mentor: review applications
+  listMyResearchApplications: (researchId, status = 'pending') =>
+    apiRequest(`/research/me/${researchId}/applications/?status=${encodeURIComponent(status)}`),
+  approveResearchApplication: (researchId, applicationId) =>
+    apiRequest(`/research/me/${researchId}/applications/${applicationId}/approve/`, { method: 'POST' }),
+  rejectResearchApplication: (researchId, applicationId) =>
+    apiRequest(`/research/me/${researchId}/applications/${applicationId}/reject/`, { method: 'POST' }),
 };
 
 // ============== REFERENCE DATA API ==============

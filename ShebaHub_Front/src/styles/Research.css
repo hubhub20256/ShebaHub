@@ -1,0 +1,74 @@
+.researchSelectWrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 14px;
+}
+
+.researchSelectWrap .researchSelect {
+  -webkit-appearance: none;
+  appearance: none;
+  border: 2px solid rgba(44, 44, 108, 0.22) !important;
+  border-radius: 14px !important;
+  padding: 11px 14px 11px 42px !important; /* leave room for the arrow (RTL) */
+  font-weight: 600 !important;
+  font-size: 16px !important;
+  line-height: 1.2;
+  font-family: inherit;
+  text-align: right;
+  direction: rtl;
+  color: #111827 !important;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%) !important;
+  min-width: 240px;
+  max-width: 320px;
+  height: 44px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+  box-shadow: 0 6px 18px rgba(17, 24, 39, 0.08) !important;
+  transition: border-color 150ms ease, box-shadow 150ms ease, transform 120ms ease;
+  cursor: pointer;
+}
+
+.researchSelectWrap .researchSelect option {
+  font-size: 15px;
+}
+
+.researchSelectWrap .researchSelect option[disabled] {
+  color: #6b7280;
+  font-weight: 700;
+}
+
+.researchSelectWrap .researchSelect:hover {
+  border-color: rgba(44, 44, 108, 0.45) !important;
+  box-shadow: 0 10px 26px rgba(44, 44, 108, 0.14) !important;
+  transform: translateY(-1px);
+}
+
+.researchSelectWrap .researchSelect:focus-visible {
+  outline: none;
+  border-color: rgba(108, 213, 191, 0.95) !important;
+  box-shadow:
+    0 0 0 5px rgba(108, 213, 191, 0.28),
+    0 12px 28px rgba(17, 24, 39, 0.14) !important;
+}
+
+.researchSelectWrap .researchSelect:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.researchSelectArrow {
+  position: absolute;
+  left: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: rgba(44, 44, 108, 0.08);
+  color: rgba(44, 44, 108, 0.85);
+  font-size: 12px;
+}
