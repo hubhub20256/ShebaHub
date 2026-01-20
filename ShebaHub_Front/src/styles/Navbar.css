@@ -1,28 +1,22 @@
-/* 
- * ===================================================================================
+/* * ===================================================================================
  * 📘 NAVBAR STYLING DOCUMENTATION
  * ===================================================================================
- * 
- * HOW IT WORKS (BEGINNER'S GUIDE):
- * 
- * 1. LAYOUT (FLEXBOX):
- *    - We use 'display: flex' on the .navbar to line items up.
- *    - 'justify-content: space-between' pushes the Logo to the left, and Auth links to the right.
- *    - On Desktop, we use a trick: 'display: contents' on the .navbar-links wrapper. 
- *      This makes the wrapper "invisible", allowing the Logo, Main Links, and Auth Links to be 
- *      treated as 3 separate items by the main container, centering the Main Links perfectly.
- * 
- * 2. RESPONSIVE DESIGN (MOBILE MENU):
- *    - The @media (max-width: 768px) block contains rules that ONLY apply to small screens.
- *    - On Mobile, we hide the desktop layout and show a Hamburger Icon (3 lines).
- *    - When clicked, we show the menu by animating its 'max-height' from 0 (invisible) to 500px.
- * 
- * 3. "PUSH" EFFECT:
- *    - We use 'position: relative' and standard flow (not absolute) for the mobile menu.
- *    - This ensures that when the menu opens, it "pushes" the rest of the page content down,
- *      instead of floating on top of it.
- * 
- * ===================================================================================
+ * * HOW IT WORKS (BEGINNER'S GUIDE):
+ * * 1. LAYOUT (FLEXBOX):
+ * - We use 'display: flex' on the .navbar to line items up.
+ * - 'justify-content: space-between' pushes the Logo to the left, and Auth links to the right.
+ * - On Desktop, we use a trick: 'display: contents' on the .navbar-links wrapper. 
+ * This makes the wrapper "invisible", allowing the Logo, Main Links, and Auth Links to be 
+ * treated as 3 separate items by the main container, centering the Main Links perfectly.
+ * * 2. RESPONSIVE DESIGN (MOBILE MENU):
+ * - The @media (max-width: 768px) block contains rules that ONLY apply to small screens.
+ * - On Mobile, we hide the desktop layout and show a Hamburger Icon (3 lines).
+ * - When clicked, we show the menu by animating its 'max-height' from 0 (invisible) to 500px.
+ * * 3. "PUSH" EFFECT:
+ * - We use 'position: relative' and standard flow (not absolute) for the mobile menu.
+ * - This ensures that when the menu opens, it "pushes" the rest of the page content down,
+ * instead of floating on top of it.
+ * * ===================================================================================
  */
 
 /* --- Main Layout --- */
@@ -80,6 +74,32 @@
   display: flex;
   gap: 1.5rem;
   align-items: center;
+  /* Reverted to standard flow so Auth icons align correctly (Icon on left) */
+  flex-direction: row; 
+}
+
+/* --- DESKTOP SPECIFIC FIXES (Ordering & Centering) --- 
+   This ensures the center links are perfectly centered and ordered R-to-L,
+   while the auth links stay ordered normally.
+*/
+@media (min-width: 769px) {
+  
+  /* Main Navigation Group (Home, About, etc.) */
+  .navbar-links .navbar-group:first-child {
+      /* Perfect Centering: Takes it out of the flex flow to absolute center */
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      
+      /* Reverses order ONLY for the menu titles (Home on Right) */
+      flex-direction: row-reverse; 
+  }
+
+  /* Auth Group (Login, Register, Icons) */
+  .navbar-links .navbar-group:last-child {
+      /* Keeps standard order so Dark Mode Icon stays on the Left of Profile/Register */
+      flex-direction: row; 
+  }
 }
 
 .navbar-link {
