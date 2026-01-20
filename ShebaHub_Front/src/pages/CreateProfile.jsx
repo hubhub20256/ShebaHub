@@ -459,6 +459,14 @@ export default function CreateMentorProfile() {
     background-color: ${ACCENT_TEAL} !important;
     color: white !important;
     border-color: ${ACCENT_TEAL} !important;
+    box-shadow: 0 4px 12px rgba(108, 213, 191, 0.3) !important;
+  }
+
+  /* Calendar day active state */
+  .day-btn-active {
+    background-color: ${ACCENT_TEAL} !important;
+    color: white !important;
+    font-weight: 700 !important;
   }
     `}</style>
 
@@ -551,8 +559,16 @@ export default function CreateMentorProfile() {
               <div style={styles.field}>
                 <label style={styles.label}>האם את/ה מועסק בשיבא?</label>
                 <div style={styles.inline}>
-                  {["כן", "לא"].map((opt) => (
-                    <button key={opt} type="button" onClick={() => updateField("isShebaEmployee", opt)} style={{ ...styles.pillBtn, ...(form.isShebaEmployee === opt ? styles.pillBtnActive : {}) }}>{opt}</button>
+                 {["כן", "לא"].map((opt) => (
+                  <button 
+                  key={opt} 
+                  type="button" 
+                  onClick={() => updateField("isShebaEmployee", opt)} 
+                  className={form.isShebaEmployee === opt ? "pill-btn-active" : ""}
+                  style={{ ...styles.pillBtn, ...(form.isShebaEmployee === opt ? styles.pillBtnActive : {}) }}
+                  >
+                  {opt}
+                  </button>
                   ))}
                 </div>
               </div>
@@ -827,6 +843,7 @@ function DegreesField({ label, value, onToggle, options, error }) {
             key={opt}
             type="button"
             onClick={() => onToggle(opt)}
+            className={value.includes(opt) ? "pill-btn-active" : ""}
             style={{ ...styles.pillBtn, ...(value.includes(opt) ? styles.pillBtnActive : {}) }}
           >
             {opt}
