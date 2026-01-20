@@ -102,6 +102,13 @@
   max-width: 1400px;
   margin: 0 auto;
   padding: 20px;
+  box-sizing: border-box; /* Fixes the overflow/alignment issue */
+}
+
+@media (max-width: 480px) {
+  .cards-grid {
+    padding: 10px; /* Reduce padding on mobile to give more space to card */
+  }
 }
 
 /* ברירת מחדל למחקר או פריסות כלליות - 2 בשורה */
@@ -579,6 +586,13 @@
     margin-bottom: 20px;
     width: 100%;
   }
+
+  /* תצוגה טובה יותר במובייל - עוטף במקום לחתוך */
+  @media (max-width: 480px) {
+    .apprentice-badges-wrapper {
+      margin-bottom: 15px;
+    }
+  }
   
   .apprentice-portal-subtitle, 
   .availability-badge {
@@ -645,9 +659,19 @@
     text-align: left;
     flex: 1;
     margin-right: 20px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    /* במובייל נאפשר שבירת שורות */
+    overflow-wrap: break-word;
+    word-break: break-word;
+    white-space: normal; 
+    line-height: 1.4;
+  }
+
+  @media (min-width: 768px) {
+    .apprentice-detail-value {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
   }
   
   /* כפתור ממולא */
@@ -678,10 +702,48 @@
     gap: 20px;
     grid-template-columns: repeat(1, 1fr);
   }
+
+  /* טאבלט - 2 בשורה */
+  @media (min-width: 640px) {
+    .cards-grid.apprentices-layout {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
   
+  /* דסקטופ - 3 בשורה */
   @media (min-width: 1024px) {
     .cards-grid.apprentices-layout {
       grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  /* תיקונים למובייל קטן במיוחד עבור הכרטיס */
+  @media (max-width: 480px) {
+    .apprentice-portal-header {
+      height: 70px;
+    }
+    
+    .apprentice-portal-avatar-wrapper {
+      width: 90px;
+      height: 90px;
+      top: 15px;
+    }
+    
+    .apprentice-portal-body {
+      padding: 50px 15px 20px 15px;
+    }
+    
+    .apprentice-detail-row {
+      flex-direction: column;
+      align-items: center; /* CENTER ALIGNMENT */
+      gap: 4px;
+      text-align: center;
+    }
+    
+    .apprentice-detail-value {
+      width: 100%;
+      margin-right: 0;
+      text-align: center; /* CENTER TEXT */
     }
   }
 
@@ -802,6 +864,7 @@
   display: flex;
   justify-content: center;
   background: transparent;
+  box-sizing: border-box; /* Prevent overflow */
 }
 
 .page-intro-card {
@@ -823,6 +886,17 @@
   box-sizing: border-box;
 }
 
+@media (max-width: 600px) {
+  .page-intro-card {
+    padding: 20px 20px;
+    border-right-width: 3px;
+  }
+  
+  .page-intro-title {
+    font-size: 1.35rem;
+  }
+}
+
 .page-intro-title {
   font-size: 1.6rem; /* הקטנו את הכותרת למראה נקי */
   font-weight: 800;
@@ -838,4 +912,14 @@
   line-height: 1.6;
   color: #475569;
   max-width: 950px;
+}
+
+.researchCard--clickable {
+  cursor: pointer;
+}
+
+.researchCard--clickable:focus,
+.researchCard--clickable:focus-visible {
+  outline: 3px solid rgba(108, 213, 191, 0.55);
+  outline-offset: 3px;
 }

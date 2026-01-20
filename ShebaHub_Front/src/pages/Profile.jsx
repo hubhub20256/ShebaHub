@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { profilesAPI } from "../services/api";
+import PublicProfile from "./PublicProfile";
 import {
   SPECIALTIES_BASE,
   SPECIALTIES_SUPER,
@@ -245,8 +246,9 @@ const INITIAL_DRAFT = {
 };
 
 function Profile() {
+  const { id } = useParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [mentorProfile, setMentorProfile] = useState(null);
   const [apprenticeProfile, setApprenticeProfile] = useState(null);
   const [activeRole, setActiveRole] = useState(null);
@@ -264,19 +266,26 @@ function Profile() {
   const documentFileInputRef = useRef(null);
   const avatarObjectUrlRef = useRef(null);
 
+  const isMeAlias = id === "me";
+  const isOwnProfile = !!user && (isMeAlias || id === user.id);
+
   // If token/user is gone (logout / expired), redirect to login
   useEffect(() => {
-    if (!user) return;
+    if (!isOwnProfile) return;
     // If user exists but token was cleared/expired, force logout UI state
     const token = localStorage.getItem('accessToken');
     if (!token) {
       navigate('/login');
     }
-  }, [user, navigate]);
+  }, [isOwnProfile, navigate]);
 
   useEffect(() => {
     let isMounted = true;
     async function loadProfiles() {
+      if (!isOwnProfile) {
+        if (isMounted) setIsLoading(false);
+        return;
+      }
       setIsLoading(true);
       try {
         // If not authenticated, don't fetch protected profile data
@@ -312,12 +321,31 @@ function Profile() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [isOwnProfile]);
 
   const hasMentorProfile = useMemo(() => Boolean(mentorProfile), [mentorProfile]);
   const hasApprenticeProfile = useMemo(() => Boolean(apprenticeProfile), [apprenticeProfile]);
   const isMentor = activeRole === "mentor";
   const isApprentice = activeRole === "apprentice";
+
+  // Public profile view (read-only). This prevents non-owners from even seeing edit UI.
+  if (!isOwnProfile && !isMeAlias) {
+    return <PublicProfile />;
+  }
+
+  // /user/me requires login
+  if (isMeAlias && !user) {
+    return (
+      <div dir="rtl" className="profile-page">
+        <div style={{ textAlign: "center", padding: "50px" }}>
+          <p>יש להתחבר כדי לצפות בפרופיל</p>
+          <button className="profile-edit-btn" onClick={() => navigate("/login")}>התחברות</button>
+          <span style={{ margin: "0 8px" }} />
+          <button className="profile-edit-btn" onClick={() => navigate("/register")}>הרשמה</button>
+        </div>
+      </div>
+    );
+  }
   const hasProfile = isMentor || isApprentice;
 
   const showApprenticeSpecialty = useMemo(() => {

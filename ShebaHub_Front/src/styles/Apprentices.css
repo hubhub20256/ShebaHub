@@ -3,7 +3,6 @@
 /* Main Page Container */
 .apprentices-page {
   /* Inherit shared background from index/global if needed */
-  min-height: 100vh;
   padding: 2.5rem 1.25rem; /* 40px 20px */
   max-width: 75rem; /* 1200px */
   margin: 0 auto;

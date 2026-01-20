@@ -20,7 +20,14 @@ export default function ResearchCard({ research, isReal = false }) {
   const tooltip = (val) => String(val ?? "").trim();
 
   return (
-    <div className="researchCard" dir="rtl">
+    <Link
+      to={to}
+      state={isReal ? { source: "real" } : undefined}
+      className="researchCard researchCard--clickable"
+      dir="rtl"
+      style={{ color: "inherit", textDecoration: "none" }}
+      aria-label={`מעבר לעמוד המחקר: ${research.title}`}
+    >
       {/* 1. The Dynamic Status Badge */}
       <div className="status-badge-container">
         <span className="research-status-badge">
@@ -29,13 +36,7 @@ export default function ResearchCard({ research, isReal = false }) {
       </div>
 
       <h3 className="researchCard__title">
-        <Link
-          to={to}
-          state={isReal ? { source: "real" } : undefined}
-          style={{ color: "inherit", textDecoration: "none" }}
-        >
-          {research.title}
-        </Link>
+        {research.title}
       </h3>
 
       <div className="researchCard__fields">
@@ -109,6 +110,6 @@ export default function ResearchCard({ research, isReal = false }) {
           </span>
         </div>
       </div>
-    </div>
+    </Link>
   );
 }

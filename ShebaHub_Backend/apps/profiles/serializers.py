@@ -62,50 +62,35 @@ class HebrewBooleanField(serializers.BooleanField):
     """
     
     def to_internal_value(self, data):
-        print(f"=== HebrewBooleanField DEBUG ===")
-        print(f"  data: {repr(data)}")
-        print(f"  type: {type(data)}")
-        
         # Handle boolean directly
         if isinstance(data, bool):
-            print(f"  -> Returning bool: {data}")
             return data
         
         # Handle None
         if data is None:
             if self.allow_null:
-                print(f"  -> Returning None")
                 return None
             self.fail('null')
         
         # Handle strings
         if isinstance(data, str):
             data_stripped = data.strip()
-            print(f"  data_stripped: {repr(data_stripped)}")
             # Hebrew yes/no
             if data_stripped == 'כן':
-                print(f"  -> Matched כן, returning True")
                 return True
             if data_stripped == 'לא':
-                print(f"  -> Matched לא, returning False")
                 return False
             # English/standard values
             if data_stripped.lower() in ('yes', 'true', '1', 'on', 't', 'y'):
-                print(f"  -> Matched English True")
                 return True
             if data_stripped.lower() in ('no', 'false', '0', 'off', 'f', 'n', ''):
-                print(f"  -> Matched English False")
                 return False
         
         # Handle numbers
         if data == 1:
-            print(f"  -> Returning True (number 1)")
             return True
         if data == 0:
-            print(f"  -> Returning False (number 0)")
             return False
-        
-        print(f"  -> FAILED - no match!")
         self.fail('invalid', input=data)
 
 
@@ -999,3 +984,67 @@ class PublicStudentSerializer(serializers.ModelSerializer):
                 return request.build_absolute_uri(obj.avatar.url)
             return obj.avatar.url
         return None
+
+
+class PublicStudentDetailSerializer(StudentProfileSerializer):
+    """Public-facing student detail data (used by FE public profile page)."""
+
+    name = serializers.SerializerMethodField(read_only=True)
+    email = serializers.EmailField(source='user.email', read_only=True)
+    gender = serializers.CharField(source='user.gender', read_only=True)
+    genderDisplay = serializers.SerializerMethodField(read_only=True)
+
+    class Meta(StudentProfileSerializer.Meta):
+        fields = [
+            'id',
+            'name',
+            'email',
+            'gender',
+            'genderDisplay',
+            *[f for f in StudentProfileSerializer.Meta.fields if f != 'id'],
+        ]
+
+    def get_name(self, obj):
+        return obj.user.get_full_name()
+
+    def get_genderDisplay(self, obj):
+        value = getattr(obj.user, 'gender', None)
+        if value == 'man':
+            return 'זכר'
+        if value == 'woman':
+            return 'נקבה'
+        if value == 'other':
+            return 'אחר'
+        return value
+
+
+class PublicMentorDetailSerializer(MentorProfileSerializer):
+    """Public-facing mentor detail data (used by FE public profile page)."""
+
+    name = serializers.SerializerMethodField(read_only=True)
+    email = serializers.EmailField(source='user.email', read_only=True)
+    gender = serializers.CharField(source='user.gender', read_only=True)
+    genderDisplay = serializers.SerializerMethodField(read_only=True)
+
+    class Meta(MentorProfileSerializer.Meta):
+        fields = [
+            'id',
+            'name',
+            'email',
+            'gender',
+            'genderDisplay',
+            *[f for f in MentorProfileSerializer.Meta.fields if f != 'id'],
+        ]
+
+    def get_name(self, obj):
+        return obj.user.get_full_name()
+
+    def get_genderDisplay(self, obj):
+        value = getattr(obj.user, 'gender', None)
+        if value == 'man':
+            return 'זכר'
+        if value == 'woman':
+            return 'נקבה'
+        if value == 'other':
+            return 'אחר'
+        return value

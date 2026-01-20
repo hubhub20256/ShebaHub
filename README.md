@@ -26,8 +26,8 @@ A platform connecting students and mentors. This repository contains **both** th
 ### 1) Clone
 
 ```bash
-git clone https://github.com/yonatanel-Dev/shebahub-backend.git Sheba_Hub
-cd Sheba_Hub
+git clone -b research-enrollment-deletion-workflow --single-branch https://github.com/hubhub20256/ShebaHub.git ShebaHub
+cd ShebaHub
 ```
 
 ### 2) Backend (Django)

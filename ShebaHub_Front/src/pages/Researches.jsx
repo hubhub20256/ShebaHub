@@ -106,9 +106,11 @@ export default function Researches() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showReal]);
 
-  const activeList = showReal
+  const activeListBase = showReal
     ? realResearches.map(mapApiResearchToCard)
     : mockResearches;
+
+  const activeList = activeListBase;
 
   const filteredResearches = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
@@ -149,21 +151,23 @@ export default function Researches() {
 
 
       <div style={{ display: "flex", justifyContent: "center", marginBottom: 14 }}>
-        <button
-          type="button"
-          onClick={() => setShowReal((v) => !v)}
-          style={{
-            border: "1px solid rgba(0,0,0,0.12)",
-            background: showReal ? "#111827" : "white",
-            color: showReal ? "white" : "#111827",
-            padding: "8px 12px",
-            borderRadius: 10,
-            fontWeight: 700,
-            cursor: "pointer",
-          }}
-        >
-          {showReal ? "מציג מחקרים אמיתיים (לחץ למוק)" : "הצג מחקרים אמיתיים (זמני)"}
-        </button>
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", justifyContent: "center" }}>
+          <button
+            type="button"
+            onClick={() => setShowReal((v) => !v)}
+            style={{
+              border: "1px solid rgba(0,0,0,0.12)",
+              background: showReal ? "#111827" : "white",
+              color: showReal ? "white" : "#111827",
+              padding: "8px 12px",
+              borderRadius: 10,
+              fontWeight: 700,
+              cursor: "pointer",
+            }}
+          >
+            {showReal ? "חזור למוק" : "הצג מחקרים אמיתיים (זמני)"}
+          </button>
+        </div>
       </div>
 
       {showReal && realLoading && (
