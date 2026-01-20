@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import ResearchCard from "../components/researchCard";
 import { researchAPI } from "../services/api";
 import { useAuth } from "../context/AuthContext";
 
@@ -9,34 +8,18 @@ export default function MyResearches() {
   const navigate = useNavigate();
   const [checkingRole, setCheckingRole] = useState(true);
   const [isMentor, setIsMentor] = useState(false);
-  const [loading, setLoading] = useState(false);
+
+  const [createdLoading, setCreatedLoading] = useState(false);
+  const [createdItems, setCreatedItems] = useState([]);
+
+  const [joinedLoading, setJoinedLoading] = useState(false);
+  const [joinedItems, setJoinedItems] = useState([]);
+
   const [error, setError] = useState(null);
-  const [items, setItems] = useState([]);
   const [didRedirect, setDidRedirect] = useState(false);
 
-  const splitList = (value) => {
-    if (!value) return [];
-    if (Array.isArray(value)) return value.filter(Boolean);
-    return String(value)
-      .split(/[\n,;|]+/)
-      .map((s) => s.trim())
-      .filter(Boolean);
-  };
-
-  const cards = useMemo(() => {
-    return (Array.isArray(items) ? items : []).map((r) => ({
-      id: r.id,
-      title: r.researchName,
-      description: r.description,
-      fields: splitList(r.researchArea),
-      mentors: splitList(r.mentors),
-      apprenticesCount: r.teamSize ?? "",
-      startDate: r.startDate,
-      hoursScope: r.weeklyHours ? `${r.weeklyHours} שעות בשבוע` : "",
-      duration: r.durationWeeks ? `${r.durationWeeks} שבועות` : "",
-      rewards: r.compensation || "",
-    }));
-  }, [items]);
+  const createdCount = useMemo(() => (Array.isArray(createdItems) ? createdItems.length : 0), [createdItems]);
+  const joinedCount = useMemo(() => (Array.isArray(joinedItems) ? joinedItems.length : 0), [joinedItems]);
 
   useEffect(() => {
     // Fast role check: rely on auth payload flag
@@ -48,45 +31,71 @@ export default function MyResearches() {
   useEffect(() => {
     let cancelled = false;
 
-    const load = async () => {
+    const loadCreated = async () => {
       if (checkingRole) return;
       if (!isMentor) return;
 
-      setLoading(true);
-      setError(null);
+      setCreatedLoading(true);
       try {
         const data = await researchAPI.listMyResearches();
         if (cancelled) return;
-        setItems(Array.isArray(data) ? data : []);
+        setCreatedItems(Array.isArray(data) ? data : []);
       } catch (err) {
         if (cancelled) return;
-        setError(err?.data?.detail || "לא הצלחתי לטעון את המחקרים שלך");
+        setError(err?.data?.detail || "לא הצלחתי לטעון את המחקרים שיצרת");
       } finally {
-        if (!cancelled) setLoading(false);
+        if (!cancelled) setCreatedLoading(false);
       }
     };
 
-    load();
+    loadCreated();
     return () => {
       cancelled = true;
     };
   }, [checkingRole, isMentor]);
 
-  // For mentors, "My researches" should land on the detailed research UI
-  // (which includes the mock/real toggle + dropdown selector).
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadJoined = async () => {
+      if (checkingRole) return;
+      if (!user) return;
+
+      setJoinedLoading(true);
+      try {
+        const data = await researchAPI.listJoinedResearches();
+        if (cancelled) return;
+        setJoinedItems(Array.isArray(data) ? data : []);
+      } catch (err) {
+        if (cancelled) return;
+        setError(err?.data?.detail || "לא הצלחתי לטעון את המחקרים שנרשמת אליהם");
+      } finally {
+        if (!cancelled) setJoinedLoading(false);
+      }
+    };
+
+    loadJoined();
+    return () => {
+      cancelled = true;
+    };
+  }, [checkingRole, user]);
+
+  // Restore old UX: auto-redirect into a concrete research page (with dropdown there).
   useEffect(() => {
     if (didRedirect) return;
     if (checkingRole) return;
-    if (!isMentor) return;
-    if (loading || error) return;
-    if (!Array.isArray(items) || items.length === 0) return;
+    if (createdLoading || joinedLoading) return;
+    if (error) return;
 
-    const firstId = items[0]?.id;
-    if (!firstId) return;
+    const firstCreatedId = Array.isArray(createdItems) && createdItems.length > 0 ? createdItems[0]?.id : null;
+    const firstJoinedId = Array.isArray(joinedItems) && joinedItems.length > 0 ? joinedItems[0]?.id : null;
+
+    const targetId = (isMentor && firstCreatedId) ? firstCreatedId : (firstJoinedId || null);
+    if (!targetId) return;
 
     setDidRedirect(true);
-    navigate(`/research/${firstId}`, { state: { source: "real" }, replace: true });
-  }, [checkingRole, didRedirect, error, isMentor, items, loading, navigate]);
+    navigate(`/research/${targetId}`, { state: { source: "real" }, replace: true });
+  }, [checkingRole, createdItems, createdLoading, didRedirect, error, isMentor, joinedItems, joinedLoading, navigate]);
 
   return (
     <div className="researches-page" dir="rtl">
@@ -94,27 +103,20 @@ export default function MyResearches() {
 
       {checkingRole && <p className="researches-no-results">טוען...</p>}
 
-      {!checkingRole && !isMentor && (
-        <p className="researches-no-results">לא רשום לאף מחקר כרגע.</p>
+      {!checkingRole && (createdLoading || joinedLoading) && (
+        <p className="researches-no-results">טוען...</p>
       )}
 
-      {!checkingRole && isMentor && loading && (
-        <p className="researches-no-results">טוען את המחקרים שלך...</p>
-      )}
-      {!checkingRole && isMentor && error && (
+      {!checkingRole && !createdLoading && !joinedLoading && error && (
         <p className="researches-no-results">{error}</p>
       )}
 
-      {!checkingRole && isMentor && !loading && !error && cards.length === 0 && (
-        <p className="researches-no-results" >אין לך מחקרים עדיין. לך לעמוד "ליצירת מחקר".</p>
+      {!checkingRole && !createdLoading && !joinedLoading && !error && !didRedirect && createdCount === 0 && joinedCount === 0 && (
+        <p className="researches-no-results">אין לך מחקרים עדיין.</p>
       )}
 
-      {!checkingRole && isMentor && cards.length > 0 && (
-        <div className="cards-grid">
-          {cards.map((r) => (
-            <ResearchCard key={r.id} research={r} isReal={true} />
-          ))}
-        </div>
+      {!checkingRole && !createdLoading && !joinedLoading && !error && !didRedirect && (createdCount > 0 || joinedCount > 0) && (
+        <p className="researches-no-results">מעביר לעמוד מחקר...</p>
       )}
     </div>
   );

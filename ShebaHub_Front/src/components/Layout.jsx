@@ -1,11 +1,20 @@
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 import Navbar from "./Navbar";
 
 const Layout = () => {
+  const location = useLocation();
+  const isAuthRoute = location.pathname === "/login" || location.pathname === "/register";
+
   return (
-    <div>
+    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
       <Navbar />
-      <main style={{ padding: "2rem" }}>
+      <main
+        style={
+          isAuthRoute
+            ? { padding: 0, flex: 1, display: "flex" }
+            : { padding: "2rem", flex: 1 }
+        }
+      >
         {/* The Outlet renders the child route's element (e.g., Home, Search) */}
         <Outlet />
       </main>

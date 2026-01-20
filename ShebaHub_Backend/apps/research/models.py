@@ -53,3 +53,36 @@ class Research(models.Model):
 
     def __str__(self):
         return f"Research #{self.id}: {self.researchName}"
+
+
+class ResearchApplication(models.Model):
+    class Status(models.TextChoices):
+        PENDING = "pending", "Pending"
+        APPROVED = "approved", "Approved"
+        REJECTED = "rejected", "Rejected"
+        CANCELLED = "cancelled", "Cancelled"
+
+    id = models.AutoField(primary_key=True)
+    research = models.ForeignKey(
+        Research,
+        on_delete=models.CASCADE,
+        related_name="applications",
+    )
+    applicant = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="research_applications",
+    )
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "research_applications"
+        ordering = ["-created_at"]
+        constraints = [
+            models.UniqueConstraint(fields=["research", "applicant"], name="uniq_research_applicant"),
+        ]
+
+    def __str__(self):
+        return f"Application #{self.id}: research={self.research_id} applicant={self.applicant_id} status={self.status}"

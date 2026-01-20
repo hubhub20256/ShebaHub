@@ -4,6 +4,7 @@ import { profilesAPI, researchAPI } from "../services/api";
 import { useAuth } from "../context/AuthContext";
 import ApprenticeCard from "../components/apprenticeCard";
 import Modal from "../components/Modal";
+import "../styles/Research.css";
 import img1 from "../assets/student1.png";
 import img2 from "../assets/student2.png";
 import img3 from "../assets/student3.png";
@@ -117,6 +118,7 @@ export default function Research() {
   const isReal = useReal;
   const [realResearch, setRealResearch] = useState(null);
   const [myResearches, setMyResearches] = useState([]);
+  const [joinedResearches, setJoinedResearches] = useState([]);
   const [selectedApprentice, setSelectedApprentice] = useState(null);
   const [realLoading, setRealLoading] = useState(false);
   const [realError, setRealError] = useState(null);
@@ -124,6 +126,25 @@ export default function Research() {
   const [roleChecked, setRoleChecked] = useState(false);
   const [isApprenticesOpen, setIsApprenticesOpen] = useState(false);
   const [isApplicantsOpen, setIsApplicantsOpen] = useState(false);
+
+  // --- Applications (Real server data) ---
+  const [pendingApplications, setPendingApplications] = useState([]);
+  const [approvedApplications, setApprovedApplications] = useState([]);
+  const [applicationsLoading, setApplicationsLoading] = useState(false);
+  const [applicationsError, setApplicationsError] = useState(null);
+
+  // Real research (non-owner): show approved apprentices too
+  const [publicApprovedApplications, setPublicApprovedApplications] =
+    useState([]);
+  const [publicApprovedLoading, setPublicApprovedLoading] = useState(false);
+  const [publicApprovedError, setPublicApprovedError] = useState(null);
+
+  // Student view: my application status
+  const [myApplication, setMyApplication] = useState(null);
+  const [myApplicationLoading, setMyApplicationLoading] = useState(false);
+
+  // Mock mode: local "as-if applied" state (never touches server)
+  const [mockMyApplicationStatus, setMockMyApplicationStatus] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -163,11 +184,8 @@ export default function Research() {
     };
   }, [user]);
 
-  // Keep students on real mode (they should not see mock as their default).
-  useEffect(() => {
-    if (!roleChecked) return;
-    if (!isMentor) setUseReal(true);
-  }, [isMentor, roleChecked]);
+  // Do not force students into real mode.
+  // Users can manually toggle between mock/real, and navigation may default to real.
 
   // If navigation explicitly says "real", switch to real (e.g., coming from lists).
   // This runs when route params or nav state changes, but won't override manual toggles on the same page.
@@ -222,6 +240,28 @@ export default function Research() {
     };
   }, [isReal, isMentor]);
 
+  // Load researches the current user has joined (approved)
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadJoined = async () => {
+      if (!isReal) return;
+      if (!user) return;
+      try {
+        const data = await researchAPI.listJoinedResearches();
+        if (cancelled) return;
+        setJoinedResearches(Array.isArray(data) ? data : []);
+      } catch {
+        // Non-blocking
+      }
+    };
+
+    loadJoined();
+    return () => {
+      cancelled = true;
+    };
+  }, [isReal, user]);
+
   const data = useMemo(() => {
     if (!isReal) return researchData;
     return realResearch || null;
@@ -242,14 +282,46 @@ export default function Research() {
   const canEditThis =
     isReal && myResearches.some((r) => String(r.id) === String(id));
   const showEditButton = isMentor && (!isReal || canEditThis);
-  const showMockToggle = isMentor;
+  const showMockToggle = true;
 
   /**
    * Safe list of apprentices.
    * If `data.apprentices` is missing (common with real API data initially),
    * fall back to `mockApprentices` so the UI isn't empty.
    */
+  const mapApplicationToApprenticeCard = (app) => {
+    if (!app) return null;
+    const availabilityText = app.researchAvailability ? "כן" : "לא";
+    return {
+      applicationId: app.id,
+      id: app.applicantProfileId || app.applicantId,
+      name: app.name,
+      email: app.email,
+      gender: app.gender,
+      medical_level: app.apprenticeStage,
+      school_beginner_year: app.startYear,
+      Educational_institution: app.institution,
+      profileImage: app.avatarUrl,
+      research_availability: availabilityText,
+      application_status: app.status,
+    };
+  };
+
   const activeApprentices = useMemo(() => {
+    if (isReal && canEditThis) {
+      return (Array.isArray(approvedApplications) ? approvedApplications : [])
+        .map(mapApplicationToApprenticeCard)
+        .filter(Boolean);
+    }
+
+    if (isReal) {
+      return (Array.isArray(publicApprovedApplications)
+        ? publicApprovedApplications
+        : [])
+        .map(mapApplicationToApprenticeCard)
+        .filter(Boolean);
+    }
+
     // If we have an array of apprentices in the data, use it.
     // Otherwise, default to the mock set.
     if (Array.isArray(data?.apprentices) && data.apprentices.length > 0) {
@@ -263,13 +335,23 @@ export default function Research() {
       return mockApprentices;
     }
     return []; // It's an empty array, so we show none.
-  }, [data]);
+  }, [approvedApplications, canEditThis, data, isReal, publicApprovedApplications]);
 
   /**
    * Safe list of pending applicants.
    * Same fallback pattern as activeApprentices.
    */
   const activeApplicants = useMemo(() => {
+    if (isReal && canEditThis) {
+      return (Array.isArray(pendingApplications) ? pendingApplications : [])
+        .map(mapApplicationToApprenticeCard)
+        .filter(Boolean);
+    }
+
+    if (isReal) {
+      return [];
+    }
+
     if (Array.isArray(data?.applicants) && data.applicants.length > 0) {
       return data.applicants;
     }
@@ -277,7 +359,115 @@ export default function Research() {
       return mockApplicants;
     }
     return [];
-  }, [data]);
+  }, [canEditThis, data, isReal, pendingApplications]);
+
+  // Load applications for mentor's own research
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadApplications = async () => {
+      if (!isReal) return;
+      if (!canEditThis) return;
+      if (!id) return;
+
+      setApplicationsError(null);
+      setApplicationsLoading(true);
+      try {
+        const [pending, approved] = await Promise.all([
+          researchAPI.listMyResearchApplications(id, "pending"),
+          researchAPI.listMyResearchApplications(id, "approved"),
+        ]);
+        if (cancelled) return;
+        setPendingApplications(Array.isArray(pending) ? pending : []);
+        setApprovedApplications(Array.isArray(approved) ? approved : []);
+      } catch (err) {
+        if (cancelled) return;
+        setApplicationsError(err?.data?.detail || "לא הצלחתי לטעון בקשות הצטרפות");
+      } finally {
+        if (!cancelled) setApplicationsLoading(false);
+      }
+    };
+
+    loadApplications();
+    return () => {
+      cancelled = true;
+    };
+  }, [canEditThis, id, isReal]);
+
+  // Load approved applicants for real research when viewer is NOT the owner
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadPublicApproved = async () => {
+      if (!isReal) return;
+      if (!id) return;
+      if (canEditThis) return;
+
+      setPublicApprovedError(null);
+      setPublicApprovedLoading(true);
+      try {
+        const approved = await researchAPI.listApprovedApplicants(id);
+        if (cancelled) return;
+        setPublicApprovedApplications(Array.isArray(approved) ? approved : []);
+      } catch (err) {
+        if (cancelled) return;
+        // Keep UI clean if not authenticated/allowed
+        if (err?.status === 401 || err?.status === 403) {
+          setPublicApprovedApplications([]);
+          setPublicApprovedError(null);
+        } else {
+          setPublicApprovedApplications([]);
+          setPublicApprovedError(
+            err?.data?.detail || "לא הצלחתי לטעון מתלמדים שהתקבלו"
+          );
+        }
+      } finally {
+        if (!cancelled) setPublicApprovedLoading(false);
+      }
+    };
+
+    loadPublicApproved();
+    return () => {
+      cancelled = true;
+    };
+  }, [canEditThis, id, isReal]);
+
+  // Load student's own application status
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadMyApplication = async () => {
+      if (!isReal) return;
+      if (!id) return;
+      if (canEditThis) return; // owner doesn't apply
+      if (!user) {
+        setMyApplication(null);
+        return;
+      }
+
+      setMyApplicationLoading(true);
+      try {
+        const data = await researchAPI.getMyApplication(id);
+        if (cancelled) return;
+        setMyApplication(data);
+      } catch (err) {
+        // 404 means no application yet
+        if (cancelled) return;
+        if (err?.status === 404) {
+          setMyApplication(null);
+        } else {
+          setMyApplication(null);
+        }
+      } finally {
+        if (!cancelled) setMyApplicationLoading(false);
+      }
+    };
+
+    loadMyApplication();
+    return () => {
+      cancelled = true;
+    };
+  }, [canEditThis, id, isReal, user]);
 
   const handleEditClick = () => {
     if (isReal && id && myResearches.some((r) => String(r.id) === String(id))) {
@@ -288,20 +478,27 @@ export default function Research() {
   };
 
   // handle delete research
-  const handleDeleteResearch = () => {
-    console.log(" מנסה למחוק מחקר...");
+  const handleDeleteResearch = async () => {
+    if (!id) return;
+    if (!canEditThis) {
+      alert("אין לך הרשאה למחוק מחקר זה");
+      return;
+    }
 
-    console.log("Research ID to delete:", id);
+    const researchTitle = data?.researchName ? `"${data.researchName}"` : `ב־ID ${id}`;
 
     const confirmDelete = window.confirm(
-      `האם אתה בטוח שברצונך למחוק את מחקר מספר ${id}?`
+      `האם אתה בטוח שברצונך למחוק את המחקר ${researchTitle}?
+לא ניתן לשחזר פעולה זו.`
     );
+    if (!confirmDelete) return;
 
-    if (confirmDelete) {
-      console.log("Action: User confirmed deletion of ID:", id);
-      alert(`נשלחה בקשת מחיקה עבור מחקר מספר: ${id}`);
-    } else {
-      console.log("Action: User cancelled deletion.");
+    try {
+      await researchAPI.deleteMyResearch(id);
+      alert("המחקר נמחק בהצלחה");
+      navigate("/my-researches", { replace: true });
+    } catch (err) {
+      alert(err?.data?.detail || "לא הצלחתי למחוק את המחקר");
     }
   };
 
@@ -311,30 +508,73 @@ export default function Research() {
   };
 
   // --- Applicant Actions (Placeholder) ---
-  const handleApproveApplicant = (applicantId) => {
-    console.log(`Approved applicant ID: ${applicantId}`);
-    // TODO: Wire to API: researchAPI.approveApplicant(id, applicantId)
-    alert(`אישרת מועמד ${applicantId}`);
-  };
-
-  const handleApplyToResearch = () => {
-    // נבדוק קודם אם יש משתמש מחובר כדי למנוע שגיאות
-    if (user && user.id) {
-      console.log("Applying for research...");
-      console.log("User ID of applicant:", user.id);
-      console.log("Research ID:", id); // ה-id של המחקר הנוכחי שמגיע מה-URL
-
-      alert(`הגשת מועמדות נשלחה עבור משתמש מספר: ${user.id}`);
-    } else {
-      console.log("Error: No user found");
-      alert("עליך להיות מחובר כדי להגיש מועמדות");
+  const handleApproveApplicant = async (applicationId) => {
+    if (!id) return;
+    try {
+      await researchAPI.approveResearchApplication(id, applicationId);
+      const [pending, approved] = await Promise.all([
+        researchAPI.listMyResearchApplications(id, "pending"),
+        researchAPI.listMyResearchApplications(id, "approved"),
+      ]);
+      setPendingApplications(Array.isArray(pending) ? pending : []);
+      setApprovedApplications(Array.isArray(approved) ? approved : []);
+    } catch (err) {
+      alert(err?.data?.detail || "לא הצלחתי לאשר מועמד");
     }
   };
 
-  const handleDeclineApplicant = (applicantId) => {
-    console.log(`Declined applicant ID: ${applicantId}`);
-    // TODO: Wire to API: researchAPI.declineApplicant(id, applicantId)
-    alert(`דחית מועמד ${applicantId}`);
+  const handleDeclineApplicant = async (applicationId) => {
+    if (!id) return;
+    try {
+      await researchAPI.rejectResearchApplication(id, applicationId);
+      const pending = await researchAPI.listMyResearchApplications(id, "pending");
+      setPendingApplications(Array.isArray(pending) ? pending : []);
+    } catch (err) {
+      alert(err?.data?.detail || "לא הצלחתי לדחות מועמד");
+    }
+  };
+
+  const handleApplyToResearch = async () => {
+    if (!id) return;
+    if (!user) {
+      alert("עליך להיות מחובר כדי להגיש מועמדות");
+      navigate("/login");
+      return;
+    }
+
+    // Mock research IDs are not real server IDs (often numeric).
+    // In mock mode, keep the UX local and do not call the backend.
+    if (!isReal) {
+      setMockMyApplicationStatus("pending");
+      alert("הבקשה נשלחה בהצלחה (מוק)");
+      return;
+    }
+
+    try {
+      const app = await researchAPI.applyToResearch(id);
+      setMyApplication(app);
+      alert("הבקשה נשלחה בהצלחה");
+    } catch (err) {
+      alert(err?.data?.detail || "לא הצלחתי להגיש מועמדות");
+    }
+  };
+
+  const handleCancelMyApplication = async () => {
+    if (!id) return;
+
+    if (!isReal) {
+      setMockMyApplicationStatus("cancelled");
+      alert("המועמדות בוטלה (מוק)");
+      return;
+    }
+
+    try {
+      const app = await researchAPI.cancelMyApplication(id);
+      setMyApplication(app);
+      alert("המועמדות בוטלה");
+    } catch (err) {
+      alert(err?.data?.detail || "לא הצלחתי לבטל מועמדות");
+    }
   };
 
   const handleDownloadContract = async () => {
@@ -365,6 +605,24 @@ export default function Research() {
     if (!nextId) return;
     navigate(`/research/${nextId}`, { state: { source: "real" } });
   };
+
+  const distinctResearchesById = (arr) => {
+    const seen = new Set();
+    const out = [];
+    (Array.isArray(arr) ? arr : []).forEach((r) => {
+      const key = String(r?.id ?? "");
+      if (!key) return;
+      if (seen.has(key)) return;
+      seen.add(key);
+      out.push(r);
+    });
+    return out;
+  };
+
+  const createdResearchOptions = isMentor ? distinctResearchesById(myResearches) : [];
+  const joinedResearchOptions = distinctResearchesById(joinedResearches);
+  const hasCreatedAndJoined = createdResearchOptions.length > 0 && joinedResearchOptions.length > 0;
+  const showResearchDropdown = isReal && (createdResearchOptions.length > 0 || joinedResearchOptions.length > 0);
 
   if (isReal && realLoading) {
     return (
@@ -422,30 +680,61 @@ export default function Research() {
           </div>
 
           <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-            {isMentor && isReal && myResearches.length > 0 && (
-              <select
-                value={String(id || "")}
-                onChange={handleSelectMyResearch}
-                style={{
-                  border: "1px solid rgba(0,0,0,0.12)",
-                  borderRadius: 10,
-                  padding: "8px 10px",
-                  fontWeight: 700,
-                  color: THEME_COLOR,
-                  background: "white",
-                  maxWidth: 260,
-                }}
-                title="בחר מחקר שלך"
-              >
-                <option value="" disabled>
-                  בחר מחקר...
-                </option>
-                {myResearches.map((r) => (
-                  <option key={r.id} value={r.id}>
-                    {r.researchName}
+            {showResearchDropdown && (
+              <div className="researchSelectWrap" title={hasCreatedAndJoined ? "בחר מחקר (שיצרת / שנרשמת אליו)" : "בחר מחקר"}>
+                <span className="researchSelectArrow" aria-hidden="true">
+                  ▾
+                </span>
+                <select
+                  className="researchSelect"
+                  value={String(id || "")}
+                  onChange={handleSelectMyResearch}
+                >
+                  <option value="" disabled>
+                    בחר מחקר...
                   </option>
-                ))}
-              </select>
+                  {hasCreatedAndJoined ? (
+                    <>
+                      {createdResearchOptions.length > 0 && (
+                        <>
+                          <option value="__created__" disabled>
+                            — מחקרים שיצרתי —
+                          </option>
+                          {createdResearchOptions.map((r) => (
+                            <option key={`created-${r.id}`} value={r.id}>
+                              {r.researchName}
+                            </option>
+                          ))}
+                        </>
+                      )}
+                      {joinedResearchOptions.length > 0 && (
+                        <>
+                          <option value="__joined__" disabled>
+                            — מחקרים שנרשמתי אליהם —
+                          </option>
+                          {joinedResearchOptions.map((r) => (
+                            <option key={`joined-${r.id}`} value={r.id}>
+                              {r.researchName}
+                            </option>
+                          ))}
+                        </>
+                      )}
+                    </>
+                  ) : createdResearchOptions.length > 0 ? (
+                    createdResearchOptions.map((r) => (
+                      <option key={r.id} value={r.id}>
+                        {r.researchName}
+                      </option>
+                    ))
+                  ) : (
+                    joinedResearchOptions.map((r) => (
+                      <option key={r.id} value={r.id}>
+                        {r.researchName}
+                      </option>
+                    ))
+                  )}
+                </select>
+              </div>
             )}
 
             {showMockToggle && (
@@ -567,19 +856,46 @@ export default function Research() {
 
             {!canEditThis && (
               <div style={{ marginTop: 24 }}>
-                <button
-                  style={styles.primaryBtn}
-                  onClick={handleApplyToResearch}
-                >
-                  הגש מועמדות למחקר
-                </button>
+                {(
+                  (isReal && myApplication?.status === "pending") ||
+                  (!isReal && mockMyApplicationStatus === "pending")
+                ) ? (
+                  <button style={styles.primaryBtn} disabled>
+                    הבקשה נשלחה
+                  </button>
+                ) : (isReal && myApplication?.status === "approved") ? (
+                  <button style={styles.primaryBtn} disabled>
+                    התקבלת למחקר
+                  </button>
+                ) : (
+                  <button
+                    style={styles.primaryBtn}
+                    onClick={handleApplyToResearch}
+                    disabled={myApplicationLoading}
+                  >
+                    הגש מועמדות למחקר
+                  </button>
+                )}
+
+                {(
+                  (isReal && myApplication?.status === "pending") ||
+                  (!isReal && mockMyApplicationStatus === "pending")
+                ) && (
+                  <button
+                    style={{ ...styles.secondaryBtn, marginTop: 10 }}
+                    onClick={handleCancelMyApplication}
+                    disabled={myApplicationLoading}
+                  >
+                    בטל מועמדות
+                  </button>
+                )}
               </div>
             )}
           </div>
         </div>
 
         {/* --- Accepted Apprentices Section --- */}
-        {activeApprentices.length > 0 && (
+        {(isReal || canEditThis || activeApprentices.length > 0) && (
           <div style={{ marginTop: 32 }}>
             <div
               className="accordion-header"
@@ -622,25 +938,41 @@ export default function Research() {
                 transition: "all 0.6s cubic-bezier(0.4, 0, 0.2, 1)",
               }}
             >
-              <div
-                className="apprentices-grid compact-view"
-                style={{ marginTop: 16 }}
-              >
-                {activeApprentices.map((student) => (
-                  <div
-                    key={student.id}
-                    onClick={() => setSelectedApprentice(student)}
-                  >
-                    <ApprenticeCard apprentice={student} />
-                  </div>
-                ))}
-              </div>
+              {(canEditThis ? applicationsError : publicApprovedError) && (
+                <div style={{ marginTop: 12, color: "#b91c1c", fontWeight: 700 }}>
+                  {canEditThis ? applicationsError : publicApprovedError}
+                </div>
+              )}
+
+              {(canEditThis ? applicationsLoading : publicApprovedLoading) ? (
+                <div style={{ marginTop: 12, color: "#6b7280", fontWeight: 700 }}>
+                  טוען מתלמדים מהשרת...
+                </div>
+              ) : activeApprentices.length === 0 ? (
+                <div style={{ marginTop: 12, color: "#6b7280", fontWeight: 700 }}>
+                  אין מתלמדים שהתקבלו עדיין.
+                </div>
+              ) : (
+                <div
+                  className="apprentices-grid compact-view"
+                  style={{ marginTop: 16 }}
+                >
+                  {activeApprentices.map((student) => (
+                    <div
+                      key={student.id}
+                      onClick={() => setSelectedApprentice(student)}
+                    >
+                      <ApprenticeCard apprentice={student} />
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         )}
 
         {/* --- Pending Applicants Section (Mentor Only) --- */}
-        {canEditThis && activeApplicants.length > 0 && (
+        {canEditThis && (
           <div style={{ marginTop: 32 }}>
             <div
               className="accordion-header"
@@ -683,52 +1015,70 @@ export default function Research() {
                 transition: "all 0.6s cubic-bezier(0.4, 0, 0.2, 1)",
               }}
             >
-              <div
-                className="apprentices-grid compact-view"
-                style={{ marginTop: 16 }}
-              >
-                {activeApplicants.map((applicant) => (
-                  <div key={applicant.id} className="applicant-card-wrapper">
-                    <div onClick={() => setSelectedApprentice(applicant)}>
-                      <ApprenticeCard apprentice={applicant} />
+              {applicationsError && (
+                <div style={{ marginTop: 12, color: "#b91c1c", fontWeight: 700 }}>
+                  {applicationsError}
+                </div>
+              )}
+
+              {applicationsLoading ? (
+                <div style={{ marginTop: 12, color: "#6b7280", fontWeight: 700 }}>
+                  טוען מועמדים מהשרת...
+                </div>
+              ) : activeApplicants.length === 0 ? (
+                <div style={{ marginTop: 12, color: "#6b7280", fontWeight: 700 }}>
+                  אין מועמדים ממתינים.
+                </div>
+              ) : (
+                <div
+                  className="apprentices-grid compact-view"
+                  style={{ marginTop: 16 }}
+                >
+                  {activeApplicants.map((applicant) => (
+                    <div key={applicant.applicationId || applicant.id} className="applicant-card-wrapper">
+                      <div onClick={() => setSelectedApprentice(applicant)}>
+                        <ApprenticeCard apprentice={applicant} />
+                      </div>
+                      <div className="applicant-actions">
+                        <button
+                          className="btn-approve"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleApproveApplicant(applicant.applicationId);
+                          }}
+                        >
+                          ✓ אשר
+                        </button>
+                        <button
+                          className="btn-decline"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeclineApplicant(applicant.applicationId);
+                          }}
+                        >
+                          ✗ דחה
+                        </button>
+                      </div>
                     </div>
-                    <div className="applicant-actions">
-                      <button
-                        className="btn-approve"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleApproveApplicant(applicant.id);
-                        }}
-                      >
-                        ✓ אשר
-                      </button>
-                      <button
-                        className="btn-decline"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeclineApplicant(applicant.id);
-                        }}
-                      >
-                        ✗ דחה
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         )}
 
 
-        <div style={styles.bottomActionsContainer}>
-           <button 
-             style={styles.deleteButton} 
-             onClick={handleDeleteResearch}
-           >
-             <DeleteIcon />
-             מחיקת המחקר
-           </button>
-        </div>
+        {isReal && canEditThis && (
+          <div style={styles.bottomActionsContainer}>
+            <button
+              style={styles.deleteButton}
+              onClick={handleDeleteResearch}
+            >
+              <DeleteIcon />
+              מחיקת המחקר
+            </button>
+          </div>
+        )}
      
       </div>
 
@@ -1176,6 +1526,20 @@ const styles = {
     fontWeight: 700,
     border: "none",
     boxShadow: "0 4px 12px rgba(44, 44, 108, 0.2)",
+    transition: "0.2s",
+  },
+
+  secondaryBtn: {
+    width: "100%",
+    padding: "12px",
+    borderRadius: 30,
+    background: "white",
+    color: THEME_COLOR,
+    cursor: "pointer",
+    fontSize: 15,
+    fontWeight: 800,
+    border: `1px solid rgba(44, 44, 108, 0.25)`,
+    boxShadow: "0 4px 12px rgba(0, 0, 0, 0.03)",
     transition: "0.2s",
   },
 

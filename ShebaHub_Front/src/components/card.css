@@ -839,3 +839,13 @@
   color: #475569;
   max-width: 950px;
 }
+
+.researchCard--clickable {
+  cursor: pointer;
+}
+
+.researchCard--clickable:focus,
+.researchCard--clickable:focus-visible {
+  outline: 3px solid rgba(108, 213, 191, 0.55);
+  outline-offset: 3px;
+}
