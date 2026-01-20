@@ -430,6 +430,48 @@ export default function CreateMentorProfile() {
 
   return (
     <div dir="rtl" style={styles.page}>
+    {/* Dynamic Theme Variables */}
+    <style>{`
+      :root {
+      --switch-bg: #f5f5fa;
+    --btn-inactive-text: #666;
+    --btn-active-bg: #ffffff;
+    --btn-active-text: #2C2C6C;
+    --field-bg: #ffffff;
+    --text-main: #333333;
+    --border-color: #dddddd;
+    --popup-bg: #ffffff;
+      }
+
+      /* If your app uses a class like .dark-mode or data-theme='dark' */
+      [data-theme='dark'], .dark-mode {
+    --switch-bg: #1a1a1a;
+    --btn-inactive-text: #aaa;
+    --btn-active-bg: #333;
+    --btn-active-text: #ffffff;
+    --field-bg: #2a2a2a;    /* Dark background for inputs */
+    --text-main: #eeeeee;   /* Light text for dark mode */
+    --border-color: #444444;
+    --popup-bg: #1e1e1e;    /* Dark background for calendar */
+      }
+    /* Force the active state for buttons and pills */
+  .pill-btn-active {
+    background-color: ${ACCENT_TEAL} !important;
+    color: white !important;
+    border-color: ${ACCENT_TEAL} !important;
+    box-shadow: 0 4px 12px rgba(108, 213, 191, 0.3) !important;
+  }
+
+  /* Calendar day active state */
+  .day-btn-active {
+    background-color: ${ACCENT_TEAL} !important;
+    color: white !important;
+    font-weight: 700 !important;
+  }
+    `}</style>
+
+    <header style={styles.header}></header>
+    <div dir="rtl" style={styles.page}>
       <header style={styles.header}>
         <h1 style={styles.title}>יצירת פרופיל</h1>
         <div style={styles.titleUnderline}></div>
@@ -517,8 +559,16 @@ export default function CreateMentorProfile() {
               <div style={styles.field}>
                 <label style={styles.label}>האם את/ה מועסק בשיבא?</label>
                 <div style={styles.inline}>
-                  {["כן", "לא"].map((opt) => (
-                    <button key={opt} type="button" onClick={() => updateField("isShebaEmployee", opt)} style={{ ...styles.pillBtn, ...(form.isShebaEmployee === opt ? styles.pillBtnActive : {}) }}>{opt}</button>
+                 {["כן", "לא"].map((opt) => (
+                  <button 
+                  key={opt} 
+                  type="button" 
+                  onClick={() => updateField("isShebaEmployee", opt)} 
+                  className={form.isShebaEmployee === opt ? "pill-btn-active" : ""}
+                  style={{ ...styles.pillBtn, ...(form.isShebaEmployee === opt ? styles.pillBtnActive : {}) }}
+                  >
+                  {opt}
+                  </button>
                   ))}
                 </div>
               </div>
@@ -650,6 +700,7 @@ export default function CreateMentorProfile() {
         `}</style>
       </form>
     </div >
+    </div>
   );
 }
 
@@ -792,6 +843,7 @@ function DegreesField({ label, value, onToggle, options, error }) {
             key={opt}
             type="button"
             onClick={() => onToggle(opt)}
+            className={value.includes(opt) ? "pill-btn-active" : ""}
             style={{ ...styles.pillBtn, ...(value.includes(opt) ? styles.pillBtnActive : {}) }}
           >
             {opt}
@@ -827,9 +879,9 @@ const styles = {
   header: { textAlign: "center", marginBottom: 32 },
   title: { fontSize: 32, fontWeight: 800, marginBottom: 8 },
   titleUnderline: { width: 50, height: 4, background: ACCENT_TEAL, margin: "0 auto", borderRadius: 2 },
-  roleSwitch: { display: "flex", justifyContent: "center", background: "#f5f5fa", padding: 4, borderRadius: 12, width: "fit-content", margin: "0 auto 32px" },
-  roleBtn: { minWidth: 120, padding: "10px 16px", borderRadius: 10, border: "none", background: "transparent", cursor: "pointer", fontSize: 15, fontWeight: 600, color: "#666", transition: "all 0.2s" },
-  roleBtnActive: { background: "white", color: THEME_COLOR, boxShadow: "0 2px 8px rgba(0,0,0,0.05)" },
+  roleSwitch: { display: "flex", justifyContent: "center", background: "var(--switch-bg)", padding: 4, borderRadius: 12, width: "fit-content", margin: "0 auto 32px", border: "1px solid #333" },
+  roleBtn: { minWidth: 120, padding: "10px 16px", borderRadius: 10, border: "none", background: "transparent", cursor: "pointer", fontSize: 15, fontWeight: 600, color: "var(--btn-inactive-text)", transition: "all 0.2s" },
+  roleBtnActive: { background: "var(--btn-active-bg)", color: "var(--btn-active-text)", boxShadow: "0 2px 8px rgba(0,0,0,0.05)" },
   card: { border: "1px solid rgba(0,0,0,0.06)", borderRadius: 16, padding: "32px", background: "white", boxShadow: "0 12px 40px rgba(0,0,0,0.03)" },
   section: { marginBottom: 24 },
   sectionTitle: { fontSize: 17, fontWeight: 700, color: THEME_COLOR, marginBottom: 16, borderRight: `4px solid ${ACCENT_PINK}`, paddingRight: 8, lineHeight: "1" },
@@ -838,16 +890,16 @@ const styles = {
 
   label: { fontSize: 13, fontWeight: 600, color: "#000000", marginBottom: 2 },
 
-  input: { padding: "10px 14px", borderRadius: 8, border: "1px solid #ddd", fontSize: 14, outlineColor: ACCENT_TEAL, transition: "border 0.2s", height: 42, boxSizing: "border-box", width: "100%", fontFamily: "inherit", color: "#555" },
+  input: { padding: "10px 14px", borderRadius: 8, border: "1px solid #ddd", fontSize: 14, background: "var(--field-bg)", outlineColor: ACCENT_TEAL, transition: "border 0.2s", height: 42, boxSizing: "border-box", width: "100%", fontFamily: "inherit", color: "var(--text-main)" },
   select: { padding: "10px 14px", borderRadius: 8, border: "1px solid #ddd", fontSize: 14, background: "#fff", outlineColor: ACCENT_TEAL, height: 42, width: "100%", color: "#555" },
   textarea: { padding: "10px 14px", borderRadius: 8, border: "1px solid #ddd", fontSize: 14, resize: "vertical", outlineColor: ACCENT_TEAL, fontFamily: "inherit", color: "#555" },
 
   inline: { display: "flex", gap: 8, flexWrap: "wrap" },
-  pillBtn: { padding: "8px 16px", borderRadius: 8, border: "1px solid #eee", background: "white", cursor: "pointer", fontWeight: 600, fontSize: 13, color: "#666", transition: "0.2s" },
+  pillBtn: { padding: "8px 16px", borderRadius: 8, border: "1px solid #eee", background: "var(--field-bg)", cursor: "pointer", fontWeight: 600, fontSize: 13, color: "#666", transition: "0.2s" },
   pillBtnActive: { background: ACCENT_TEAL, color: "white", borderColor: ACCENT_TEAL },
   fileWrapper: { position: "relative", width: "100%" },
   fileInput: { opacity: 0, position: "absolute", zIndex: -1, width: "0.1px" },
-  fileLabel: { display: "block", textAlign: "center", padding: "12px", borderRadius: 8, border: `1px dashed ${ACCENT_TEAL}`, color: ACCENT_TEAL, fontWeight: 600, cursor: "pointer", fontSize: 13, background: "#fafffe", transition: "0.2s" },
+  fileLabel: { display: "block", textAlign: "center", padding: "12px", borderRadius: 8, border: `1px dashed ${ACCENT_TEAL}`, color: ACCENT_TEAL, fontWeight: 600, cursor: "pointer", fontSize: 13, background: "#var(--field-bg)", transition: "0.2s" },
   actions: { display: "flex", justifyContent: "center", marginTop: 32 },
   primaryBtn: { padding: "14px 48px", borderRadius: 30, background: THEME_COLOR, color: "white", cursor: "pointer", fontSize: 16, fontWeight: 700, border: "none", boxShadow: "0 4px 12px rgba(44, 44, 108, 0.2)", transition: "0.2s" },
   inputError: { border: `1px solid ${ACCENT_PINK}` },
@@ -863,9 +915,9 @@ const styles = {
     marginTop: 16,
     border: `1px solid ${ACCENT_PINK}`
   },
-  disabled: { background: "#f9f9f9", cursor: "not-allowed", opacity: 0.7 },
+disabled: { background: "rgba(255, 255, 255, 0.14)", cursor: "not-allowed", opacity: 1 },
 
-  calendarPopup: { position: "absolute", top: "105%", right: 0, width: "280px", background: "white", borderRadius: 12, boxShadow: "0 10px 30px rgba(0,0,0,0.15)", border: "1px solid #eee", padding: 16, zIndex: 100 },
+  calendarPopup: { position: "absolute", top: "105%", right: 0, width: "280px", background: "var(--popup-bg)", borderRadius: 12, boxShadow: "0 10px 30px rgba(0,0,0,0.15)", border: "1px solid var(--border-color) solid #eee", padding: 16, zIndex: 100, color: "var(--text-main)"},
   calendarHeader: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 },
   navBtn: { background: "none", border: "none", cursor: "pointer", fontSize: 16, color: "#666", padding: 4 },
   calendarGrid: { display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 6 },
