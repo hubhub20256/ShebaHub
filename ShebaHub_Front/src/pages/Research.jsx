@@ -1,17 +1,57 @@
+/**
+ * @file Research.jsx
+ * @description Research Details Page - Displays detailed information about a specific research project.
+ *
+ * ## Features
+ * - **Research Overview**: Displays the research name, description, requirements, skills, and logistics.
+ * - **Accepted Apprentices**: Shows a grid of apprentices who have been approved to join the research.
+ * - **Pending Applicants**: (Mentor only) Displays applicants awaiting approval, with Approve/Decline actions.
+ * - **Mock Mode**: Supports mock data for UI development and testing when the backend is unavailable.
+ * - **Real Mode**: Fetches real research data from the API based on URL params.
+ * - **Mobile Responsive**: Fully responsive layout that stacks elements vertically on small screens.
+ *
+ * ## Key Components
+ * - `ResearchApprenticeCard`: A locally-defined card component for displaying apprentice/applicant info.
+ * - `Section`, `DetailItem`, `SidebarItem`: Helper components for structured content display.
+ *
+ * ## State Management
+ * - `useReal`: Toggles between mock and real data modes.
+ * - `realResearch`: Holds the fetched research data in real mode.
+ * - `pendingApplications`, `approvedApplications`: Server data for mentor's applicant management.
+ * - `myApplication`: (Student) Tracks the current user's application status.
+ *
+ * ## CSS
+ * - Styles are embedded inline via a `<style>` tag for page-specific customization.
+ * - Mobile responsiveness is handled via `@media (max-width: 768px)` queries.
+ *
+ * @author ShebaHub Team
+ * @since 2024
+ */
+
 import React, { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { profilesAPI, researchAPI } from "../services/api";
 import { useAuth } from "../context/AuthContext";
-import ApprenticeCard from "../components/apprenticeCard"; // Main existing card
+import ApprenticeCard from "../components/apprenticeCard"; // Main existing card (used in compact view)
 import "../styles/Research.css";
-// Images import
+
+// --- Mock Images ---
 import img1 from "../assets/student1.png";
 import img2 from "../assets/student2.png";
 import img3 from "../assets/student3.png";
 
-// --- Local Research Card Component ---
-// Defined locally to be specific to this page while keeping the main cards unaltered.
-const ResearchApprenticeCard = ({ apprentice, onClick }) => {
+/**
+ * ResearchApprenticeCard
+ * A compact card for displaying apprentice/applicant information within the Research page.
+ * Defined locally to avoid modifying the shared `ApprenticeCard` component.
+ *
+ * @param {Object} props
+ * @param {Object} props.apprentice - The apprentice/applicant data object.
+ * @param {Function} [props.onClick] - Optional click handler for the card.
+ * @param {React.ReactNode} [props.children] - Optional children (e.g., action buttons).
+ * @returns {JSX.Element}
+ */
+const ResearchApprenticeCard = ({ apprentice, onClick, children }) => {
   const navigate = useNavigate();
   // Default image fallback
   const avatarUrl = apprentice.profileImage || null;
@@ -62,6 +102,13 @@ const ResearchApprenticeCard = ({ apprentice, onClick }) => {
       <button className="rac-profile-btn" onClick={handleProfileClick}>
         לחץ לפרופיל מלא
       </button>
+
+      {/* Action Buttons (Approve/Decline) */}
+      {children && (
+        <div className="rac-actions-container">
+          {children}
+        </div>
+      )}
     </div>
   );
 };
@@ -165,6 +212,19 @@ const researchData = {
   applicants: mockApplicants, // Attach mock applicants
 };
 
+/**
+ * Research Component
+ * The main page component for displaying a single research project's details.
+ *
+ * Supports two modes:
+ * - **Mock Mode**: Uses local mock data for UI testing.
+ * - **Real Mode**: Fetches data from the backend API based on the URL param `id`.
+ *
+ * Mentors can manage applicants (approve/decline) when viewing their own research.
+ * Students can apply to join the research.
+ *
+ * @returns {JSX.Element}
+ */
 export default function Research() {
   const { user } = useAuth();
   const { id } = useParams();
@@ -731,7 +791,7 @@ export default function Research() {
             <span style={styles.idBadge}>ID: {data.helsinkiApproval}</span>
           </div>
 
-          <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+          <div className="action-bar-controls" style={{ display: "flex", gap: 10, alignItems: "center" }}>
             {showResearchDropdown && (
               <div className="researchSelectWrap" title={hasCreatedAndJoined ? "בחר מחקר (שיצרת / שנרשמת אליו)" : "בחר מחקר"}>
                 <span className="researchSelectArrow" aria-hidden="true">
@@ -1094,30 +1154,31 @@ export default function Research() {
                       <ResearchApprenticeCard 
                         apprentice={applicant}
                         /* onClick handler removed: using profile button instead */
-                      />
-                      {/* Only show approve/decline buttons in real mode */}
-                      {isReal && (
-                        <div className="applicant-actions">
-                          <button
-                            className="btn-approve"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleApproveApplicant(applicant.applicationId);
-                            }}
-                          >
-                            ✓ אשר
-                          </button>
-                          <button
-                            className="btn-decline"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDeclineApplicant(applicant.applicationId);
-                            }}
-                          >
-                            ✗ דחה
-                          </button>
-                        </div>
-                      )}
+                      >
+                        {/* Only show approve/decline buttons in real mode */}
+                        {isReal && (
+                          <div className="applicant-actions">
+                            <button
+                              className="btn-approve"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleApproveApplicant(applicant.applicationId);
+                              }}
+                            >
+                              ✓ אשר
+                            </button>
+                            <button
+                              className="btn-decline"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeclineApplicant(applicant.applicationId);
+                              }}
+                            >
+                              ✗ דחה
+                            </button>
+                          </div>
+                        )}
+                      </ResearchApprenticeCard>
                     </div>
                   ))}
                 </div>
@@ -1427,42 +1488,131 @@ export default function Research() {
            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
         }
 
-        /* Action Buttons for Applicants */
+        /* Actions Container (Child Functionality) */
+        .rac-actions-container {
+          width: 100%;
+          margin-top: 1rem;
+          padding-top: 0.75rem;
+          border-top: 1px solid #f3f4f6;
+          box-sizing: border-box;
+        }
+
+        /* Applicant Card Wrapper - ensure it behaves like a flexible grid item */
         .applicant-card-wrapper {
           display: flex;
           flex-direction: column;
+          height: 100%;
+          min-width: 0; /* Important for grid/flex overflow prevents */
+          width: 100%;
         }
+
+        /* Action Buttons for Applicants */
         .applicant-actions {
           display: flex;
-          gap: 8px;
-          margin-top: 12px;
-          padding: 0 8px;
+          gap: 12px;
+          width: 100%;
+          box-sizing: border-box;
         }
+        
         .applicant-actions button {
           flex: 1;
-          padding: 10px 16px;
-          border-radius: 8px;
+          padding: 8px 12px;
+          border-radius: 10px;
           font-weight: 600;
           font-size: 14px;
           cursor: pointer;
           transition: all 0.2s ease;
           border: none;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 4px;
         }
+        
         .btn-approve {
-          background-color: #10b981;
+          background: #10b981;
           color: white;
+          box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);
         }
         .btn-approve:hover {
-          background-color: #059669;
+          background: #059669;
           transform: translateY(-1px);
+          box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3);
         }
+        
         .btn-decline {
-          background-color: #ef4444;
+          background: #ef4444;
           color: white;
+          box-shadow: 0 2px 4px rgba(239, 68, 68, 0.2);
         }
         .btn-decline:hover {
-          background-color: #dc2626;
+          background: #dc2626;
           transform: translateY(-1px);
+        }
+
+        /* Mobile Responsive Adjustments */
+        @media (max-width: 768px) {
+          .research-layout { 
+            gap: 20px;
+          }
+          
+          /* Full Width Action Bar Items */
+          .action-bar {
+            flex-direction: column !important;
+            gap: 16px !important;
+            align-items: stretch !important;
+            flex-wrap: nowrap !important;
+          }
+          
+          /* Force immediate children to be full width/centered */
+          .action-bar > div {
+            width: 100% !important;
+            justify-content: center !important;
+            flex-wrap: wrap !important;
+          }
+          
+          /* Status Group Centering */
+          .status-group {
+            width: 100% !important;
+            justify-content: center !important;
+            margin-bottom: 4px;
+          }
+
+          /* Research Selector Full Width */
+          .researchSelectWrap {
+            width: 100% !important;
+            max-width: 100% !important;
+            flex: 1 1 auto;
+          }
+          .researchSelect {
+            width: 100% !important;
+            max-width: 100% !important;
+          }
+          
+          /* Container for Dropdown and Toggle: Force Stack */
+          .action-bar-controls {
+             width: 100% !important;
+             display: flex !important;
+             flex-direction: column !important;
+             align-items: stretch !important;
+             gap: 12px !important;
+             justify-content: center !important;
+          }
+          
+          .action-bar button {
+            width: 100% !important;
+            justify-content: center !important;
+            margin: 0 !important;
+          }
+
+          /* Reduce Paddings */
+          .main-card {
+            padding: 16px !important; /* Reduced from 32px */
+          }
+          
+          .research-apprentices-grid {
+             gap: 12px;
+          }
         }
       `}</style>
     </div>
