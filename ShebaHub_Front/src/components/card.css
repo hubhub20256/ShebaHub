@@ -457,6 +457,16 @@
   border: 1px solid rgba(100, 116, 139, 0.2);
 }
 
+.availability-badge.unknown {
+  color: #64748b; /* אפור */
+  background: rgba(100, 116, 139, 0.1);
+  border: 1px solid rgba(100, 116, 139, 0.2);
+}
+
+.availability-badge.placeholder {
+  visibility: hidden;
+}
+
 /* שדות המידע - מראה קלאסי */
 .apprentice-portal-details {
   width: 100%;
@@ -609,6 +619,13 @@
     color: #dc2626; /* צבע אדום */
     background: rgba(255, 255, 255, 0.05); /* רקע אדמדם עדין */
     border: 1px solid rgba(220, 38, 38, 0.2);
+  }
+
+  /* לא צוין - אפור */
+  .availability-badge.unknown {
+    color: #64748b;
+    background: rgba(100, 116, 139, 0.1);
+    border: 1px solid rgba(100, 116, 139, 0.2);
   }
   
   /* שדות המידע */

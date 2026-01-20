@@ -21,6 +21,7 @@ const mockApprentices = [
     Educational_institution: "אוניברסיטת תל אביב - הפקולטה לרפואה",
     profileImage: img1,
     availability: "זמינה למחקר קליני",
+    isAvailableForResearch: true,
   },
   {
     name: "יותם לוי",
@@ -32,6 +33,7 @@ const mockApprentices = [
     Educational_institution: "האוניברסיטה העברית והדסה עין כרם",
     profileImage: img2,
     availability: "זמינה למחקר קליני",
+    isAvailableForResearch: true,
   },
   {
     name: "מיכל שמש",
@@ -43,6 +45,7 @@ const mockApprentices = [
     Educational_institution: "אוניברסיטת בן-גוריון בנגב",
     profileImage: img3,
     availability: "זמינה למחקר קליני",
+    isAvailableForResearch: true,
   },
 ];
 
@@ -91,6 +94,7 @@ export default function Apprentices() {
       medical_level: s.apprenticeStage || "",
       Educational_institution: s.institution || "",
       profileImage: s.avatarUrl || null,
+      isAvailableForResearch: s.isAvailableForResearch,
     }));
   }, [realStudents]);
 
