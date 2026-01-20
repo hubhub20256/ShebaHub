@@ -2,12 +2,71 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { profilesAPI, researchAPI } from "../services/api";
 import { useAuth } from "../context/AuthContext";
-import ApprenticeCard from "../components/apprenticeCard";
+import ApprenticeCard from "../components/apprenticeCard"; // Main existing card
 import Modal from "../components/Modal";
 import "../styles/Research.css";
+// Images import
 import img1 from "../assets/student1.png";
 import img2 from "../assets/student2.png";
 import img3 from "../assets/student3.png";
+
+// --- Local Research Card Component ---
+// Defined locally to be specific to this page while keeping the main cards unaltered.
+const ResearchApprenticeCard = ({ apprentice, onClick }) => {
+  const navigate = useNavigate();
+  // Default image fallback
+  const avatarUrl = apprentice.profileImage || null;
+  
+  const handleProfileClick = (e) => {
+    e.stopPropagation(); // Don't trigger the card onClick
+    if (apprentice && apprentice.id) {
+      navigate(`/user/${apprentice.id}`);
+    }
+  };
+  
+  return (
+    <div className="research-apprentice-card" onClick={onClick} dir="rtl">
+      {/* Top section with avatar */}
+      <div className="rac-avatar-container">
+        {avatarUrl ? (
+          <img 
+            src={avatarUrl} 
+            alt={apprentice.name} 
+            className="rac-avatar-img"
+          />
+        ) : (
+          <div className="rac-avatar-placeholder">
+            <span>👤</span>
+          </div>
+        )}
+      </div>
+      
+      {/* Name */}
+      <h3 className="rac-name">{apprentice.name}</h3>
+      
+      {/* Info rows */}
+      <div className="rac-info">
+        <div className="rac-info-row">
+          <span className="rac-label">מוסד לימודים:</span>
+          <span className="rac-value">{apprentice.Educational_institution || "לא צוין"}</span>
+        </div>
+        
+        <div className="rac-info-row">
+          <span className="rac-label">שלב בהכשרה הרפואית:</span>
+          <span className="rac-value rac-value-highlight">
+            {apprentice.medical_level || "לא צוין"}
+          </span>
+        </div>
+      </div>
+      
+      {/* Profile button */}
+      <button className="rac-profile-btn" onClick={handleProfileClick}>
+        לחץ לפרופיל מלא
+      </button>
+    </div>
+  );
+};
+
 
 // --- Theme Constants ---
 const THEME_COLOR = "#2C2C6C";
@@ -308,6 +367,7 @@ export default function Research() {
   };
 
   const activeApprentices = useMemo(() => {
+    // Real mode: use actual server data
     if (isReal && canEditThis) {
       return (Array.isArray(approvedApplications) ? approvedApplications : [])
         .map(mapApplicationToApprenticeCard)
@@ -322,19 +382,13 @@ export default function Research() {
         .filter(Boolean);
     }
 
-    // If we have an array of apprentices in the data, use it.
-    // Otherwise, default to the mock set.
+    // Mock mode: Only show mock data when NOT in real mode
+    // This ensures mock data appears only in mock mode
     if (Array.isArray(data?.apprentices) && data.apprentices.length > 0) {
       return data.apprentices;
     }
-    // If it's real data but the field is missing/empty, we might want to show nothing?
-    // The requirement says: "show mock data unless there is real one, in that case, show the real one"
-    // Since our backend doesn't return `apprentices` field yet, `data.apprentices` will be undefined.
-    // So we fall back to mock.
-    if (!data?.apprentices) {
-      return mockApprentices;
-    }
-    return []; // It's an empty array, so we show none.
+    // Default mock apprentices for mock mode
+    return mockApprentices;
   }, [approvedApplications, canEditThis, data, isReal, publicApprovedApplications]);
 
   /**
@@ -342,6 +396,7 @@ export default function Research() {
    * Same fallback pattern as activeApprentices.
    */
   const activeApplicants = useMemo(() => {
+    // Real mode: only mentor can see pending applications
     if (isReal && canEditThis) {
       return (Array.isArray(pendingApplications) ? pendingApplications : [])
         .map(mapApplicationToApprenticeCard)
@@ -352,13 +407,11 @@ export default function Research() {
       return [];
     }
 
+    // Mock mode: show mock applicants
     if (Array.isArray(data?.applicants) && data.applicants.length > 0) {
       return data.applicants;
     }
-    if (!data?.applicants) {
-      return mockApplicants;
-    }
-    return [];
+    return mockApplicants;
   }, [canEditThis, data, isReal, pendingApplications]);
 
   // Load applications for mentor's own research
@@ -938,13 +991,15 @@ export default function Research() {
                 transition: "all 0.6s cubic-bezier(0.4, 0, 0.2, 1)",
               }}
             >
-              {(canEditThis ? applicationsError : publicApprovedError) && (
+              {/* Only show error in real mode */}
+              {isReal && (canEditThis ? applicationsError : publicApprovedError) && (
                 <div style={{ marginTop: 12, color: "#b91c1c", fontWeight: 700 }}>
                   {canEditThis ? applicationsError : publicApprovedError}
                 </div>
               )}
 
-              {(canEditThis ? applicationsLoading : publicApprovedLoading) ? (
+              {/* Only show loading state in real mode - mock mode shows data immediately */}
+              {isReal && (canEditThis ? applicationsLoading : publicApprovedLoading) ? (
                 <div style={{ marginTop: 12, color: "#6b7280", fontWeight: 700 }}>
                   טוען מתלמדים מהשרת...
                 </div>
@@ -954,16 +1009,15 @@ export default function Research() {
                 </div>
               ) : (
                 <div
-                  className="apprentices-grid compact-view"
+                  className="research-apprentices-grid"
                   style={{ marginTop: 16 }}
                 >
                   {activeApprentices.map((student) => (
-                    <div
+                    <ResearchApprenticeCard
                       key={student.id}
+                      apprentice={student}
                       onClick={() => setSelectedApprentice(student)}
-                    >
-                      <ApprenticeCard apprentice={student} />
-                    </div>
+                    />
                   ))}
                 </div>
               )}
@@ -971,8 +1025,8 @@ export default function Research() {
           </div>
         )}
 
-        {/* --- Pending Applicants Section (Mentor Only) --- */}
-        {canEditThis && (
+        {/* --- Pending Applicants Section (Mentor Only in Real, or Mock mode with applicants) --- */}
+        {(canEditThis || (!isReal && activeApplicants.length > 0)) && (
           <div style={{ marginTop: 32 }}>
             <div
               className="accordion-header"
@@ -1015,13 +1069,15 @@ export default function Research() {
                 transition: "all 0.6s cubic-bezier(0.4, 0, 0.2, 1)",
               }}
             >
-              {applicationsError && (
+              {/* Only show error in real mode */}
+              {isReal && applicationsError && (
                 <div style={{ marginTop: 12, color: "#b91c1c", fontWeight: 700 }}>
                   {applicationsError}
                 </div>
               )}
 
-              {applicationsLoading ? (
+              {/* Only show loading state in real mode */}
+              {isReal && applicationsLoading ? (
                 <div style={{ marginTop: 12, color: "#6b7280", fontWeight: 700 }}>
                   טוען מועמדים מהשרת...
                 </div>
@@ -1031,34 +1087,38 @@ export default function Research() {
                 </div>
               ) : (
                 <div
-                  className="apprentices-grid compact-view"
+                  className="research-apprentices-grid"
                   style={{ marginTop: 16 }}
                 >
                   {activeApplicants.map((applicant) => (
                     <div key={applicant.applicationId || applicant.id} className="applicant-card-wrapper">
-                      <div onClick={() => setSelectedApprentice(applicant)}>
-                        <ApprenticeCard apprentice={applicant} />
-                      </div>
-                      <div className="applicant-actions">
-                        <button
-                          className="btn-approve"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleApproveApplicant(applicant.applicationId);
-                          }}
-                        >
-                          ✓ אשר
-                        </button>
-                        <button
-                          className="btn-decline"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeclineApplicant(applicant.applicationId);
-                          }}
-                        >
-                          ✗ דחה
-                        </button>
-                      </div>
+                      <ResearchApprenticeCard 
+                        apprentice={applicant}
+                        onClick={() => setSelectedApprentice(applicant)}
+                      />
+                      {/* Only show approve/decline buttons in real mode */}
+                      {isReal && (
+                        <div className="applicant-actions">
+                          <button
+                            className="btn-approve"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleApproveApplicant(applicant.applicationId);
+                            }}
+                          >
+                            ✓ אשר
+                          </button>
+                          <button
+                            className="btn-decline"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeclineApplicant(applicant.applicationId);
+                            }}
+                          >
+                            ✗ דחה
+                          </button>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -1121,6 +1181,155 @@ export default function Research() {
           grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
           gap: 16px;
           margin-top: 8px;
+        }
+
+        /* New Research Apprentices Grid - strict 3 column grid */
+        .research-apprentices-grid {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 1rem; /* Reduced from 1.5rem */
+          width: 100%;
+          box-sizing: border-box; /* Safety */
+        }
+        
+        /* Research Apprentice Card Styles (Local) */
+        .research-apprentice-card {
+          box-sizing: border-box; /* CRITICAL fix for sizing */
+          background: #ffffff;
+          border-radius: 12px; /* Slightly tighter radius */
+          padding: 0.75rem; /* Further reduced padding */
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          text-align: center;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05); /* Softer shadow */
+          border: 1px solid #e5e7eb;
+          cursor: pointer;
+          transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+          height: 100%;
+          min-width: 0; 
+        }
+
+        .research-apprentice-card:hover {
+          transform: translateY(-2px); /* Subtle lift */
+          box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+          border-color: #6cd5bf;
+        }
+
+        .rac-avatar-container {
+          width: 56px; /* Reduced from 64px */
+          height: 56px; /* Reduced from 64px */
+          border-radius: 50%;
+          overflow: hidden;
+          margin-bottom: 0.5rem;
+          border: 2px solid #e8f5f2;
+          background: #f8fafc;
+          flex-shrink: 0;
+        }
+
+        .rac-avatar-img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
+
+        .rac-avatar-placeholder {
+          width: 100%;
+          height: 100%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: linear-gradient(135deg, #e8f5f2 0%, #f0fdf9 100%);
+          font-size: 1.5rem; /* Reduced icon size */
+          color: #94a3b8;
+        }
+
+        .rac-name {
+          margin: 0 0 0.5rem 0; /* Reduced margin */
+          font-size: 0.95rem; /* Slightly reduced font */
+          font-weight: 600;
+          color: #2c2c6c;
+          line-height: 1.2;
+        }
+
+        .rac-info {
+          width: 100%;
+          display: flex;
+          flex-direction: column;
+          gap: 0.25rem;
+          margin-bottom: 0.5rem; /* Reduced margin */
+          flex-grow: 1; 
+        }
+
+        .rac-info-row {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 0; /* Minimal gap */
+        }
+
+        .rac-label {
+          font-size: 0.7rem; /* Tiny label */
+          color: #6cd5bf;
+          font-weight: 500;
+        }
+
+        .rac-value {
+          font-size: 0.8rem;
+          color: #4b5563;
+          font-weight: 400;
+          /* line-clamp for long text preservation? */
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          max-width: 100%;
+        }
+
+        .rac-value-highlight {
+          color: #2c2c6c;
+          font-weight: 500;
+        }
+
+        .rac-profile-btn {
+          margin-top: auto;
+          padding: 0.4rem 1rem; /* Compact button */
+          background: linear-gradient(135deg, #6cd5bf 0%, #5bc4ae 100%);
+          color: white;
+          border: none;
+          border-radius: 16px;
+          font-size: 0.75rem; 
+          font-weight: 500;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          width: 100%;
+          max-width: 140px; 
+        }
+
+        .rac-profile-btn:hover {
+          background: linear-gradient(135deg, #5bc4ae 0%, #4ab39d 100%);
+          transform: scale(1.02);
+          box-shadow: 0 4px 12px rgba(108, 213, 191, 0.3);
+        }
+
+        /* Responsive Breakpoints */
+        @media (max-width: 1200px) {
+          .research-apprentices-grid {
+             gap: 1rem;
+          }
+        }
+
+        /* Below 1024px switch to 2 columns */
+        @media (max-width: 1024px) {
+          .research-apprentices-grid {
+            grid-template-columns: repeat(2, 1fr);
+          }
+        }
+        
+        /* Below 640px switch to 1 column */
+        @media (max-width: 640px) {
+          .research-apprentices-grid {
+            grid-template-columns: 1fr;
+          }
         }
 
         /* --- Compact View Overrides (Local Only) --- */
