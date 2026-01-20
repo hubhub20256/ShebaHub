@@ -3,7 +3,6 @@ import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { profilesAPI, researchAPI } from "../services/api";
 import { useAuth } from "../context/AuthContext";
 import ApprenticeCard from "../components/apprenticeCard"; // Main existing card
-import Modal from "../components/Modal";
 import "../styles/Research.css";
 // Images import
 import img1 from "../assets/student1.png";
@@ -178,7 +177,7 @@ export default function Research() {
   const [realResearch, setRealResearch] = useState(null);
   const [myResearches, setMyResearches] = useState([]);
   const [joinedResearches, setJoinedResearches] = useState([]);
-  const [selectedApprentice, setSelectedApprentice] = useState(null);
+
   const [realLoading, setRealLoading] = useState(false);
   const [realError, setRealError] = useState(null);
   const [isMentor, setIsMentor] = useState(false);
@@ -1016,7 +1015,7 @@ export default function Research() {
                     <ResearchApprenticeCard
                       key={student.id}
                       apprentice={student}
-                      onClick={() => setSelectedApprentice(student)}
+                      /* onClick handler removed: using profile button instead */
                     />
                   ))}
                 </div>
@@ -1094,7 +1093,7 @@ export default function Research() {
                     <div key={applicant.applicationId || applicant.id} className="applicant-card-wrapper">
                       <ResearchApprenticeCard 
                         apprentice={applicant}
-                        onClick={() => setSelectedApprentice(applicant)}
+                        /* onClick handler removed: using profile button instead */
                       />
                       {/* Only show approve/decline buttons in real mode */}
                       {isReal && (
@@ -1143,18 +1142,7 @@ export default function Research() {
       </div>
 
       {/* --- Details Modal --- */}
-      <Modal
-        isOpen={!!selectedApprentice}
-        onClose={() => setSelectedApprentice(null)}
-        transparent={true}
-      >
-        {selectedApprentice && (
-          /* Render full card (without compact-view class context) so it shows all fields */
-          <div className="modal-card-wrapper">
-            <ApprenticeCard apprentice={selectedApprentice} />
-          </div>
-        )}
-      </Modal>
+
 
       <style>{`
         .research-layout {
@@ -1417,17 +1405,7 @@ export default function Research() {
           }
         }
 
-        /* --- Modal Card Styling --- */
-        .modal-card-wrapper .apprenticeCard {
-          border: 1px solid rgba(0,0,0,0.06) !important;
-          box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
-          border-radius: 20px !important;
-          background: white;
-          width: 100%;
-          min-width: 320px;
-          max-width: 500px;
-          /* overflow: hidden; Removed to prevent scrollbars */
-        }
+
         
         /* Accordion Header Style */
         .accordion-header {
