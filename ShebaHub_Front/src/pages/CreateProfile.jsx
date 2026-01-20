@@ -430,6 +430,26 @@ export default function CreateMentorProfile() {
 
   return (
     <div dir="rtl" style={styles.page}>
+    {/* Dynamic Theme Variables */}
+    <style>{`
+      :root {
+        --switch-bg: #f5f5fa;
+        --btn-inactive-text: #666;
+        --btn-active-bg: #ffffff;
+        --btn-active-text: #2C2C6C;
+      }
+
+      /* If your app uses a class like .dark-mode or data-theme='dark' */
+      [data-theme='dark'], .dark-mode {
+        --switch-bg: #1a1a1a;
+        --btn-inactive-text: #aaa;
+        --btn-active-bg: #333;
+        --btn-active-text: #ffffff;
+      }
+    `}</style>
+
+    <header style={styles.header}></header>
+    <div dir="rtl" style={styles.page}>
       <header style={styles.header}>
         <h1 style={styles.title}>יצירת פרופיל</h1>
         <div style={styles.titleUnderline}></div>
@@ -650,6 +670,7 @@ export default function CreateMentorProfile() {
         `}</style>
       </form>
     </div >
+    </div>
   );
 }
 
@@ -827,9 +848,9 @@ const styles = {
   header: { textAlign: "center", marginBottom: 32 },
   title: { fontSize: 32, fontWeight: 800, marginBottom: 8 },
   titleUnderline: { width: 50, height: 4, background: ACCENT_TEAL, margin: "0 auto", borderRadius: 2 },
-  roleSwitch: { display: "flex", justifyContent: "center", background: "#f5f5fa", padding: 4, borderRadius: 12, width: "fit-content", margin: "0 auto 32px" },
-  roleBtn: { minWidth: 120, padding: "10px 16px", borderRadius: 10, border: "none", background: "transparent", cursor: "pointer", fontSize: 15, fontWeight: 600, color: "#666", transition: "all 0.2s" },
-  roleBtnActive: { background: "white", color: THEME_COLOR, boxShadow: "0 2px 8px rgba(0,0,0,0.05)" },
+  roleSwitch: { display: "flex", justifyContent: "center", background: "var(--switch-bg)", padding: 4, borderRadius: 12, width: "fit-content", margin: "0 auto 32px", border: "1px solid #333" },
+  roleBtn: { minWidth: 120, padding: "10px 16px", borderRadius: 10, border: "none", background: "transparent", cursor: "pointer", fontSize: 15, fontWeight: 600, color: "var(--btn-inactive-text)", transition: "all 0.2s" },
+  roleBtnActive: { background: "var(--btn-active-bg)", color: "var(--btn-active-text)", boxShadow: "0 2px 8px rgba(0,0,0,0.05)" },
   card: { border: "1px solid rgba(0,0,0,0.06)", borderRadius: 16, padding: "32px", background: "white", boxShadow: "0 12px 40px rgba(0,0,0,0.03)" },
   section: { marginBottom: 24 },
   sectionTitle: { fontSize: 17, fontWeight: 700, color: THEME_COLOR, marginBottom: 16, borderRight: `4px solid ${ACCENT_PINK}`, paddingRight: 8, lineHeight: "1" },
@@ -863,7 +884,7 @@ const styles = {
     marginTop: 16,
     border: `1px solid ${ACCENT_PINK}`
   },
-  disabled: { background: "#f9f9f9", cursor: "not-allowed", opacity: 0.7 },
+disabled: { background: "rgba(255, 255, 255, 0.14)", cursor: "not-allowed", opacity: 1 },
 
   calendarPopup: { position: "absolute", top: "105%", right: 0, width: "280px", background: "white", borderRadius: 12, boxShadow: "0 10px 30px rgba(0,0,0,0.15)", border: "1px solid #eee", padding: 16, zIndex: 100 },
   calendarHeader: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 },
