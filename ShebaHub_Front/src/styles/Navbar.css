@@ -47,6 +47,15 @@
   z-index: 1000;
 }
 
+[data-theme="dark"] .navbar {
+  background: #121212 !important;
+  /* Fully opaque dark background */
+  border-bottom: 1px solid #333;
+  backdrop-filter: none;
+  /* Disable blur to prevent any translucency effect */
+}
+
+
 
 .navbar-logo-container {
   display: flex;
@@ -63,7 +72,8 @@
 
 /* --- Navigation Links (Desktop) --- */
 .navbar-links {
-  display: contents; /* Allows children to participate in the main grid/flex layout */
+  display: contents;
+  /* Allows children to participate in the main grid/flex layout */
 }
 
 .navbar-group {
@@ -90,7 +100,8 @@
 }
 
 .navbar-link {
-  position: relative; /* חשוב בשביל הקו */
+  position: relative;
+  /* חשוב בשביל הקו */
 }
 
 .navbar-link:hover::after {
@@ -104,6 +115,9 @@
   background: rgba(44, 44, 108, 0.55);
 }
 
+[data-theme="dark"] .navbar-profile-icon img {
+  filter: brightness(0) invert(1);
+}
 
 /* --- Hamburger Menu Icon (Default: Hidden) --- */
 .hamburger-menu {
@@ -127,11 +141,11 @@
 
 /* --- Mobile Rules (<768px) --- */
 @media (max-width: 768px) {
-  
+
   .mobile-actions {
     display: flex;
     align-items: center;
-    gap: 15px; 
+    gap: 15px;
   }
 
   .mobile-actions .navbar-profile-icon img {
@@ -143,11 +157,6 @@
     cursor: pointer;
   }
 
-  [data-theme="dark"] .mobile-actions .navbar-profile-icon img,
-  [data-theme="dark"] .navbar-profile-icon img {
-    filter: brightness(0) invert(1);
-  }
-  
   .hamburger-menu {
     display: flex;
   }
@@ -156,26 +165,28 @@
     display: flex;
     width: 100%;
     margin-left: 0;
-    
+
     /* Menu Appearance */
     background: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(10px);
 
-    border-top: 1px solid transparent; 
+    border-top: 1px solid transparent;
     box-shadow: none;
-    
+
     /* Animation Properties */
     flex-direction: column;
     align-items: center;
     padding: 0;
-    max-height: 0; /* Hidden by default */
+    max-height: 0;
+    /* Hidden by default */
     overflow: hidden;
     gap: 0;
     transition: max-height 0.4s ease-in-out, border-color 0.4s;
   }
 
   .navbar-links.active {
-    max-height: calc(100vh - 64px); /* Open state (fit viewport under navbar) */
+    max-height: calc(100vh - 64px);
+    /* Open state (fit viewport under navbar) */
     padding: 1rem 0;
     border-top-color: #eee;
     overflow-y: auto;
@@ -195,7 +206,7 @@
     text-align: center;
     border-bottom: 1px solid #eee;
   }
-  
+
   .navbar-group:last-child .navbar-link:last-child {
     border-bottom: none;
   }
@@ -204,9 +215,11 @@
   .hamburger-menu.open .hamburger-line:nth-child(1) {
     transform: rotate(45deg) translate(5px, 6px);
   }
+
   .hamburger-menu.open .hamburger-line:nth-child(2) {
     opacity: 0;
   }
+
   .hamburger-menu.open .hamburger-line:nth-child(3) {
     transform: rotate(-45deg) translate(5px, -6px);
   }
