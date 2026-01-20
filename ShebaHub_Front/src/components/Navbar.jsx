@@ -231,26 +231,13 @@ const DesktopNavbar = () => {
 
         <div className="navbar-group">
           <Link
-            to="/researches"
+            to="/"
             className="navbar-link"
             style={{ color: "var(--text-color)" }}
           >
-            מחקרים
+            דף בית
           </Link>
-          <Link
-            to="/apprentices"
-            className="navbar-link"
-            style={{ color: "var(--text-color)" }}
-          >
-            מתלמדים
-          </Link>
-          <Link
-            to="/mentors"
-            className="navbar-link"
-            style={{ color: "var(--text-color)" }}
-          >
-            מנחים
-          </Link>
+
           <Link
             to="/About"
             className="navbar-link"
@@ -258,13 +245,34 @@ const DesktopNavbar = () => {
           >
             אודותינו
           </Link>
-          <Link
-            to="/"
-            className="navbar-link"
-            style={{ color: "var(--text-color)" }}
-          >
-            דף בית
-          </Link>
+
+          {user && (
+            <>
+              <Link
+                to="/mentors"
+                className="navbar-link"
+                style={{ color: "var(--text-color)" }}
+              >
+                מנחים
+              </Link>
+
+              <Link
+                to="/apprentices"
+                className="navbar-link"
+                style={{ color: "var(--text-color)" }}
+              >
+                מתלמדים
+              </Link>
+
+              <Link
+                to="/researches"
+                className="navbar-link"
+                style={{ color: "var(--text-color)" }}
+              >
+                מחקרים
+              </Link>
+            </>
+          )}
         </div>
 
         <div className="navbar-group">
@@ -370,29 +378,14 @@ const MobileNavbar = () => {
       >
         <div className="navbar-group">
           <Link
-            to="/researches"
+            to="/"
             className="navbar-link"
             onClick={closeAll}
             style={{ color: "var(--text-color)" }}
           >
-            מחקרים
+            דף בית
           </Link>
-          <Link
-            to="/apprentices"
-            className="navbar-link"
-            onClick={closeAll}
-            style={{ color: "var(--text-color)" }}
-          >
-            מתלמדים
-          </Link>
-          <Link
-            to="/mentors"
-            className="navbar-link"
-            onClick={closeAll}
-            style={{ color: "var(--text-color)" }}
-          >
-            מנחים
-          </Link>
+
           <Link
             to="/About"
             className="navbar-link"
@@ -401,14 +394,37 @@ const MobileNavbar = () => {
           >
             אודותינו
           </Link>
-          <Link
-            to="/"
-            className="navbar-link"
-            onClick={closeAll}
-            style={{ color: "var(--text-color)" }}
-          >
-            דף בית
-          </Link>
+
+          {user && (
+            <>
+              <Link
+                to="/mentors"
+                className="navbar-link"
+                onClick={closeAll}
+                style={{ color: "var(--text-color)" }}
+              >
+                מנחים
+              </Link>
+
+              <Link
+                to="/apprentices"
+                className="navbar-link"
+                onClick={closeAll}
+                style={{ color: "var(--text-color)" }}
+              >
+                מתלמדים
+              </Link>
+
+              <Link
+                to="/researches"
+                className="navbar-link"
+                onClick={closeAll}
+                style={{ color: "var(--text-color)" }}
+              >
+                מחקרים
+              </Link>
+            </>
+          )}
         </div>
 
         {!user && (
