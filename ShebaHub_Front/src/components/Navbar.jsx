@@ -120,47 +120,19 @@ const ProfileMenu = ({ closeParentMenu, onOpen, isOpen }) => {
       </Link>
 
       {showMenu && (
-        <div
-          className="profile-dropdown"
-          style={{
-            position: "absolute",
-            top: "calc(100% + 15px)",
-            right: -10,
-            minWidth: "220px",
-            background: "var(--card-bg)", // שימוש במשתנה החדש
-            border: "1px solid var(--border-color)", // שימוש במשתנה החדש
-            borderRadius: "12px",
-            boxShadow: "0 12px 30px rgba(0,0,0,0.15)",
-            zIndex: 9999,
-            textAlign: "right",
-            display: "flex",
-            flexDirection: "column",
-            padding: "10px 0",
-            overflow: "hidden",
-          }}
-        >
+        <div className="profile-dropdown">
           <Link
             to={`/user/${user.id || "me"}`}
-            className="navbar-link"
+            className="navbar-link profile-dropdown-link"
             onClick={closeParentMenu}
-            style={{
-              padding: "10px 20px",
-              display: "block",
-              color: "var(--text-color)",
-            }}
           >
             הפרופיל האישי
           </Link>
 
           <Link
             to="/my-researches"
-            className="navbar-link"
+            className="navbar-link profile-dropdown-link"
             onClick={closeParentMenu}
-            style={{
-              padding: "10px 20px",
-              display: "block",
-              color: "var(--text-color)",
-            }}
           >
             המחקרים שלי
           </Link>
@@ -169,13 +141,8 @@ const ProfileMenu = ({ closeParentMenu, onOpen, isOpen }) => {
             <>
               <Link
                 to="/create-research"
-                className="navbar-link"
+                className="navbar-link profile-dropdown-link"
                 onClick={closeParentMenu}
-                style={{
-                  padding: "10px 20px",
-                  display: "block",
-                  color: "var(--text-color)",
-                }}
               >
                 ליצירת מחקר
               </Link>
@@ -184,17 +151,11 @@ const ProfileMenu = ({ closeParentMenu, onOpen, isOpen }) => {
 
           <Link
             to="/"
-            className="navbar-link"
+            className="navbar-link profile-dropdown-link profile-logout-link"
             onClick={(e) => {
               e.preventDefault();
               logout();
               if (closeParentMenu) closeParentMenu();
-            }}
-            style={{
-              color: "red",
-              padding: "10px 20px",
-              display: "block",
-              borderTop: "1px solid var(--border-color)",
             }}
           >
             התנתקות
@@ -308,25 +269,38 @@ const DesktopNavbar = () => {
 // 3. MOBILE VIEW
 // ==========================================
 const MobileNavbar = () => {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
 
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  // Single state: 'none', 'profile', or 'menu'
+  const [activeMenu, setActiveMenu] = useState('none');
+  const [isMentor, setIsMentor] = useState(false);
 
   const toggleHamburger = () => {
-    setIsMenuOpen(!isMenuOpen);
-    if (!isMenuOpen) setIsProfileOpen(false);
+    setActiveMenu((prev) => (prev === 'menu' ? 'none' : 'menu'));
   };
 
-  const toggleProfile = (newState) => {
-    setIsProfileOpen(newState);
-    if (newState) setIsMenuOpen(false);
+  const toggleProfile = () => {
+    setActiveMenu((prev) => (prev === 'profile' ? 'none' : 'profile'));
   };
 
   const closeAll = () => {
-    setIsMenuOpen(false);
-    setIsProfileOpen(false);
+    setActiveMenu('none');
   };
+
+  // Check if user is mentor
+  useEffect(() => {
+    if (!user) {
+      setIsMentor(false);
+      return;
+    }
+    if (typeof user.has_mentor_profile === "boolean") {
+      setIsMentor(user.has_mentor_profile);
+    }
+  }, [user]);
+
+  const isMenuOpen = activeMenu === 'menu';
+  const isProfileOpen = activeMenu === 'profile';
+  const isAnyOpen = activeMenu !== 'none';
 
   return (
     <nav
@@ -346,12 +320,30 @@ const MobileNavbar = () => {
         {/* כפתור מצב לילה למובייל */}
         <ThemeToggle />
 
+        {/* Profile Icon Button */}
         {user && (
-          <ProfileMenu
-            isOpen={isProfileOpen}
-            onOpen={toggleProfile}
-            closeParentMenu={closeAll}
-          />
+          <button
+            className="mobile-profile-btn"
+            onClick={toggleProfile}
+            style={{
+              background: "transparent",
+              border: "none",
+              cursor: "pointer",
+              padding: 0,
+            }}
+          >
+            <img
+              src={UserProfileIcon}
+              alt="User Profile"
+              className="navbar-profile-icon"
+              style={{
+                width: "35px",
+                height: "35px",
+                objectFit: "contain",
+                borderRadius: "50%",
+              }}
+            />
+          </button>
         )}
 
         <button
@@ -374,87 +366,130 @@ const MobileNavbar = () => {
         </button>
       </div>
 
+      {/* Single Dropdown Container - switches content based on activeMenu */}
       <div
-        className={`navbar-links ${isMenuOpen ? "active" : ""}`}
+        className={`mobile-dropdown ${isAnyOpen ? "active" : ""}`}
         style={{ backgroundColor: "var(--bg-color)" }}
       >
-        <div className="navbar-group">
-          <Link
-            to="/"
-            className="navbar-link"
-            onClick={closeAll}
-            style={{ color: "var(--text-color)" }}
-          >
-            דף בית
-          </Link>
-
-          <Link
-            to="/About"
-            className="navbar-link"
-            onClick={closeAll}
-            style={{ color: "var(--text-color)" }}
-          >
-            אודותינו
-          </Link>
-
-          {user && (
-            <>
-              <Link
-                to="/mentors"
-                className="navbar-link"
-                onClick={closeAll}
-                style={{ color: "var(--text-color)" }}
-              >
-                מנחים
-              </Link>
-
-              <Link
-                to="/apprentices"
-                className="navbar-link"
-                onClick={closeAll}
-                style={{ color: "var(--text-color)" }}
-              >
-                מתלמדים
-              </Link>
-
-              <Link
-                to="/researches"
-                className="navbar-link"
-                onClick={closeAll}
-                style={{ color: "var(--text-color)" }}
-              >
-                מחקרים
-              </Link>
-            </>
-          )}
-        </div>
-
-        {!user && (
-          <div
-            className="navbar-group"
-            style={{
-              borderTop: "1px solid var(--border-color)",
-              width: "100%",
-              padding: "10px 0",
-            }}
-          >
+        {/* Profile Links */}
+        {isProfileOpen && user && (
+          <>
             <Link
-              to="/login"
+              to={`/user/${user.id || "me"}`}
               className="navbar-link"
               onClick={closeAll}
               style={{ color: "var(--text-color)" }}
             >
-              התחברות
+              הפרופיל האישי
             </Link>
+
             <Link
-              to="/register"
+              to="/my-researches"
               className="navbar-link"
               onClick={closeAll}
               style={{ color: "var(--text-color)" }}
             >
-              הרשמה
+              המחקרים שלי
             </Link>
-          </div>
+
+            {isMentor && (
+              <Link
+                to="/create-research"
+                className="navbar-link"
+                onClick={closeAll}
+                style={{ color: "var(--text-color)" }}
+              >
+                ליצירת מחקר
+              </Link>
+            )}
+
+            <Link
+              to="/"
+              className="navbar-link profile-logout-link"
+              onClick={(e) => {
+                e.preventDefault();
+                logout();
+                closeAll();
+              }}
+            >
+              התנתקות
+            </Link>
+          </>
+        )}
+
+        {/* Navigation Links */}
+        {isMenuOpen && (
+          <>
+            <Link
+              to="/"
+              className="navbar-link"
+              onClick={closeAll}
+              style={{ color: "var(--text-color)" }}
+            >
+              דף בית
+            </Link>
+
+            <Link
+              to="/About"
+              className="navbar-link"
+              onClick={closeAll}
+              style={{ color: "var(--text-color)" }}
+            >
+              אודותינו
+            </Link>
+
+            {user && (
+              <>
+                <Link
+                  to="/mentors"
+                  className="navbar-link"
+                  onClick={closeAll}
+                  style={{ color: "var(--text-color)" }}
+                >
+                  מנחים
+                </Link>
+
+                <Link
+                  to="/apprentices"
+                  className="navbar-link"
+                  onClick={closeAll}
+                  style={{ color: "var(--text-color)" }}
+                >
+                  מתלמדים
+                </Link>
+
+                <Link
+                  to="/researches"
+                  className="navbar-link"
+                  onClick={closeAll}
+                  style={{ color: "var(--text-color)" }}
+                >
+                  מחקרים
+                </Link>
+              </>
+            )}
+
+            {!user && (
+              <>
+                <Link
+                  to="/login"
+                  className="navbar-link"
+                  onClick={closeAll}
+                  style={{ color: "var(--text-color)" }}
+                >
+                  התחברות
+                </Link>
+                <Link
+                  to="/register"
+                  className="navbar-link"
+                  onClick={closeAll}
+                  style={{ color: "var(--text-color)" }}
+                >
+                  הרשמה
+                </Link>
+              </>
+            )}
+          </>
         )}
       </div>
     </nav>
