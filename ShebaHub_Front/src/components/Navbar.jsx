@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import "../index.css";
 import "../styles/Navbar.css";
 import ShebaNavbarLogo from "../assets/ShebaNavbarLogo.png";
@@ -50,6 +50,7 @@ const ThemeToggle = () => {
 // ==========================================
 const ProfileMenu = ({ closeParentMenu, onOpen, isOpen }) => {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const [isMentor, setIsMentor] = useState(false);
   const [localIsOpen, setLocalIsOpen] = useState(false);
   const isControlled = isOpen !== undefined;
@@ -189,6 +190,7 @@ const ProfileMenu = ({ closeParentMenu, onOpen, isOpen }) => {
               e.preventDefault();
               logout();
               if (closeParentMenu) closeParentMenu();
+              navigate("/");
             }}
             style={{
               color: "red",
@@ -468,5 +470,6 @@ const Navbar = () => {
   const isDesktop = useMediaQuery("(min-width: 769px)");
   return isDesktop ? <DesktopNavbar /> : <MobileNavbar />;
 };
+
 
 export default Navbar;
