@@ -102,12 +102,14 @@
   max-width: 1400px;
   margin: 0 auto;
   padding: 20px;
-  box-sizing: border-box; /* Fixes the overflow/alignment issue */
+  box-sizing: border-box;
+  /* Fixes the overflow/alignment issue */
 }
 
 @media (max-width: 480px) {
   .cards-grid {
-    padding: 10px; /* Reduce padding on mobile to give more space to card */
+    padding: 10px;
+    /* Reduce padding on mobile to give more space to card */
   }
 }
 
@@ -121,13 +123,16 @@
 /* פריסה למתלמדים ולמנחים - 3 בשורה (ממסך 1024px ומעלה) */
 .cards-grid.apprentices-layout,
 .cards-grid.mentors-layout {
-  grid-template-columns: 1fr; /* מובייל */
+  grid-template-columns: 1fr;
+  /* מובייל */
 }
 
 @media (min-width: 1024px) {
+
   .cards-grid.apprentices-layout,
   .cards-grid.mentors-layout {
-    grid-template-columns: repeat(3, 1fr); /* 3 בשורה */
+    grid-template-columns: repeat(3, 1fr);
+    /* 3 בשורה */
   }
 }
 
@@ -158,6 +163,7 @@
 /* ===== Mobile Tweaks ===== */
 
 @media (max-width: 600px) {
+
   .apprenticeCard,
   .mentorCard,
   .researchCard {
@@ -264,17 +270,18 @@
 .researchCard {
   width: 100%;
   background: white;
-  
+
   /* פס צבעוני עליון מוטמע במסגרת */
   border: 1px solid rgba(15, 23, 42, 0.10);
-  border-top: 6px solid #00498e; 
-  
+  border-top: 6px solid #00498e;
+
   border-radius: 24px;
   padding: 24px;
   box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
   transition: transform 200ms ease, box-shadow 200ms ease, border-color 200ms ease;
   position: relative;
-  overflow: visible; /* חשוב כדי שהמלל המלא יצוף בחוץ */
+  overflow: visible;
+  /* חשוב כדי שהמלל המלא יצוף בחוץ */
 }
 
 .researchCard:hover {
@@ -405,17 +412,20 @@
   .researchCard__details {
     grid-template-columns: 1fr;
   }
+
   .researchCard__value::after {
     display: none;
   }
 }
+
 /* =========================================================
    APPRENTICE CARD - גרסה מאוחדת ונקייה
    ========================================================= */
 
 /* גוף הכרטיס */
 .apprentice-portal-body {
-  padding: 60px 20px 30px 20px; /* מרווח פנימי מאוזן */
+  padding: 60px 20px 30px 20px;
+  /* מרווח פנימי מאוזן */
   text-align: center;
   display: flex;
   flex-direction: column;
@@ -425,20 +435,21 @@
 /* מיכל התגים (אליפסות) מתחת לשם */
 .apprentice-badges-wrapper {
   display: flex;
-  flex-direction: row; 
-  justify-content: center; 
-  gap: 8px; 
+  flex-direction: row;
+  justify-content: center;
+  gap: 8px;
   margin-bottom: 25px;
   flex-wrap: wrap;
 }
 
 /* הגדרה בסיסית לשני התגים - יצירת מראה אליפטי זהה */
-.apprentice-portal-subtitle, 
+.apprentice-portal-subtitle,
 .availability-badge {
   font-size: 0.8rem;
   font-weight: 700;
   padding: 4px 14px;
-  border-radius: 999px; /* אליפסה מושלמת */
+  border-radius: 999px;
+  /* אליפסה מושלמת */
   display: inline-flex;
   align-items: center;
   white-space: nowrap;
@@ -446,20 +457,22 @@
 
 /* תג 1: שלב הכשרה (טורקיז) */
 .apprentice-portal-subtitle {
-  color: #35BE9F; 
+  color: #35BE9F;
   background: rgba(53, 190, 159, 0.1);
   border: 1px solid rgba(53, 190, 159, 0.2);
 }
 
 /* תג 2: זמינות למחקר (צבעים דינמיים) */
 .availability-badge.available {
-  color: #16a34a; /* ירוק */
+  color: #16a34a;
+  /* ירוק */
   background: rgba(22, 163, 74, 0.1);
   border: 1px solid rgba(22, 163, 74, 0.2);
 }
 
 .availability-badge.not-available {
-  color: #64748b; /* אפור */
+  color: #64748b;
+  /* אפור */
   background: rgba(100, 116, 139, 0.1);
   border: 1px solid rgba(100, 116, 139, 0.2);
 }
@@ -478,7 +491,8 @@
   justify-content: space-between;
   align-items: center;
   padding: 10px 0;
-  border-bottom: 1px solid #f8fafc; /* קו הפרדה עדין מאוד */
+  border-bottom: 1px solid #f8fafc;
+  /* קו הפרדה עדין מאוד */
 }
 
 .apprentice-detail-row:last-child {
@@ -488,12 +502,14 @@
 .apprentice-detail-label {
   font-size: 0.9rem;
   font-weight: 800;
-  color: #000000; /* שחור לכותרת */
+  color: #000000;
+  /* שחור לכותרת */
 }
 
 .apprentice-detail-value {
   font-size: 0.9rem;
-  color: #64748b; /* אפור לערך */
+  color: #64748b;
+  /* אפור לערך */
   font-weight: 600;
   text-align: left;
   flex: 1;
@@ -518,236 +534,241 @@
   background: #323472;
   color: #ffffff;
 }
+
 /* =========================================================
    APPRENTICE CARD - FINAL INTEGRATED VERSION
    ========================================================= */
 
-   .apprentice-portal-card {
-    background: #ffffff;
-    border-radius: 20px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
-    width: 100%;
-    margin: 25px auto;
-    display: flex;
-    flex-direction: column;
-    overflow: visible;
-    border: none;
-  }
-  
-  .apprentice-portal-header {
-    height: 90px;
-    background: #f4f9ff; 
-    position: relative;
-    display: flex;
-    justify-content: center;
-    border-radius: 20px 20px 0 0;
-  }
-  
-  .apprentice-portal-avatar-wrapper {
-    position: absolute;
-    top: 10px;
-    width: 110px;
-    height: 110px;
-    border-radius: 50%;
-    border: 4px solid #ffffff; 
-    overflow: hidden;
-    background: #fff;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-    z-index: 10;
-  }
-  
-  .apprentice-portal-img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-  
-  .apprentice-portal-body {
-    padding: 70px 20px 20px 20px; 
-    text-align: center;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
-  
-  .apprentice-portal-name {
-    font-size: 1.3rem;
-    font-weight: 900;
-    color: #323472;
-    margin: 0 0 10px 0;
-  }
-  
-  /* סידור התגים אחד מתחת לשני */
+.apprentice-portal-card {
+  background: #ffffff;
+  border-radius: 20px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+  width: 100%;
+  margin: 25px auto;
+  display: flex;
+  flex-direction: column;
+  overflow: visible;
+  border: none;
+}
+
+.apprentice-portal-header {
+  height: 90px;
+  background: #f4f9ff;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  border-radius: 20px 20px 0 0;
+}
+
+.apprentice-portal-avatar-wrapper {
+  position: absolute;
+  top: 10px;
+  width: 110px;
+  height: 110px;
+  border-radius: 50%;
+  border: 4px solid #ffffff;
+  overflow: hidden;
+  background: #fff;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  z-index: 10;
+}
+
+.apprentice-portal-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.apprentice-portal-body {
+  padding: 70px 20px 20px 20px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.apprentice-portal-name {
+  font-size: 1.3rem;
+  font-weight: 900;
+  color: #323472;
+  margin: 0 0 10px 0;
+}
+
+/* סידור התגים אחד מתחת לשני */
+.apprentice-badges-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 20px;
+  width: 100%;
+}
+
+/* תצוגה טובה יותר במובייל - עוטף במקום לחתוך */
+@media (max-width: 480px) {
   .apprentice-badges-wrapper {
-    display: flex;
-    flex-direction: column; 
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 20px;
-    width: 100%;
+    margin-bottom: 15px;
   }
+}
 
-  /* תצוגה טובה יותר במובייל - עוטף במקום לחתוך */
-  @media (max-width: 480px) {
-    .apprentice-badges-wrapper {
-      margin-bottom: 15px;
-    }
-  }
-  
-  .apprentice-portal-subtitle, 
-  .availability-badge {
-    font-size: 0.8rem;
-    font-weight: 700;
-    padding: 4px 16px;
-    border-radius: 999px;
-    display: inline-block;
-    white-space: nowrap;
-  }
-  
-  /* שלב הכשרה */
-  .apprentice-portal-subtitle {
-    color: #000000; 
-    background: rgba(255, 255, 255, 0.1);
-    border: 1.5px solid rgba(0, 0, 0, 0.2);
-  }
-  
-  /* זמינות - ירוק */
-  .availability-badge.available {
-    color: #16a34a;
-    background: rgba(22, 163, 74, 0.1);
-    border: 1px solid rgba(22, 163, 74, 0.2);
-  }
-  
-  /* לא זמין - אדום */
-  .availability-badge.not-available {
-    color: #dc2626; /* צבע אדום */
-    background: rgba(255, 255, 255, 0.05); /* רקע אדמדם עדין */
-    border: 1px solid rgba(220, 38, 38, 0.2);
-  }
-  
-  /* שדות המידע */
-  .apprentice-portal-details {
-    width: 100%;
-    border-top: 1px solid #f1f5f9;
-    padding-top: 15px;
-    display: flex;
-    flex-direction: column;
-  }
-  
-  .apprentice-detail-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px 0;
-    border-bottom: 1px solid #f1f5f9;
-  }
-  
-  .apprentice-detail-row:last-child {
-    border-bottom: none;
-  }
-  
-  .apprentice-detail-label {
-    font-size: 0.9rem;
-    font-weight: 800;
-    color: #000000;
-  }
-  
+.apprentice-portal-subtitle,
+.availability-badge {
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 4px 16px;
+  border-radius: 999px;
+  display: inline-block;
+  white-space: nowrap;
+}
+
+/* שלב הכשרה */
+.apprentice-portal-subtitle {
+  color: #000000;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1.5px solid rgba(0, 0, 0, 0.2);
+}
+
+/* זמינות - ירוק */
+.availability-badge.available {
+  color: #16a34a;
+  background: rgba(22, 163, 74, 0.1);
+  border: 1px solid rgba(22, 163, 74, 0.2);
+}
+
+/* לא זמין - אדום */
+.availability-badge.not-available {
+  color: #dc2626;
+  /* צבע אדום */
+  background: rgba(255, 255, 255, 0.05);
+  /* רקע אדמדם עדין */
+  border: 1px solid rgba(220, 38, 38, 0.2);
+}
+
+/* שדות המידע */
+.apprentice-portal-details {
+  width: 100%;
+  border-top: 1px solid #f1f5f9;
+  padding-top: 15px;
+  display: flex;
+  flex-direction: column;
+}
+
+.apprentice-detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.apprentice-detail-row:last-child {
+  border-bottom: none;
+}
+
+.apprentice-detail-label {
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: #000000;
+}
+
+.apprentice-detail-value {
+  font-size: 0.9rem;
+  color: #64748b;
+  font-weight: 500;
+  text-align: left;
+  flex: 1;
+  margin-right: 20px;
+  /* במובייל נאפשר שבירת שורות */
+  overflow-wrap: break-word;
+  word-break: break-word;
+  white-space: normal;
+  line-height: 1.4;
+}
+
+@media (min-width: 768px) {
   .apprentice-detail-value {
-    font-size: 0.9rem;
-    color: #64748b;
-    font-weight: 500;
-    text-align: left;
-    flex: 1;
-    margin-right: 20px;
-    /* במובייל נאפשר שבירת שורות */
-    overflow-wrap: break-word;
-    word-break: break-word;
-    white-space: normal; 
-    line-height: 1.4;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
+}
 
-  @media (min-width: 768px) {
-    .apprentice-detail-value {
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-  }
-  
-  /* כפתור ממולא */
-  .apprentice-portal-btn {
-    margin-top: 20px;
-    padding: 12px 24px;
-    background: #323472;
-    color: #ffffff;
-    border: none;
-    border-radius: 10px;
-    font-weight: 800;
-    font-size: 0.9rem;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    width: 100%; 
-    max-width: 220px;
-  }
-  
-  .apprentice-portal-btn:hover {
-    background: #232554;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 10px rgba(50, 52, 114, 0.2);
-  }
-  
-  /* פריסת גריד לעמוד מתלמדים */
+/* כפתור ממולא */
+.apprentice-portal-btn {
+  margin-top: 20px;
+  padding: 12px 24px;
+  background: #323472;
+  color: #ffffff;
+  border: none;
+  border-radius: 10px;
+  font-weight: 800;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  width: 100%;
+  max-width: 220px;
+}
+
+.apprentice-portal-btn:hover {
+  background: #232554;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(50, 52, 114, 0.2);
+}
+
+/* פריסת גריד לעמוד מתלמדים */
+.cards-grid.apprentices-layout {
+  display: grid;
+  gap: 20px;
+  grid-template-columns: repeat(1, 1fr);
+}
+
+/* טאבלט - 2 בשורה */
+@media (min-width: 640px) {
   .cards-grid.apprentices-layout {
-    display: grid;
-    gap: 20px;
-    grid-template-columns: repeat(1, 1fr);
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* דסקטופ - 3 בשורה */
+@media (min-width: 1024px) {
+  .cards-grid.apprentices-layout {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* תיקונים למובייל קטן במיוחד עבור הכרטיס */
+@media (max-width: 480px) {
+  .apprentice-portal-header {
+    height: 70px;
   }
 
-  /* טאבלט - 2 בשורה */
-  @media (min-width: 640px) {
-    .cards-grid.apprentices-layout {
-      grid-template-columns: repeat(2, 1fr);
-    }
-  }
-  
-  /* דסקטופ - 3 בשורה */
-  @media (min-width: 1024px) {
-    .cards-grid.apprentices-layout {
-      grid-template-columns: repeat(3, 1fr);
-    }
+  .apprentice-portal-avatar-wrapper {
+    width: 90px;
+    height: 90px;
+    top: 15px;
   }
 
-  /* תיקונים למובייל קטן במיוחד עבור הכרטיס */
-  @media (max-width: 480px) {
-    .apprentice-portal-header {
-      height: 70px;
-    }
-    
-    .apprentice-portal-avatar-wrapper {
-      width: 90px;
-      height: 90px;
-      top: 15px;
-    }
-    
-    .apprentice-portal-body {
-      padding: 50px 15px 20px 15px;
-    }
-    
-    .apprentice-detail-row {
-      flex-direction: column;
-      align-items: center; /* CENTER ALIGNMENT */
-      gap: 4px;
-      text-align: center;
-    }
-    
-    .apprentice-detail-value {
-      width: 100%;
-      margin-right: 0;
-      text-align: center; /* CENTER TEXT */
-    }
+  .apprentice-portal-body {
+    padding: 50px 15px 20px 15px;
   }
 
-  /* Hero Section העיצוב החדש */
+  .apprentice-detail-row {
+    flex-direction: column;
+    align-items: center;
+    /* CENTER ALIGNMENT */
+    gap: 4px;
+    text-align: center;
+  }
+
+  .apprentice-detail-value {
+    width: 100%;
+    margin-right: 0;
+    text-align: center;
+    /* CENTER TEXT */
+  }
+}
+
+/* Hero Section העיצוב החדש */
 .mentors-hero-section {
   background: linear-gradient(135deg, #f8fafc 0%, #eff6ff 100%);
   padding: 60px 20px;
@@ -765,7 +786,8 @@
 .mentors-hero-title {
   font-size: 2.8rem;
   font-weight: 900;
-  color: #1e3a8a; /* נייבי שיבא */
+  color: #1e3a8a;
+  /* נייבי שיבא */
   margin-bottom: 15px;
   letter-spacing: -0.5px;
 }
@@ -773,7 +795,8 @@
 .title-underline {
   width: 80px;
   height: 5px;
-  background: #35BE9F; /* טורקיז */
+  background: #35BE9F;
+  /* טורקיז */
   margin: 0 auto 25px auto;
   border-radius: 10px;
 }
@@ -812,7 +835,7 @@
 .mode-switch-btn.is-real {
   background: #1e293b;
   color: white;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .mode-switch-btn:hover {
@@ -839,7 +862,7 @@
   border-radius: 15px;
   border: 1px solid #e2e8f0;
   font-size: 1rem;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.02);
   transition: border-color 0.3s ease;
 }
 
@@ -852,36 +875,44 @@
   .mentors-hero-title {
     font-size: 2rem;
   }
+
   .mentors-hero-description {
     font-size: 1rem;
   }
 }
+
 /* --- Page Intro Section - Wide & Slim Version --- */
 
 .page-intro-wrapper {
   width: 100%;
-  padding: 40px 20px 20px 20px; /* הקטנו את הריווח מלמעלה ומלמטה */
+  padding: 40px 20px 20px 20px;
+  /* הקטנו את הריווח מלמעלה ומלמטה */
   display: flex;
   justify-content: center;
   background: transparent;
-  box-sizing: border-box; /* Prevent overflow */
+  box-sizing: border-box;
+  /* Prevent overflow */
 }
 
 .page-intro-card {
   background: #ffffff;
-  max-width: 1200px; /* נשאר רחב */
+  max-width: 1200px;
+  /* נשאר רחב */
   width: 100%;
-  padding: 30px 45px; /* צמצמנו את ה-Padding האנכי (30px במקום 50px) */
-  border-radius: 12px; /* פינות מעוגלות בעדינות רבה יותר */
-  
+  padding: 30px 45px;
+  /* צמצמנו את ה-Padding האנכי (30px במקום 50px) */
+  border-radius: 12px;
+  /* פינות מעוגלות בעדינות רבה יותר */
+
   /* הקו האנכי השחור - דק יותר לעידון */
-  border-right: 4px solid #9696B7; 
-  
-  box-shadow: 0 2px 15px rgba(0, 0, 0, 0.03); /* צל עדין עוד יותר */
+  border-right: 4px solid #9696B7;
+
+  box-shadow: 0 2px 15px rgba(0, 0, 0, 0.03);
+  /* צל עדין עוד יותר */
   border-top: 1px solid #f1f5f9;
   border-left: 1px solid #f1f5f9;
   border-bottom: 1px solid #f1f5f9;
-  
+
   text-align: right;
   box-sizing: border-box;
 }
@@ -891,14 +922,15 @@
     padding: 20px 20px;
     border-right-width: 3px;
   }
-  
+
   .page-intro-title {
     font-size: 1.35rem;
   }
 }
 
 .page-intro-title {
-  font-size: 1.6rem; /* הקטנו את הכותרת למראה נקי */
+  font-size: 1.6rem;
+  /* הקטנו את הכותרת למראה נקי */
   font-weight: 800;
   color: #000000;
   margin: 0;
@@ -908,7 +940,8 @@
 
 
 .page-intro-description {
-  font-size: 1rem; /* פונט סטנדרטי ונעים */
+  font-size: 1rem;
+  /* פונט סטנדרטי ונעים */
   line-height: 1.6;
   color: #475569;
   max-width: 950px;
@@ -922,4 +955,33 @@
 .researchCard--clickable:focus-visible {
   outline: 3px solid rgba(108, 213, 191, 0.55);
   outline-offset: 3px;
+}
+
+/* =========================================================
+   DARK MODE HEADER FIXES (Mentors, Researchers, Apprentices)
+   ========================================================= */
+
+[data-theme="dark"] .page-intro-card,
+[data-theme="dark"] .mentors-hero-section {
+  background: var(--card-bg) !important;
+  color: var(--text-color) !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5) !important;
+  border: 1px solid #333 !important;
+}
+
+[data-theme="dark"] .page-intro-title,
+[data-theme="dark"] .mentors-hero-title {
+  color: #61dafb !important;
+  /* Light blue for titles */
+}
+
+[data-theme="dark"] .page-intro-description,
+[data-theme="dark"] .mentors-hero-description {
+  color: #e0e0e0 !important;
+}
+
+/* Fix for the underline in hero section */
+[data-theme="dark"] .title-underline {
+  background: #35BE9F !important;
+  /* Keep original turquoise or adjust if needed */
 }

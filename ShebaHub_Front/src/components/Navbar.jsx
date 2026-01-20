@@ -226,8 +226,7 @@ const DesktopNavbar = () => {
       </div>
 
       <div className="navbar-links">
-        {/* הוספת כפתור מצב לילה */}
-        <ThemeToggle />
+        {/* ThemeToggle moved to right group */}
 
         <div className="navbar-group">
           <Link
@@ -276,6 +275,9 @@ const DesktopNavbar = () => {
         </div>
 
         <div className="navbar-group">
+          {/* כפתור מצב לילה - הועבר לכאן כדי לא לשבור את המרכוז */}
+          <ThemeToggle />
+
           {user ? (
             <ProfileMenu />
           ) : (

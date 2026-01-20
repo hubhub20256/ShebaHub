@@ -54,7 +54,7 @@ const INITIAL_FORM_STATE = {
   hasResearchExperience: "",
   researchExperienceDetails: "",
   weeklyHours: "",
-  startDate: "", 
+  startDate: "",
   workType: "",
   softwareSkills: "",
   compensationPreference: "",
@@ -203,7 +203,7 @@ export default function CreateMentorProfile() {
     (form.apprenticeStage === "סטודנט" && (form.yearOfStudy === "ו'" || form.yearOfStudy === "ז'"));
 
   const selectedGroup = form.specialtyGroup || "";
-  
+
   // REMOVED BRACKETS []
   const specialtyOptions = [
     { v: "", t: selectedGroup ? "בחרי/י התמחות" : "קודם בחרי/י קטגוריה" },
@@ -213,7 +213,7 @@ export default function CreateMentorProfile() {
   // תרגום שגיאות מאנגלית לעברית
   const translateError = (error) => {
     if (!error) return error;
-    
+
     const translations = {
       "This field is required.": "שדה חובה",
       "This field may not be blank.": "שדה זה לא יכול להיות ריק",
@@ -249,7 +249,7 @@ export default function CreateMentorProfile() {
   async function submit(e) {
     e.preventDefault();
     if (!validate()) return;
-    
+
     setIsLoading(true);
     setServerError("");
 
@@ -368,11 +368,11 @@ export default function CreateMentorProfile() {
       setTimeout(() => window.scrollTo({ top: 0, left: 0, behavior: "auto" }), 0);
     } catch (error) {
       console.error("Profile creation failed:", error);
-      
+
       if (error.data) {
         console.log("Error data:", error.data);
         console.log("Error details:", JSON.stringify(error.data.details, null, 2));
-        
+
         // טיפול בשגיאות ספציפיות מהשרת
         if (error.data.code === "CONFLICT") {
           setServerError(translateError(error.data.message));
@@ -380,15 +380,15 @@ export default function CreateMentorProfile() {
           // שגיאות ולידציה - הצג את השדות הספציפיים
           const newErrors = {};
           let hasFieldErrors = false;
-          
+
           Object.keys(error.data.details).forEach(key => {
-            const errorMsg = Array.isArray(error.data.details[key]) 
-              ? error.data.details[key][0] 
+            const errorMsg = Array.isArray(error.data.details[key])
+              ? error.data.details[key][0]
               : error.data.details[key];
             newErrors[key] = translateError(errorMsg);
             hasFieldErrors = true;
           });
-          
+
           if (hasFieldErrors) {
             setErrors(prev => ({ ...prev, ...newErrors }));
             // גם הצג הודעה כללית
@@ -407,8 +407,8 @@ export default function CreateMentorProfile() {
           const newErrors = {};
           Object.keys(error.data).forEach(key => {
             if (key !== 'code' && key !== 'message' && key !== 'details') {
-              const errorMsg = Array.isArray(error.data[key]) 
-                ? error.data[key][0] 
+              const errorMsg = Array.isArray(error.data[key])
+                ? error.data[key][0]
                 : error.data[key];
               newErrors[key] = translateError(errorMsg);
             }
@@ -462,8 +462,10 @@ export default function CreateMentorProfile() {
         </button>
       </div>
 
-      <form onSubmit={submit} style={styles.card}>
-        
+      <form onSubmit={submit} style={styles.card} className="create-profile-card">
+
+        {/* SECTION 1 */}
+
         {/* SECTION 1 */}
         <div style={styles.section}>
           <h3 style={styles.sectionTitle}>פרטים כלליים ושלב הכשרה</h3>
@@ -509,39 +511,39 @@ export default function CreateMentorProfile() {
         <div style={{ ...styles.section, borderTop: "1px solid #eee", paddingTop: 24 }}>
           <h3 style={styles.sectionTitle}>ניסיון ומקום עבודה</h3>
           <div className="mentor-grid" style={styles.grid}>
-             <InputField label="מקום עבודה" name="workplace" value={form.workplace} onChange={handleChange} error={role === "mentor" ? errors.workplace : null} placeholder={role === "mentor" ? "מקום העבודה" : "מקום עבודה (אם רלוונטי)"} />
+            <InputField label="מקום עבודה" name="workplace" value={form.workplace} onChange={handleChange} error={role === "mentor" ? errors.workplace : null} placeholder={role === "mentor" ? "מקום העבודה" : "מקום עבודה (אם רלוונטי)"} />
 
             {role === "apprentice" && (
-                <div style={styles.field}>
-                  <label style={styles.label}>האם את/ה מועסק בשיבא?</label>
-                  <div style={styles.inline}>
-                    {["כן", "לא"].map((opt) => (
-                      <button key={opt} type="button" onClick={() => updateField("isShebaEmployee", opt)} style={{ ...styles.pillBtn, ...(form.isShebaEmployee === opt ? styles.pillBtnActive : {}) }}>{opt}</button>
-                    ))}
-                  </div>
+              <div style={styles.field}>
+                <label style={styles.label}>האם את/ה מועסק בשיבא?</label>
+                <div style={styles.inline}>
+                  {["כן", "לא"].map((opt) => (
+                    <button key={opt} type="button" onClick={() => updateField("isShebaEmployee", opt)} style={{ ...styles.pillBtn, ...(form.isShebaEmployee === opt ? styles.pillBtnActive : {}) }}>{opt}</button>
+                  ))}
                 </div>
+              </div>
             )}
           </div>
 
           <DegreesField label="תארים" name="degrees" value={form.degrees} onToggle={toggleDegree} error={errors.degrees} options={["MD", "PhD", "MSc", "MPH", "MBA"]} />
 
           {role === "mentor" ? (
-            <div style={{marginTop: 15}}>
+            <div style={{ marginTop: 15 }}>
               <div style={styles.field}>
-                <label style={styles.label}>ניסיון בהנחיה <span style={{color: ACCENT_PINK}}>*</span></label>
+                <label style={styles.label}>ניסיון בהנחיה <span style={{ color: ACCENT_PINK }}>*</span></label>
                 <div style={styles.inline}>
                   {["כן", "לא"].map((opt) => (
                     <button key={opt} type="button" onClick={() => updateField("hasMentoringExperience", opt)} style={{ ...styles.pillBtn, ...(form.hasMentoringExperience === opt ? styles.pillBtnActive : {}), ...(errors.hasMentoringExperience ? { borderColor: ACCENT_PINK } : {}) }}>{opt}</button>
                   ))}
                 </div>
                 {errors.hasMentoringExperience && <div style={styles.error}>{errors.hasMentoringExperience}</div>}
-                <div style={{marginTop: 10}}>
-                   <InputField label="פירוט ניסיון בהנחיה" name="mentoringExperienceDetails" value={form.mentoringExperienceDetails} onChange={handleChange} disabled={form.hasMentoringExperience !== "כן"} />
+                <div style={{ marginTop: 10 }}>
+                  <InputField label="פירוט ניסיון בהנחיה" name="mentoringExperienceDetails" value={form.mentoringExperienceDetails} onChange={handleChange} disabled={form.hasMentoringExperience !== "כן"} />
                 </div>
               </div>
             </div>
           ) : (
-            <div style={{marginTop: 15}}>
+            <div style={{ marginTop: 15 }}>
               <div style={styles.field}>
                 <label style={styles.label}>ניסיון במחקר</label>
                 <div style={styles.inline}>
@@ -559,7 +561,7 @@ export default function CreateMentorProfile() {
         <div style={{ ...styles.section, borderTop: "1px solid #eee", paddingTop: 24 }}>
           {/* CHANGED TITLE FOR MENTOR */}
           <h3 style={styles.sectionTitle}>
-             {role === "mentor" ? "רקע מחקרי ותחומי עניין" : "מחקר וזמינות"}
+            {role === "mentor" ? "רקע מחקרי ותחומי עניין" : "מחקר וזמינות"}
           </h3>
 
           {role === "apprentice" ? (
@@ -569,7 +571,7 @@ export default function CreateMentorProfile() {
                 <SelectField label="סוג העבודה המבוקשת" name="workType" value={form.workType} onChange={handleChange} options={[{ v: "", t: "בחרי עבודה" }, { v: "איסוף נתונים", t: "איסוף נתונים" }, { v: "כתיבה מדעית", t: "כתיבה מדעית" }, { v: "ניתוח סטטיסטי", t: "ניתוח סטטיסטי" }]} />
                 <SelectField label="העדפת תגמול" name="compensationPreference" value={form.compensationPreference} onChange={handleChange} options={[{ v: "", t: "בחרי סוג תגמול" }, { v: "מלגה", t: "מלגה" }, { v: "שכר", t: "שכר" }, { v: "קרדיט אקדמי", t: "קרדיט אקדמי" }, { v: "ללא תגמול / התנדבות", t: "ללא תגמול / התנדבות" }]} />
                 <SelectField label="אופן ההשתתפות" name="participationMode" value={form.participationMode} onChange={handleChange} options={[{ v: "", t: "בחרי מיקום" }, { v: "פרונטלי", t: "פרונטלי" }, { v: "מרחוק", t: "מרחוק" }, { v: "היברידי", t: "היברידי" }]} />
-                
+
                 <div style={styles.field}>
                   <label style={styles.label}>זמינות למחקר</label>
                   <div style={styles.inline}>
@@ -583,25 +585,25 @@ export default function CreateMentorProfile() {
 
               <div className="mentor-grid" style={styles.grid}>
                 <InputField label="היקף שעות שבועי" name="weeklyHours" value={form.weeklyHours} onChange={handleChange} placeholder="מספר בלבד" />
-                <DatePickerField 
-                  label="זמינות להתחלה" 
-                  name="startDate" 
-                  value={form.startDate} 
-                  onChange={(date) => updateField("startDate", date)} 
+                <DatePickerField
+                  label="זמינות להתחלה"
+                  name="startDate"
+                  value={form.startDate}
+                  onChange={(date) => updateField("startDate", date)}
                 />
               </div>
-              
+
               <div className="mentor-grid" style={styles.grid}>
-                  <TextAreaField label="מיומנויות וכלים" name="softwareSkills" value={form.softwareSkills} onChange={handleChange} placeholder="למשל: SPSS, Python..." rows={2} />
-                  <TextAreaField label="ניסיון מקצועי קודם" name="professionalExperience" value={form.professionalExperience} onChange={handleChange} placeholder="תאר/י ניסיון רלוונטי..." rows={2} />
+                <TextAreaField label="מיומנויות וכלים" name="softwareSkills" value={form.softwareSkills} onChange={handleChange} placeholder="למשל: SPSS, Python..." rows={2} />
+                <TextAreaField label="ניסיון מקצועי קודם" name="professionalExperience" value={form.professionalExperience} onChange={handleChange} placeholder="תאר/י ניסיון רלוונטי..." rows={2} />
               </div>
             </>
           ) : (
             <>
-               <div className="mentor-grid" style={styles.grid}>
-                  {/* REMOVED BRACKETS [] */}
-                  <SelectField label="תחומי עניין מחקר" name="researchInterests" value={form.researchInterests} onChange={handleChange} options={[{ v: "", t: "בחרי/י תחומים" }, { v: "AI ברפואה", t: "AI ברפואה" }, { v: "אפידמיולוגיה", t: "אפידמיולוגיה" }, { v: "רפואה דחופה", t: "רפואה דחופה" }, { v: "מחקר קליני", t: "מחקר קליני" }]} />
-               </div>
+              <div className="mentor-grid" style={styles.grid}>
+                {/* REMOVED BRACKETS [] */}
+                <SelectField label="תחומי עניין מחקר" name="researchInterests" value={form.researchInterests} onChange={handleChange} options={[{ v: "", t: "בחרי/י תחומים" }, { v: "AI ברפואה", t: "AI ברפואה" }, { v: "אפידמיולוגיה", t: "אפידמיולוגיה" }, { v: "רפואה דחופה", t: "רפואה דחופה" }, { v: "מחקר קליני", t: "מחקר קליני" }]} />
+              </div>
               <TextAreaField label="תיאור מחקרים קודמים" name="previousResearchDescription" value={form.previousResearchDescription} onChange={handleChange} />
             </>
           )}
@@ -612,8 +614,8 @@ export default function CreateMentorProfile() {
           <h3 style={styles.sectionTitle}>פרטים נוספים וקבצים</h3>
           <TextAreaField label="תיאור רקע אישי ואקדמי" name="personalAcademicDescription" value={form.personalAcademicDescription} onChange={handleChange} error={errors.personalAcademicDescription} rows={4} />
           <TextAreaField label="לקבלת חוות דעת ממנחים/מתלמדים" name="recommendationRequest" value={form.recommendationRequest} onChange={handleChange} placeholder="תואר + שם מלא + דואר אלקטרוני" rows={4} />
-          
-          <div className="mentor-grid" style={{...styles.grid, marginTop: 15}}>
+
+          <div className="mentor-grid" style={{ ...styles.grid, marginTop: 15 }}>
             <FileField label="העלאת קבצים (אופציונלי)" name="filesUpload" file={form.filesUpload} onChange={handleFileChange} />
             {/* REMOVED CONTRACT UPLOAD */}
           </div>
@@ -627,8 +629,8 @@ export default function CreateMentorProfile() {
         )}
 
         <div style={styles.actions}>
-          <button 
-            type="submit" 
+          <button
+            type="submit"
             style={{
               ...styles.primaryBtn,
               opacity: isLoading ? 0.7 : 1,
@@ -647,7 +649,7 @@ export default function CreateMentorProfile() {
           }
         `}</style>
       </form>
-    </div>
+    </div >
   );
 }
 
@@ -665,16 +667,16 @@ function InputField({ label, name, value, onChange, placeholder, disabled, error
 
 const CalendarIcon = ({ color }) => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M19 4H5C3.89543 4 3 4.89543 3 6V20C3 21.1046 3.89543 22 5 22H19C20.1046 22 21 21.1046 21 20V6C21 4.89543 20.1046 4 19 4Z" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-    <path d="M16 2V6" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-    <path d="M8 2V6" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-    <path d="M3 10H21" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    <path d="M19 4H5C3.89543 4 3 4.89543 3 6V20C3 21.1046 3.89543 22 5 22H19C20.1046 22 21 21.1046 21 20V6C21 4.89543 20.1046 4 19 4Z" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M16 2V6" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M8 2V6" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M3 10H21" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 );
 
 function DatePickerField({ label, value, onChange }) {
   const [show, setShow] = useState(false);
-  const [currentDate, setCurrentDate] = useState(new Date()); 
+  const [currentDate, setCurrentDate] = useState(new Date());
   const popupRef = useRef(null);
 
   useEffect(() => {
@@ -688,11 +690,11 @@ function DatePickerField({ label, value, onChange }) {
   }, []);
 
   const getMonthName = (date) => new Intl.DateTimeFormat("he-IL", { month: "long", year: "numeric" }).format(date);
-  
+
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const firstDay = new Date(year, month, 1).getDay(); 
+  const firstDay = new Date(year, month, 1).getDay();
 
   const handleDayClick = (day) => {
     const d = new Date(year, month, day);
@@ -713,11 +715,11 @@ function DatePickerField({ label, value, onChange }) {
   };
 
   return (
-    <div style={{...styles.field, position: 'relative'}} ref={popupRef}>
+    <div style={{ ...styles.field, position: 'relative' }} ref={popupRef}>
       <label style={styles.label}>{label}</label>
-      <div 
+      <div
         onClick={() => setShow(!show)}
-        style={{...styles.input, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingLeft: 10}}
+        style={{ ...styles.input, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingLeft: 10 }}
       >
         <span>{formatForDisplay(value) || "בחרי תאריך"}</span>
         <CalendarIcon color={ACCENT_TEAL} />
@@ -727,19 +729,19 @@ function DatePickerField({ label, value, onChange }) {
         <div style={styles.calendarPopup}>
           <div style={styles.calendarHeader}>
             <button type="button" onClick={nextMonth} style={styles.navBtn}>&lt;</button>
-            <span style={{fontWeight: 700, color: THEME_COLOR}}>{getMonthName(currentDate)}</span>
+            <span style={{ fontWeight: 700, color: THEME_COLOR }}>{getMonthName(currentDate)}</span>
             <button type="button" onClick={prevMonth} style={styles.navBtn}>&gt;</button>
           </div>
           <div style={styles.calendarGrid}>
-            {['א','ב','ג','ד','ה','ו','ש'].map(d => <div key={d} style={styles.dayName}>{d}</div>)}
+            {['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ש'].map(d => <div key={d} style={styles.dayName}>{d}</div>)}
             {Array.from({ length: firstDay }).map((_, i) => <div key={`empty-${i}`} />)}
             {Array.from({ length: daysInMonth }).map((_, i) => {
               const day = i + 1;
               const isSelected = value && parseInt(value.split('/')[0]) === day;
               return (
-                <button 
-                  key={day} 
-                  type="button" 
+                <button
+                  key={day}
+                  type="button"
                   onClick={() => handleDayClick(day)}
                   style={{
                     ...styles.dayBtn,
@@ -782,14 +784,14 @@ function TextAreaField({ label, name, value, onChange, rows, placeholder, error 
 
 function DegreesField({ label, value, onToggle, options, error }) {
   return (
-    <div style={{...styles.field, marginTop: 15}}>
+    <div style={{ ...styles.field, marginTop: 15 }}>
       <label style={styles.label}>{label}</label>
       <div style={styles.inline}>
         {options.map((opt) => (
-          <button 
+          <button
             key={opt}
-            type="button" 
-            onClick={() => onToggle(opt)} 
+            type="button"
+            onClick={() => onToggle(opt)}
             style={{ ...styles.pillBtn, ...(value.includes(opt) ? styles.pillBtnActive : {}) }}
           >
             {opt}
@@ -807,7 +809,7 @@ function FileField({ label, name, file, onChange }) {
       <label style={styles.label}>{label}</label>
       <div style={styles.fileWrapper}>
         <input type="file" name={name} onChange={onChange} style={styles.fileInput} id={name} />
-        <label htmlFor={name} style={styles.fileLabel}>
+        <label htmlFor={name} style={styles.fileLabel} className="create-profile-file-label">
           {file ? `✅ ${file.name}` : "בחרי קובץ..."}
         </label>
       </div>
@@ -833,16 +835,16 @@ const styles = {
   sectionTitle: { fontSize: 17, fontWeight: 700, color: THEME_COLOR, marginBottom: 16, borderRight: `4px solid ${ACCENT_PINK}`, paddingRight: 8, lineHeight: "1" },
   grid: { marginBottom: 16 },
   field: { display: "flex", flexDirection: "column", gap: 6, marginBottom: 4 },
-  
+
   label: { fontSize: 13, fontWeight: 600, color: "#000000", marginBottom: 2 },
-  
+
   input: { padding: "10px 14px", borderRadius: 8, border: "1px solid #ddd", fontSize: 14, outlineColor: ACCENT_TEAL, transition: "border 0.2s", height: 42, boxSizing: "border-box", width: "100%", fontFamily: "inherit", color: "#555" },
   select: { padding: "10px 14px", borderRadius: 8, border: "1px solid #ddd", fontSize: 14, background: "#fff", outlineColor: ACCENT_TEAL, height: 42, width: "100%", color: "#555" },
   textarea: { padding: "10px 14px", borderRadius: 8, border: "1px solid #ddd", fontSize: 14, resize: "vertical", outlineColor: ACCENT_TEAL, fontFamily: "inherit", color: "#555" },
-  
+
   inline: { display: "flex", gap: 8, flexWrap: "wrap" },
   pillBtn: { padding: "8px 16px", borderRadius: 8, border: "1px solid #eee", background: "white", cursor: "pointer", fontWeight: 600, fontSize: 13, color: "#666", transition: "0.2s" },
-  pillBtnActive: { background: ACCENT_TEAL, color: "white", borderColor: ACCENT_TEAL },  
+  pillBtnActive: { background: ACCENT_TEAL, color: "white", borderColor: ACCENT_TEAL },
   fileWrapper: { position: "relative", width: "100%" },
   fileInput: { opacity: 0, position: "absolute", zIndex: -1, width: "0.1px" },
   fileLabel: { display: "block", textAlign: "center", padding: "12px", borderRadius: 8, border: `1px dashed ${ACCENT_TEAL}`, color: ACCENT_TEAL, fontWeight: 600, cursor: "pointer", fontSize: 13, background: "#fafffe", transition: "0.2s" },
@@ -850,14 +852,14 @@ const styles = {
   primaryBtn: { padding: "14px 48px", borderRadius: 30, background: THEME_COLOR, color: "white", cursor: "pointer", fontSize: 16, fontWeight: 700, border: "none", boxShadow: "0 4px 12px rgba(44, 44, 108, 0.2)", transition: "0.2s" },
   inputError: { border: `1px solid ${ACCENT_PINK}` },
   error: { color: ACCENT_PINK, fontSize: 11, fontWeight: 600, marginTop: 2 },
-  serverError: { 
-    color: ACCENT_PINK, 
-    fontSize: 14, 
-    fontWeight: 600, 
-    textAlign: "center", 
-    padding: "12px 16px", 
-    background: "#fff5f5", 
-    borderRadius: 8, 
+  serverError: {
+    color: ACCENT_PINK,
+    fontSize: 14,
+    fontWeight: 600,
+    textAlign: "center",
+    padding: "12px 16px",
+    background: "#fff5f5",
+    borderRadius: 8,
     marginTop: 16,
     border: `1px solid ${ACCENT_PINK}`
   },
