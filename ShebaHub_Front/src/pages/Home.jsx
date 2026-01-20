@@ -12,7 +12,7 @@ const Home = () => {
     <main className="home-page">
       <section className="home-hero">
         <div className="home-left" dir="rtl">
-          <h1 className="home-title">ברוכה הבאה לShebaHub</h1>
+          <h1 className="home-title"> ברוכים הבאים ל-hebaHub</h1>
 
           <p className="home-subtitle">
             פלטפורמה לחיבור בין חוקרים לסטודנטים ומתמחים לקידום מחקר, חדשנות
