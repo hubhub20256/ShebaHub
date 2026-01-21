@@ -939,6 +939,7 @@ class PublicStudentSerializer(serializers.ModelSerializer):
     apprenticeStage = serializers.SerializerMethodField(read_only=True)
     institution = serializers.SerializerMethodField(read_only=True)
     avatarUrl = serializers.SerializerMethodField(read_only=True)
+    isAvailableForResearch = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = StudentProfile
@@ -952,6 +953,7 @@ class PublicStudentSerializer(serializers.ModelSerializer):
             'apprenticeStage',
             'institution',
             'avatarUrl',
+            'isAvailableForResearch',
         ]
 
     def get_genderDisplay(self, obj):
