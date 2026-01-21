@@ -26,7 +26,7 @@ A platform connecting students and mentors. This repository contains **both** th
 ### 1) Clone
 
 ```bash
-git clone -b research-enrollment-deletion-workflow --single-branch https://github.com/hubhub20256/ShebaHub.git ShebaHub
+git clone -b minor-bug-fixes --single-branch https://github.com/hubhub20256/ShebaHub.git ShebaHub
 cd ShebaHub
 ```
 
