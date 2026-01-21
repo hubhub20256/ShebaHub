@@ -112,7 +112,7 @@ export default function MyResearches() {
       )}
 
       {!checkingRole && !createdLoading && !joinedLoading && !error && !didRedirect && createdCount === 0 && joinedCount === 0 && (
-        <p className="researches-no-results">אין לך מחקרים עדיין.</p>
+        <p className="researches-no-results">עדיין לא נרשמת למחקר. נשלח לעזור לך למצוא את הפרוייקט הבא שלך!</p>
       )}
 
       {!checkingRole && !createdLoading && !joinedLoading && !error && !didRedirect && (createdCount > 0 || joinedCount > 0) && (

@@ -1,5 +1,4 @@
 /* src/index.css */
-:*,
 *::before,
 *::after {
   box-sizing: border-box;
@@ -11,20 +10,29 @@
   font-weight: 400;
 
   /* משתנים למצב יום (ברירת מחדל) */
-  --primary-color: #0056b3; /* Sheba-like Blue */
+  --primary-color: #0056b3;
+  /* Sheba-like Blue */
   --bg-color: #f4f7f6;
   --text-color: #333;
-  --card-bg: #ffffff; /* הוספתי רקע לכרטיסים/אלמנטים */
-  --border-color: #e0e0e0; /* הוספתי צבע לגבולות */
+  --card-bg: #ffffff;
+  /* הוספתי רקע לכרטיסים/אלמנטים */
+  --border-color: #e0e0e0;
+  /* הוספתי צבע לגבולות */
 }
 
 /* משתנים למצב לילה */
 [data-theme="dark"] {
-  --primary-color: #4da3ff; /* כחול בהיר יותר שמתאים לרקע כהה */
-  --bg-color: #121212; /* רקע כהה מאוד */
-  --text-color: #e0e0e0; /* טקסט בהיר */
-  --card-bg: #1e1e1e; /* רקע כרטיסים כהה */
-  --border-color: #333333; /* גבולות כהים */
+  color-scheme: dark;
+  --primary-color: #4da3ff;
+  /* כחול בהיר יותר שמתאים לרקע כהה */
+  --bg-color: #121212;
+  /* רקע כהה מאוד */
+  --text-color: #e0e0e0;
+  /* טקסט בהיר */
+  --card-bg: #1e1e1e;
+  /* רקע כרטיסים כהה */
+  --border-color: #333333;
+  /* גבולות כהים */
 }
 
 body {
@@ -50,6 +58,7 @@ h2,
 h3 {
   margin-top: 0;
 }
+
 /* הוספה לקובץ src/index.css */
 
 #root {
@@ -57,7 +66,8 @@ h3 {
   background-color: var(--bg-color);
   color: var(--text-color);
   width: 100%;
-  isolation: isolate; /* מונע זליגה של רקעים אחרים */
+  isolation: isolate;
+  /* מונע זליגה של רקעים אחרים */
 }
 
 /* ========================================= */
@@ -82,7 +92,7 @@ body,
 [data-theme="dark"] .home-right,
 [data-theme="dark"] main,
 [data-theme="dark"] section,
-[data-theme="dark"] div > main {
+[data-theme="dark"] div>main {
   background-color: transparent !important;
   color: var(--text-color) !important;
 }
@@ -90,7 +100,8 @@ body,
 /* 3. מחזיר את הצבע רק לקופסאות הקטנות שצריכות אותו (כמו הכרטיסים עם המספרים 01, 02) */
 [data-theme="dark"] .home-vision-text-block {
   background-color: var(--card-bg) !important;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5); /* צל מודגש יותר ללילה */
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+  /* צל מודגש יותר ללילה */
 }
 
 /* 4. מוודא שכל הטקסטים בצבע הנכון */
@@ -101,6 +112,7 @@ body,
 [data-theme="dark"] span {
   color: var(--text-color) !important;
 }
+
 /* ====================================================== */
 /* תיקון ספציפי לדפי התחברות, הרשמה ודף הבית             */
 /* ====================================================== */
@@ -135,7 +147,8 @@ body,
 
 /* 3. תיקון דפי הרשמה והתחברות (Auth Pages) */
 /* צובע את הטופס באפור כהה ואת האינפוטים */
-[data-theme="dark"] .auth-layout,       /* מניח שזה שם הקלאס של ה-Layout */
+[data-theme="dark"] .auth-layout,
+/* מניח שזה שם הקלאס של ה-Layout */
 [data-theme="dark"] .register-form,
 [data-theme="dark"] form {
   background-color: transparent !important;
@@ -157,7 +170,13 @@ body,
 [data-theme="dark"] textarea {
   background-color: #2b2b2b !important;
   color: #fff !important;
+  color: #fff !important;
   border-color: #555 !important;
+}
+
+[data-theme="dark"] select option {
+  background-color: #2b2b2b !important;
+  color: #fff !important;
 }
 
 [data-theme="dark"] input::placeholder {
@@ -175,15 +194,20 @@ body,
 
 /* 1. רקע הכרטיסייה עצמה */
 [data-theme="dark"] .researchCard {
-  background-color: var(--card-bg) !important; /* אפור כהה */
-  color: var(--text-color) !important; /* טקסט בהיר */
-  border: 1px solid #333 !important; /* מסגרת עדינה */
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5) !important; /* צל כהה */
+  background-color: var(--card-bg) !important;
+  /* אפור כהה */
+  color: var(--text-color) !important;
+  /* טקסט בהיר */
+  border: 1px solid #333 !important;
+  /* מסגרת עדינה */
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5) !important;
+  /* צל כהה */
 }
 
 /* 2. כותרת הכרטיסייה (הלינק) */
 [data-theme="dark"] .researchCard__title a {
-  color: #61dafb !important; /* תכלת בהיר שיבלוט על הרקע הכהה */
+  color: #61dafb !important;
+  /* תכלת בהיר שיבלוט על הרקע הכהה */
 }
 
 /* 3. תגיות התחום (העיגולים הקטנים כמו "נוירולוגיה") */
@@ -195,7 +219,8 @@ body,
 
 /* 4. התוויות הקטנות (למשל: "מנחים:", "תחילת מחקר:") */
 [data-theme="dark"] .researchCard__label {
-  color: #aaaaaa !important; /* אפור בהיר, לא לבן בוהק */
+  color: #aaaaaa !important;
+  /* אפור בהיר, לא לבן בוהק */
   font-weight: normal;
 }
 
@@ -216,10 +241,14 @@ body,
 
 /* 1. הקופסה הלבנה של הטופס (הכרטיס במרכז) */
 [data-theme="dark"] .auth-card {
-  background-color: var(--card-bg) !important; /* צבע אפור כהה */
-  color: var(--text-color) !important; /* טקסט בהיר */
-  border: 1px solid #333 !important; /* מסגרת עדינה */
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5) !important; /* צל מודגש יותר */
+  background-color: var(--card-bg) !important;
+  /* צבע אפור כהה */
+  color: var(--text-color) !important;
+  /* טקסט בהיר */
+  border: 1px solid #333 !important;
+  /* מסגרת עדינה */
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5) !important;
+  /* צל מודגש יותר */
 }
 
 /* 2. הכותרת של הטופס ("הרשמה" / "התחברות") */
@@ -229,12 +258,14 @@ body,
 
 /* 3. תת-כותרת ("ברוכה הבאה") */
 [data-theme="dark"] .auth-subtitle {
-  color: #aaaaaa !important; /* אפור בהיר */
+  color: #aaaaaa !important;
+  /* אפור בהיר */
 }
 
 /* 4. הלינק התחתון ("להתחברות" / "להרשמה") */
 [data-theme="dark"] .auth-link {
-  color: #4da3ff !important; /* תכלת יפה */
+  color: #4da3ff !important;
+  /* תכלת יפה */
 }
 
 /* 5. הטקסט שליד הלינק התחתון */
@@ -293,4 +324,32 @@ body,
 [data-theme="dark"] .mentorCard strong,
 [data-theme="dark"] .mentorCard b {
   color: #cccccc !important;
+}
+
+/* ======================================================= */
+/* FIX FOR CREATE PROFILE PAGE (INLINE STYLES OVERRIDE)   */
+/* ======================================================= */
+
+/* ======================================================= */
+
+/* specific override for the create profile card to replace "white" inline style */
+[data-theme="dark"] .create-profile-card {
+  background-color: var(--card-bg) !important;
+  border: 1px solid #333 !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5) !important;
+}
+
+/* Force labels and section titles to be light in dark mode */
+[data-theme="dark"] label,
+[data-theme="dark"] h3,
+[data-theme="dark"] .create-profile-label,
+[data-theme="dark"] .create-profile-section-title {
+  color: var(--text-color) !important;
+}
+
+/* Ensure Role Buttons are visible */
+[data-theme="dark"] button[type="button"] {
+  color: var(--text-color) !important;
+  background-color: transparent !important;
+  border-color: #555 !important;
 }
