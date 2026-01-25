@@ -127,7 +127,7 @@ def my_research_detail(request, research_id: int):
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def apply_to_research(request, research_id: int):
-    """POST /api/v1/research/<id>/apply/ -> authenticated user applies to a research."""
+    """POST /api/v1/research/<id>/apply/ -> student applies to a research."""
     try:
         research = Research.objects.get(id=research_id)
     except Research.DoesNotExist:
@@ -136,10 +136,8 @@ def apply_to_research(request, research_id: int):
     if research.owner_id == request.user.id:
         return Response({"detail": "You cannot apply to your own research."}, status=status.HTTP_400_BAD_REQUEST)
 
-    # Roles are determined by the existence of related profiles.
-    # Allow both students and mentors/researchers (mentor profile) to apply.
-    if not (getattr(request.user, "has_student_profile", False) or getattr(request.user, "has_mentor_profile", False)):
-        return Response({"detail": "You must create a profile before applying to researches."}, status=status.HTTP_403_FORBIDDEN)
+    if not StudentProfile.objects.filter(user=request.user).exists():
+        return Response({"detail": "Only students can apply to researches."}, status=status.HTTP_403_FORBIDDEN)
 
     try:
         obj = ResearchApplication.objects.get(research=research, applicant=request.user)

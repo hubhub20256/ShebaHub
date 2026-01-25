@@ -129,69 +129,12 @@
   transition: all 0.3s ease;
 }
 
-/* --- Profile Dropdown (Desktop - Floating) --- */
-.profile-dropdown {
-  position: absolute;
-  top: calc(100% + 15px);
-  right: -10px;
-  min-width: 220px;
-  background: var(--card-bg, #fff);
-  border: 1px solid var(--border-color, #eee);
-  border-radius: 12px;
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
-  z-index: 9999;
-  text-align: right;
-  display: flex;
-  flex-direction: column;
-  padding: 10px 0;
-  overflow: hidden;
-}
-
-.profile-dropdown-link {
-  padding: 10px 20px !important;
-  display: block !important;
-  color: var(--text-color) !important;
-  border-bottom: none !important;
-  text-align: right;
-}
-
-.profile-dropdown-link:hover {
-  background: rgba(44, 44, 108, 0.08);
-}
-
-.profile-logout-link {
-  color: red !important;
-  border-top: 1px solid var(--border-color) !important;
-}
-
 /* --- Mobile Rules (<768px) --- */
 @media (max-width: 768px) {
-
-  /* Navbar needs to be able to grow on mobile when menu opens */
-  .navbar.mobile-view {
-    height: auto;
-    min-height: 64px;
-    flex-wrap: wrap;
-  }
-
-  /* Header row items need to be 64px tall and centered */
-  .navbar.mobile-view > .navbar-logo-container,
-  .navbar.mobile-view > .mobile-actions {
-    min-height: 64px;
-    display: flex;
-    align-items: center;
-  }
-
   .mobile-actions {
     display: flex;
     align-items: center;
     gap: 15px;
-  }
-
-  .mobile-profile-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
   }
 
   .mobile-actions .navbar-profile-icon img {
@@ -207,20 +150,12 @@
     display: flex;
   }
 
-  /* Single unified dropdown for both profile and hamburger menu */
-  .mobile-dropdown,
   .navbar-links {
     display: flex;
     width: 100%;
     margin-left: 0;
-    
-    /* Ensure menu is in document flow (push content pattern) */
-    position: relative;
-    flex-basis: 100%;
-    order: 3; /* Ensures menu appears below the header row */
 
-    /* Menu Appearance */
-    background: var(--bg-color, rgba(255, 255, 255, 0.95));
+    background: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(10px);
 
     border-top: 1px solid transparent;
@@ -232,37 +167,16 @@
     max-height: 0;
     overflow: hidden;
     gap: 0;
-    transition: max-height 0.6s cubic-bezier(0.4, 0, 0.2, 1), 
-                padding 0.6s ease,
-                border-color 0.6s ease;
+    transition: max-height 0.4s ease-in-out, border-color 0.4s;
   }
 
-  .mobile-dropdown.active,
   .navbar-links.active {
-    max-height: 500px; /* Fixed max height for smoother animation */
-    /* Open state */
-    padding: 0.75rem 0;
-    border-top-color: var(--border-color, #eee);
+    max-height: calc(100vh - 64px);
+    padding: 1rem 0;
+    border-top-color: #eee;
     overflow-y: auto;
   }
 
-  .mobile-dropdown .navbar-link {
-    display: block;
-    padding: 0.8rem 0;
-    width: 100%;
-    text-align: center;
-    border-bottom: 1px solid var(--border-color, #eee);
-  }
-
-  .mobile-dropdown .navbar-link:last-child {
-    border-bottom: none;
-  }
-
-  .mobile-dropdown .profile-logout-link {
-    color: red !important;
-  }
-
-  /* Vertical Stacking for Groups/Links */
   .navbar-group {
     flex-direction: column;
     width: 100%;

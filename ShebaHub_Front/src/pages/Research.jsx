@@ -409,9 +409,10 @@ export default function Research() {
    */
   const mapApplicationToApprenticeCard = (app) => {
     if (!app) return null;
+    const availabilityText = app.researchAvailability ? "כן" : "לא";
     return {
       applicationId: app.id,
-      id: app.applicantProfileId || app.applicantMentorProfileId || app.applicantId,
+      id: app.applicantProfileId || app.applicantId,
       name: app.name,
       email: app.email,
       gender: app.gender,
@@ -419,8 +420,7 @@ export default function Research() {
       school_beginner_year: app.startYear,
       Educational_institution: app.institution,
       profileImage: app.avatarUrl,
-      isAvailableForResearch: app.researchAvailability,
-      hasStudentProfile: app.hasStudentProfile,
+      research_availability: availabilityText,
       application_status: app.status,
     };
   };
@@ -1516,16 +1516,10 @@ export default function Research() {
         
         .applicant-actions button {
           flex: 1;
-          padding: 10px 16px;
-          height: 44px;
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          gap: 8px;
-          border-radius: 8px;
+          padding: 8px 12px;
+          border-radius: 10px;
           font-weight: 600;
           font-size: 14px;
-          line-height: 1;
           cursor: pointer;
           transition: all 0.2s ease;
           border: none;
