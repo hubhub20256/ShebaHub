@@ -1,5 +1,5 @@
 // API Service for Backend Communication
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+const API_BASE_URL = 'http://localhost:8000/api';
 
 // ---------------- Token helpers ----------------
 const decodeJwtPayload = (token) => {
@@ -42,29 +42,29 @@ const clearTokens = () => {
 // Create headers with authentication
 const getHeaders = (includeAuth = true, isFormData = false) => {
   const headers = {};
-
+  
   if (!isFormData) {
     headers['Content-Type'] = 'application/json';
   }
-
+  
   if (includeAuth) {
     const token = getAccessToken();
     if (token && isAccessTokenValid(token)) {
       headers['Authorization'] = `Bearer ${token}`;
     }
   }
-
+  
   return headers;
 };
 
 // Handle API response
 const handleResponse = async (response) => {
   const data = await response.json().catch(() => ({}));
-
+  
   if (!response.ok) {
     throw { status: response.status, data };
   }
-
+  
   return data;
 };
 
@@ -72,14 +72,14 @@ const handleResponse = async (response) => {
 const refreshAccessToken = async () => {
   const refreshToken = getRefreshToken();
   if (!refreshToken) return false;
-
+  
   try {
     const response = await fetch(`${API_BASE_URL}/auth/token/refresh/`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ refresh: refreshToken }),
     });
-
+    
     if (response.ok) {
       const data = await response.json();
       localStorage.setItem('accessToken', data.access);
@@ -94,16 +94,16 @@ const refreshAccessToken = async () => {
 // API request wrapper (auto-retries once after refresh on 401)
 const apiRequest = async (endpoint, options = {}) => {
   const { method = 'GET', body, auth = true, isFormData = false } = options;
-
+  
   const config = {
     method,
     headers: getHeaders(auth, isFormData),
   };
-
+  
   if (body) {
     config.body = isFormData ? body : JSON.stringify(body);
   }
-
+  
   const url = `${API_BASE_URL}${endpoint}`;
   let response = await fetch(url, config);
 
@@ -135,22 +135,22 @@ export const authAPI = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(userData),
     });
-
+    
     const data = await response.json();
-
+    
     if (!response.ok) {
       throw { status: response.status, data };
     }
-
+    
     // Save tokens and user data
     if (data.tokens) {
       setTokens(data.tokens.access, data.tokens.refresh);
       localStorage.setItem('user', JSON.stringify(data.user));
     }
-
+    
     return data;
   },
-
+  
   // Login user
   login: async (credentials) => {
     const response = await fetch(`${API_BASE_URL}/auth/login/`, {
@@ -158,33 +158,33 @@ export const authAPI = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(credentials),
     });
-
+    
     const data = await response.json();
-
+    
     if (!response.ok) {
       throw { status: response.status, data };
     }
-
+    
     // Save tokens and user data
     if (data.tokens) {
       setTokens(data.tokens.access, data.tokens.refresh);
       localStorage.setItem('user', JSON.stringify(data.user));
     }
-
+    
     return data;
   },
-
+  
   // Logout user
   logout: () => {
     clearTokens();
   },
-
+  
   // Get current user from localStorage
   getCurrentUser: () => {
     const user = localStorage.getItem('user');
     return user ? JSON.parse(user) : null;
   },
-
+  
   // Check if user is authenticated
   isAuthenticated: () => {
     const token = getAccessToken();
@@ -197,28 +197,28 @@ export const authAPI = {
 export const profilesAPI = {
   // Get mentor profile of current user
   getMyMentorProfile: () => apiRequest('/profiles/mentor/me/'),
-
+  
   // Create mentor profile
   createMentorProfile: (profileData) => apiRequest('/profiles/mentor/me/', {
     method: 'POST',
     body: profileData,
   }),
-
+  
   // Update mentor profile (partial update)
   updateMentorProfile: (profileData) => apiRequest('/profiles/mentor/me/', {
     method: 'PATCH',
     body: profileData,
   }),
-
+  
   // Get student profile of current user
   getMyStudentProfile: () => apiRequest('/profiles/student/me/'),
-
+  
   // Create student profile
   createStudentProfile: (profileData) => apiRequest('/profiles/student/me/', {
     method: 'POST',
     body: profileData,
   }),
-
+  
   // Update student profile (partial update)
   updateStudentProfile: (profileData) => apiRequest('/profiles/student/me/', {
     method: 'PATCH',
@@ -270,16 +270,16 @@ export const profilesAPI = {
     const queryString = new URLSearchParams(params).toString();
     return apiRequest(`/profiles/mentors/${queryString ? '?' + queryString : ''}`, { auth: false });
   },
-
+  
   // Get specific mentor by ID (public)
   getMentor: (id) => apiRequest(`/profiles/mentors/${id}/`, { auth: true }),
-
+  
   // List all students (public)
   listStudents: (params = {}) => {
     const queryString = new URLSearchParams(params).toString();
     return apiRequest(`/profiles/students/${queryString ? '?' + queryString : ''}`, { auth: false });
   },
-
+  
   // Get specific student by ID (public)
   getStudent: (id) => apiRequest(`/profiles/students/${id}/`, { auth: true }),
 };
@@ -377,7 +377,7 @@ export const researchAPI = {
 export const referenceAPI = {
   // Get all reference data
   getAll: () => apiRequest('/reference-data/', { auth: false }),
-
+  
   // Get specific reference data
   getSpecialties: () => apiRequest('/reference-data/specialties/', { auth: false }),
   getInstitutions: () => apiRequest('/reference-data/institutions/', { auth: false }),
