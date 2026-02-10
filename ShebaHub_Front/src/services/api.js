@@ -1,5 +1,7 @@
 // API Service for Backend Communication
-const API_BASE_URL = 'http://shebahub.hitheal.org.il:8085/api';
+//const API_BASE_URL = 'http://shebahub.hitheal.org.il:8085/api';
+const API_BASE_URL = 'http://localhost:8000/api';
+
 //updated url
 
 // ---------------- Token helpers ----------------
