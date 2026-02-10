@@ -477,16 +477,6 @@
   border: 1px solid rgba(100, 116, 139, 0.2);
 }
 
-.availability-badge.unknown {
-  color: #64748b; /* אפור */
-  background: rgba(100, 116, 139, 0.1);
-  border: 1px solid rgba(100, 116, 139, 0.2);
-}
-
-.availability-badge.placeholder {
-  visibility: hidden;
-}
-
 /* שדות המידע - מראה קלאסי */
 .apprentice-portal-details {
   width: 100%;
@@ -758,20 +748,8 @@
     top: 15px;
   }
 
-  /* לא צוין - אפור */
-  .availability-badge.unknown {
-    color: #64748b;
-    background: rgba(100, 116, 139, 0.1);
-    border: 1px solid rgba(100, 116, 139, 0.2);
-  }
-  
-  /* שדות המידע */
-  .apprentice-portal-details {
-    width: 100%;
-    border-top: 1px solid #f1f5f9;
-    padding-top: 15px;
-    display: flex;
-    flex-direction: column;
+  .apprentice-portal-body {
+    padding: 50px 15px 20px 15px;
   }
 
   .apprentice-detail-row {

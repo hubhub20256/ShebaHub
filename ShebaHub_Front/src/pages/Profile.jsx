@@ -328,26 +328,6 @@ function Profile() {
   const isMentor = activeRole === "mentor";
   const isApprentice = activeRole === "apprentice";
 
-  // Public profile view (read-only). This prevents non-owners from even seeing edit UI.
-  if (!isOwnProfile && !isMeAlias) {
-    return <PublicProfile />;
-  }
-
-  // /user/me requires login
-  if (isMeAlias && !user) {
-    return (
-      <div dir="rtl" className="profile-page">
-        <div style={{ textAlign: "center", padding: "50px" }}>
-          <p>יש להתחבר כדי לצפות בפרופיל</p>
-          <button className="profile-edit-btn" onClick={() => navigate("/login")}>התחברות</button>
-          <span style={{ margin: "0 8px" }} />
-          <button className="profile-edit-btn" onClick={() => navigate("/register")}>הרשמה</button>
-        </div>
-      </div>
-    );
-  }
-  const hasProfile = isMentor || isApprentice;
-
   const showApprenticeSpecialty = useMemo(() => {
     if (!userData || !isApprentice) return false;
     if (userData.apprenticeStage === "סטודנט") {
@@ -553,6 +533,10 @@ function Profile() {
     }
   }
 
+  // ================================================================
+  // CONDITIONAL RENDERING - Order is critical! 
+  // ================================================================
+  // 1. First: Show loading state while fetching data
   if (isLoading) {
     return (
       <div dir="rtl" className="profile-page">
@@ -563,6 +547,28 @@ function Profile() {
     );
   }
 
+  // 2. Second: Check if viewing someone else's profile (PUBLIC VIEW)
+  //    This MUST come before user/userData checks to prevent showing
+  //    "no profile found" for valid public profiles
+  if (!isOwnProfile && !isMeAlias) {
+    return <PublicProfile />;
+  }
+
+  // 3. Third: Check if /user/me was accessed without login
+  if (isMeAlias && !user) {
+    return (
+      <div dir="rtl" className="profile-page">
+        <div style={{ textAlign: "center", padding: "50px" }}>
+          <p>יש להתחבר כדי לצפות בפרופיל</p>
+          <button className="profile-edit-btn" onClick={() => navigate("/login")}>התחברות</button>
+          <span style={{ margin: "0 8px" }} />
+          <button className="profile-edit-btn" onClick={() => navigate("/register")}>הרשמה</button>
+        </div>
+      </div>
+    );
+  }
+
+  // 4. Fourth: Check if user is logged in (for viewing own profile)
   if (!user) {
     return (
       <div dir="rtl" className="profile-page">
@@ -576,6 +582,7 @@ function Profile() {
     );
   }
 
+  // 5. Fifth: Check if own profile exists
   if (!userData) {
     return (
       <div dir="rtl" className="profile-page">
@@ -586,6 +593,11 @@ function Profile() {
       </div>
     );
   }
+
+  // ================================================================
+  // OWN PROFILE VIEW - Render editable profile interface
+  // ================================================================
+  const hasProfile = isMentor || isApprentice;
 
   const shouldShowSpecialty = isMentor || showApprenticeSpecialty;
   const toggleLabel = (() => {

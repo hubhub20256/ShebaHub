@@ -4,37 +4,9 @@ import "./card.css";
 export default function ApprenticesCard({ apprentice }) {
   const navigate = useNavigate();
 
-  const shouldShowAvailabilityBadge = apprentice?.hasStudentProfile !== false;
-
-  const rawAvailability =
-    apprentice?.isAvailableForResearch ??
-    apprentice?.researchAvailability ??
-    apprentice?.research_availability;
-
-  const normalizedAvailability = (() => {
-    if (rawAvailability === true) return true;
-    if (rawAvailability === false) return false;
-    if (typeof rawAvailability === "string") {
-      const v = rawAvailability.trim();
-      if (v === "כן") return true;
-      if (v === "לא") return false;
-    }
-    return null;
-  })();
-
-  const availabilityText =
-    normalizedAvailability === true
-      ? "זמינ/ה להצטרפות למחקר"
-      : normalizedAvailability === false
-        ? "לא זמינ/ה להצטרפות למחקר"
-        : "זמינות להצטרפות למחקר לא צוינה";
-
-  const availabilityClass =
-    normalizedAvailability === true
-      ? "available"
-      : normalizedAvailability === false
-        ? "not-available"
-        : "unknown";
+  const isAvailable = apprentice.research_availability === "כן";
+  const availabilityText = isAvailable ? "זמינ/ה להצטרפות למחקר" : "לא זמינ/ה להצטרפות למחקר";
+  const availabilityClass = isAvailable ? "available" : "not-available";
 
   const handleProfileClick = () => {
     if (apprentice && apprentice.id) {
@@ -65,13 +37,9 @@ export default function ApprenticesCard({ apprentice }) {
         
         {/* מיכל התגים כעת יכיל רק את הזמינות */}
         <div className="apprentice-badges-wrapper">
-          {shouldShowAvailabilityBadge ? (
-            <span className={`availability-badge ${availabilityClass}`}>
-              {availabilityText}
-            </span>
-          ) : (
-            <span className="availability-badge placeholder">placeholder</span>
-          )}
+          <span className={`availability-badge ${availabilityClass}`}>
+            {availabilityText}
+          </span>
         </div>
 
         <div className="apprentice-portal-details">
