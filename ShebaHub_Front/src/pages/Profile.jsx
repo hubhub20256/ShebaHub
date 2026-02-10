@@ -327,6 +327,7 @@ function Profile() {
   const hasApprenticeProfile = useMemo(() => Boolean(apprenticeProfile), [apprenticeProfile]);
   const isMentor = activeRole === "mentor";
   const isApprentice = activeRole === "apprentice";
+  const hasProfile = isMentor || isApprentice;
 
   const showApprenticeSpecialty = useMemo(() => {
     if (!userData || !isApprentice) return false;
@@ -336,6 +337,7 @@ function Profile() {
     return userData.apprenticeStage !== "";
   }, [userData, isApprentice]);
 
+  // ALL function definitions - these don't violate hooks rules
   function handleToggleClick() {
     if (hasMentorProfile && hasApprenticeProfile) {
       const next = activeRole === "mentor" ? apprenticeProfile : mentorProfile;
@@ -533,28 +535,22 @@ function Profile() {
     }
   }
 
-  // ================================================================
-  // CONDITIONAL RENDERING - Order is critical! 
-  // ================================================================
-  // 1. First: Show loading state while fetching data
-  if (isLoading) {
-    return (
-      <div dir="rtl" className="profile-page">
-        <div style={{ textAlign: "center", padding: "50px" }}>
-          <p>טוען פרופיל...</p>
-        </div>
-      </div>
-    );
-  }
+  // Computed values that depend on hooks (but don't use hooks themselves)
+  const shouldShowSpecialty = isMentor || showApprenticeSpecialty;
+  const toggleLabel = (() => {
+    if (hasMentorProfile && hasApprenticeProfile) return `🔄 החלף תצוגה (${isMentor ? "מנחה" : "מתלמד/ת"})`;
+    if (hasApprenticeProfile && !hasMentorProfile) return "🔄 צור פרופיל מנחה";
+    if (hasMentorProfile && !hasApprenticeProfile) return "🔄 צור פרופיל מתלמד/ת";
+    return "🔄 צור פרופיל";
+  })();
 
-  // 2. Second: Check if viewing someone else's profile (PUBLIC VIEW)
-  //    This MUST come before user/userData checks to prevent showing
-  //    "no profile found" for valid public profiles
+  // NOW we can do conditional rendering - all hooks have been called
+  // Public profile view (read-only). This prevents non-owners from even seeing edit UI.
   if (!isOwnProfile && !isMeAlias) {
     return <PublicProfile />;
   }
 
-  // 3. Third: Check if /user/me was accessed without login
+  // /user/me requires login
   if (isMeAlias && !user) {
     return (
       <div dir="rtl" className="profile-page">
@@ -568,7 +564,16 @@ function Profile() {
     );
   }
 
-  // 4. Fourth: Check if user is logged in (for viewing own profile)
+  if (isLoading) {
+    return (
+      <div dir="rtl" className="profile-page">
+        <div style={{ textAlign: "center", padding: "50px" }}>
+          <p>טוען פרופיל...</p>
+        </div>
+      </div>
+    );
+  }
+
   if (!user) {
     return (
       <div dir="rtl" className="profile-page">
@@ -582,7 +587,6 @@ function Profile() {
     );
   }
 
-  // 5. Fifth: Check if own profile exists
   if (!userData) {
     return (
       <div dir="rtl" className="profile-page">
@@ -593,19 +597,6 @@ function Profile() {
       </div>
     );
   }
-
-  // ================================================================
-  // OWN PROFILE VIEW - Render editable profile interface
-  // ================================================================
-  const hasProfile = isMentor || isApprentice;
-
-  const shouldShowSpecialty = isMentor || showApprenticeSpecialty;
-  const toggleLabel = (() => {
-    if (hasMentorProfile && hasApprenticeProfile) return `🔄 החלף תצוגה (${isMentor ? "מנחה" : "מתלמד/ת"})`;
-    if (hasApprenticeProfile && !hasMentorProfile) return "🔄 צור פרופיל מנחה";
-    if (hasMentorProfile && !hasApprenticeProfile) return "🔄 צור פרופיל מתלמד/ת";
-    return "🔄 צור פרופיל";
-  })();
 
   return (
     <div dir="rtl" className="profile-page">

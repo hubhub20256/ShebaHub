@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from apps.profiles.models import StudentProfile
+from apps.profiles.models import StudentProfile, MentorProfile
 
 from .models import Research, ResearchApplication
 
@@ -87,6 +87,7 @@ class ResearchCreateSerializer(serializers.ModelSerializer):
 class ResearchApplicationSerializer(serializers.ModelSerializer):
     applicantId = serializers.SerializerMethodField(read_only=True)
     applicantProfileId = serializers.SerializerMethodField(read_only=True)
+    applicantMentorProfileId = serializers.SerializerMethodField(read_only=True)
     name = serializers.SerializerMethodField(read_only=True)
     email = serializers.SerializerMethodField(read_only=True)
     gender = serializers.SerializerMethodField(read_only=True)
@@ -95,6 +96,8 @@ class ResearchApplicationSerializer(serializers.ModelSerializer):
     institution = serializers.SerializerMethodField(read_only=True)
     avatarUrl = serializers.SerializerMethodField(read_only=True)
     researchAvailability = serializers.SerializerMethodField(read_only=True)
+    isAvailableForResearch = serializers.SerializerMethodField(read_only=True)
+    hasStudentProfile = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = ResearchApplication
@@ -105,6 +108,7 @@ class ResearchApplicationSerializer(serializers.ModelSerializer):
             "updated_at",
             "applicantId",
             "applicantProfileId",
+            "applicantMentorProfileId",
             "name",
             "email",
             "gender",
@@ -113,6 +117,8 @@ class ResearchApplicationSerializer(serializers.ModelSerializer):
             "institution",
             "avatarUrl",
             "researchAvailability",
+            "isAvailableForResearch",
+            "hasStudentProfile",
         ]
         read_only_fields = fields
 
@@ -123,6 +129,10 @@ class ResearchApplicationSerializer(serializers.ModelSerializer):
         profile = self._get_student_profile(obj)
         return str(profile.id) if profile else None
 
+    def get_applicantMentorProfileId(self, obj):
+        profile = self._get_mentor_profile(obj)
+        return str(profile.id) if profile else None
+
     def _get_student_profile(self, obj):
         try:
             return StudentProfile.objects.select_related(
@@ -130,6 +140,15 @@ class ResearchApplicationSerializer(serializers.ModelSerializer):
                 "apprenticeStage",
             ).get(user=obj.applicant)
         except StudentProfile.DoesNotExist:
+            return None
+
+    def _get_mentor_profile(self, obj):
+        try:
+            return MentorProfile.objects.select_related(
+                "institution",
+                "academicRank",
+            ).get(user=obj.applicant)
+        except MentorProfile.DoesNotExist:
             return None
 
     def get_name(self, obj):
@@ -180,3 +199,9 @@ class ResearchApplicationSerializer(serializers.ModelSerializer):
         if not profile:
             return None
         return bool(getattr(profile, "isAvailableForResearch", False))
+
+    def get_isAvailableForResearch(self, obj):
+        return self.get_researchAvailability(obj)
+
+    def get_hasStudentProfile(self, obj):
+        return self._get_student_profile(obj) is not None
