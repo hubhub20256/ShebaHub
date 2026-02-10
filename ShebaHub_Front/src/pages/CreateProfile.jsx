@@ -9,7 +9,6 @@ import {
 } from "../data/specialties";
 
 // --- CONSTANTS ---
-// REMOVED BRACKETS []
 const SPECIALTY_GROUPS = [
   { v: "", t: "בחרי/י קטגוריה" },
   { v: "מקצועות הבסיס", t: "מקצועות הבסיס" },
@@ -46,7 +45,6 @@ const INITIAL_FORM_STATE = {
   personalAcademicDescription: "",
   recommendationRequest: "",
   filesUpload: null,
-  // contractUpload removed from state logically, though keeping it here doesn't hurt, it won't be used in UI
   contractUpload: null,
   apprenticeStage: "",
   startYear: "",
@@ -76,14 +74,14 @@ export default function CreateMentorProfile() {
   const hasMentorProfile = useMemo(() => user?.has_mentor_profile === true, [user]);
   const hasApprenticeProfile = useMemo(() => user?.has_student_profile === true, [user]);
 
-  // קבע תפקיד ברירת מחדל לפי פרמטרים ולפי מה שכבר קיים
+  const MandatoryStar = () => <span style={{ color: ACCENT_PINK }}>*</span>;
+
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const roleParam = params.get("role");
 
     const requestedRole = roleParam === "apprentice" || roleParam === "mentor" ? roleParam : null;
 
-    // אם כבר קיים פרופיל מהסוג הזה - אל תאפשר ליצור שוב
     if (requestedRole === "mentor" && hasMentorProfile) {
       setRole(hasApprenticeProfile ? "apprentice" : "mentor");
       return;
@@ -100,7 +98,6 @@ export default function CreateMentorProfile() {
       return;
     }
 
-    // אם יש רק אחד קיים - הכריח את השני
     if (hasApprenticeProfile && !hasMentorProfile) {
       setRole("mentor");
       setForm(INITIAL_FORM_STATE);
@@ -115,7 +112,6 @@ export default function CreateMentorProfile() {
     }
   }, [location.search, hasApprenticeProfile, hasMentorProfile]);
 
-  // sync role with ?role=mentor|apprentice if navigated from profile toggle
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const roleParam = params.get("role");
@@ -167,12 +163,29 @@ export default function CreateMentorProfile() {
   }
 
   function toggleDegree(deg) {
+    const NO_DEGREE = "ללא תואר קודם";
+
     setForm((prev) => {
-      const exists = prev.degrees.includes(deg);
-      const nextDegrees = exists
-        ? prev.degrees.filter((x) => x !== deg)
-        : [...prev.degrees, deg];
-      return { ...prev, degrees: nextDegrees };
+      let newDegrees = [...prev.degrees];
+
+      if (deg === NO_DEGREE) {
+        if (newDegrees.includes(NO_DEGREE)) {
+          return { ...prev, degrees: [] };
+        }
+        return { ...prev, degrees: [NO_DEGREE] };
+      }
+
+      if (newDegrees.includes(NO_DEGREE)) {
+        newDegrees = newDegrees.filter(d => d !== NO_DEGREE);
+      }
+
+      if (newDegrees.includes(deg)) {
+        newDegrees = newDegrees.filter((x) => x !== deg);
+      } else {
+        newDegrees.push(deg);
+      }
+
+      return { ...prev, degrees: newDegrees };
     });
   }
 
@@ -204,13 +217,11 @@ export default function CreateMentorProfile() {
 
   const selectedGroup = form.specialtyGroup || "";
 
-  // REMOVED BRACKETS []
   const specialtyOptions = [
     { v: "", t: selectedGroup ? "בחרי/י התמחות" : "קודם בחרי/י קטגוריה" },
     ...((specialtiesByGroup[selectedGroup] || []).map((s) => ({ v: s, t: s }))),
   ];
 
-  // תרגום שגיאות מאנגלית לעברית
   const translateError = (error) => {
     if (!error) return error;
 
@@ -253,11 +264,9 @@ export default function CreateMentorProfile() {
     setIsLoading(true);
     setServerError("");
 
-    // פונקציה לסינון ערכים ריקים (שומרת על false כי זה ערך תקין)
     const filterEmpty = (obj) => {
       const filtered = {};
       Object.entries(obj).forEach(([key, value]) => {
-        // שמור על false כי זה ערך תקין לשדות boolean
         if (value === false) {
           filtered[key] = value;
           return;
@@ -280,7 +289,6 @@ export default function CreateMentorProfile() {
         return;
       }
 
-      // בניית הנתונים לשליחה
       let profileData = {
         institution: form.institution,
         degrees: form.degrees,
@@ -289,12 +297,10 @@ export default function CreateMentorProfile() {
         recommendationRequest: form.recommendationRequest,
       };
 
-      // המרת כן/לא ל-true/false
       const toBoolean = (val) => val === "כן" ? true : val === "לא" ? false : undefined;
 
       if (role === "mentor") {
         const profileType = "mentor";
-        // נתונים ספציפיים למנחה
         profileData = {
           ...profileData,
           specialtyGroup: form.specialtyGroup,
@@ -306,22 +312,20 @@ export default function CreateMentorProfile() {
           previousResearchDescription: form.previousResearchDescription,
         };
 
-        // סינון ערכים ריקים
         profileData = filterEmpty(profileData);
 
+        // --- RESTORED LOGS ---
         console.log("Creating mentor profile:", profileData);
         const response = await profilesAPI.createMentorProfile(profileData);
         console.log("Mentor profile created:", response);
 
         await uploadInitialDocument(profileType);
 
-        // עדכון המשתמש שיש לו פרופיל מנחה
         if (updateUser) {
           updateUser({ has_mentor_profile: true });
         }
       } else {
         const profileType = "student";
-        // נתונים ספציפיים לסטודנט/מתלמד
         profileData = {
           ...profileData,
           apprenticeStage: form.apprenticeStage,
@@ -340,44 +344,39 @@ export default function CreateMentorProfile() {
           participationMode: form.participationMode,
         };
 
-        // אם רלוונטי - הוסף התמחות
         if (isSpecialtyRelevant && form.specialty) {
           profileData.specialtyGroup = form.specialtyGroup;
           profileData.specialty = form.specialty;
         }
 
-        // סינון ערכים ריקים
         profileData = filterEmpty(profileData);
 
+        // --- RESTORED LOGS ---
         console.log("Creating student profile:", profileData);
         const response = await profilesAPI.createStudentProfile(profileData);
         console.log("Student profile created:", response);
 
         await uploadInitialDocument(profileType);
 
-        // עדכון המשתמש שיש לו פרופיל סטודנט
         if (updateUser) {
           updateUser({ has_student_profile: true });
         }
       }
 
-      // הודעת הצלחה ומעבר לדף הבית
       alert("הפרופיל נוצר בהצלחה! 🎉");
       navigate("/");
-      // החזר את הגלילה לראש העמוד אחרי הניווט כדי להציג את ה-toolbar
       setTimeout(() => window.scrollTo({ top: 0, left: 0, behavior: "auto" }), 0);
     } catch (error) {
       console.error("Profile creation failed:", error);
 
       if (error.data) {
+        // --- RESTORED LOGS ---
         console.log("Error data:", error.data);
         console.log("Error details:", JSON.stringify(error.data.details, null, 2));
 
-        // טיפול בשגיאות ספציפיות מהשרת
         if (error.data.code === "CONFLICT") {
           setServerError(translateError(error.data.message));
         } else if (error.data.code === "VALIDATION_ERROR" && error.data.details) {
-          // שגיאות ולידציה - הצג את השדות הספציפיים
           const newErrors = {};
           let hasFieldErrors = false;
 
@@ -391,7 +390,6 @@ export default function CreateMentorProfile() {
 
           if (hasFieldErrors) {
             setErrors(prev => ({ ...prev, ...newErrors }));
-            // גם הצג הודעה כללית
             setServerError("יש שגיאות בטופס, נא לתקן את השדות המסומנים");
           } else {
             setServerError(translateError(error.data.message) || "אירעה שגיאה ביצירת הפרופיל");
@@ -403,7 +401,6 @@ export default function CreateMentorProfile() {
         } else if (error.data.non_field_errors) {
           setServerError(translateError(error.data.non_field_errors[0]));
         } else {
-          // שגיאות בשדות ספציפיים (פורמט ישן)
           const newErrors = {};
           Object.keys(error.data).forEach(key => {
             if (key !== 'code' && key !== 'message' && key !== 'details') {
@@ -430,276 +427,338 @@ export default function CreateMentorProfile() {
 
   return (
     <div dir="rtl" style={styles.page}>
-    {/* Dynamic Theme Variables */}
-    <style>{`
+      <style>{`
       :root {
-      --switch-bg: #f5f5fa;
-    --btn-inactive-text: #666;
-    --btn-active-bg: #ffffff;
-    --btn-active-text: #2C2C6C;
-    --field-bg: #ffffff;
-    --text-main: #333333;
-    --border-color: #dddddd;
-    --popup-bg: #ffffff;
+        --switch-bg: #f5f5fa;
+        --btn-inactive-text: #666;
+        --btn-active-bg: #ffffff;
+        --btn-active-text: #2C2C6C;
+        --field-bg: #ffffff;
+        --text-main: #333333;
+        --border-color: #dddddd;
+        --popup-bg: #ffffff;
       }
-
-      /* If your app uses a class like .dark-mode or data-theme='dark' */
       [data-theme='dark'], .dark-mode {
-    --switch-bg: #1a1a1a;
-    --btn-inactive-text: #aaa;
-    --btn-active-bg: #333;
-    --btn-active-text: #ffffff;
-    --field-bg: #2a2a2a;    /* Dark background for inputs */
-    --text-main: #eeeeee;   /* Light text for dark mode */
-    --border-color: #444444;
-    --popup-bg: #1e1e1e;    /* Dark background for calendar */
+        --switch-bg: #1a1a1a;
+        --btn-inactive-text: #aaa;
+        --btn-active-bg: #333;
+        --btn-active-text: #ffffff;
+        --field-bg: #2a2a2a;
+        --text-main: #eeeeee;
+        --border-color: #444444;
+        --popup-bg: #1e1e1e;
       }
-    /* Force the active state for buttons and pills */
-  .pill-btn-active {
-    background-color: ${ACCENT_TEAL} !important;
-    color: white !important;
-    border-color: ${ACCENT_TEAL} !important;
-    box-shadow: 0 4px 12px rgba(108, 213, 191, 0.3) !important;
-  }
+      
+      /* Active state style */
+      .pill-btn-active {
+        background-color: ${ACCENT_TEAL} !important;
+        color: white !important;
+        border-color: ${ACCENT_TEAL} !important;
+        /* Force shadow even on focus */
+        box-shadow: 0 4px 12px rgba(108, 213, 191, 0.3) !important;
+        outline: none !important;
+      }
 
-  /* Calendar day active state */
-  .day-btn-active {
-    background-color: ${ACCENT_TEAL} !important;
-    color: white !important;
-    font-weight: 700 !important;
-  }
+      /* Focus management - KILL THE OUTLINE */
+      .pill-btn:focus, 
+      .pill-btn:focus-visible, 
+      .pill-btn:active {
+        outline: none !important;
+        /* Only remove shadow for non-active buttons */
+      }
+      
+      /* Ensure active buttons keep their style when focused */
+      .pill-btn-active:focus, 
+      .pill-btn-active:focus-visible {
+        outline: none !important;
+        box-shadow: 0 4px 12px rgba(108, 213, 191, 0.3) !important;
+        border-color: ${ACCENT_TEAL} !important;
+      }
+
+      /* Default border color for inactive buttons on focus */
+      .pill-btn:not(.pill-btn-active):focus {
+        border-color: #ccc !important;
+        box-shadow: none !important;
+      }
+      
+      .day-btn-active {
+        background-color: ${ACCENT_TEAL} !important;
+        color: white !important;
+        font-weight: 700 !important;
+      }
     `}</style>
 
-    <header style={styles.header}></header>
-    <div dir="rtl" style={styles.page}>
-      <header style={styles.header}>
-        <h1 style={styles.title}>יצירת פרופיל</h1>
-        <div style={styles.titleUnderline}></div>
-      </header>
+      <header style={styles.header}></header>
+      <div dir="rtl" style={styles.page}>
+        <header style={styles.header}>
+          <h1 style={styles.title}>יצירת פרופיל</h1>
+          <div style={styles.titleUnderline}></div>
+        </header>
 
-      <div style={styles.roleSwitch}>
-        <button
-          type="button"
-          onClick={() => handleRoleSwitch("mentor")}
-          disabled={hasMentorProfile}
-          style={{
-            ...styles.roleBtn,
-            ...(role === "mentor" ? styles.roleBtnActive : {}),
-            ...(hasMentorProfile ? styles.disabled : {})
-          }}
-        >
-          מנחה
-        </button>
-        <button
-          type="button"
-          onClick={() => handleRoleSwitch("apprentice")}
-          disabled={hasApprenticeProfile}
-          style={{
-            ...styles.roleBtn,
-            ...(role === "apprentice" ? styles.roleBtnActive : {}),
-            ...(hasApprenticeProfile ? styles.disabled : {})
-          }}
-        >
-          מתלמד/ת
-        </button>
-      </div>
-
-      <form onSubmit={submit} style={styles.card} className="create-profile-card">
-
-        {/* SECTION 1 */}
-
-        {/* SECTION 1 */}
-        <div style={styles.section}>
-          <h3 style={styles.sectionTitle}>פרטים כלליים ושלב הכשרה</h3>
-          <div className="mentor-grid" style={styles.grid}>
-            {role === "apprentice" && (
-              <>
-                {/* REMOVED BRACKETS [] */}
-                <SelectField label="שלב בהכשרה רפואית" name="apprenticeStage" value={form.apprenticeStage} onChange={handleChange} error={errors.apprenticeStage} options={[{ v: "", t: "בחרי/י שלב" }, { v: "סטודנט", t: "סטודנט" }, { v: "לפני סטאז׳", t: "לפני סטאז׳" }, { v: "סטאז׳ר", t: "סטאז׳ר" }, { v: "אחרי סטאז׳", t: "אחרי סטאז׳" }, { v: "מתמחה", t: "מתמחה" }, { v: "רופא מתמחה", t: "רופא מתמחה" }, { v: "אחר", t: "אחר" }]} />
-                <SelectField label="שנת תחילת הלימודים" name="startYear" value={form.startYear} onChange={handleChange} options={[{ v: "", t: "בחרי שנה" }, ...START_YEARS]} />
-              </>
-            )}
-
-            {role === "apprentice" && form.apprenticeStage === "סטודנט" && (
-              <div style={{ ...styles.field, gridColumn: "1 / -1" }}>
-                <label style={styles.label}>שנת לימודים</label>
-                <div style={styles.inline}>
-                  {["א'", "ב'", "ג'", "ד'", "ה'", "ו'", "ז'"].map((y) => (
-                    // CHANGED: Using styles.pillBtn instead of styles.yearBtn
-                    <button key={y} type="button" onClick={() => updateField("yearOfStudy", y)} style={{ ...styles.pillBtn, ...(form.yearOfStudy === y ? styles.pillBtnActive : {}) }}>{y}</button>
-                  ))}
-                </div>
-                {errors.yearOfStudy && <div style={styles.error}>{errors.yearOfStudy}</div>}
-              </div>
-            )}
-
-            {isSpecialtyRelevant && (
-              <>
-                <SelectField label="קטגוריית התמחות" name="specialtyGroup" value={form.specialtyGroup} onChange={handleSpecialtyGroupChange} error={errors.specialtyGroup} options={SPECIALTY_GROUPS} />
-                <SelectField label="התמחות / תחום מרכזי" name="specialty" value={form.specialty} onChange={handleChange} error={errors.specialty} options={specialtyOptions} disabled={!selectedGroup} />
-              </>
-            )}
-
-            {/* REMOVED BRACKETS [] */}
-            <SelectField label="מוסד לימודים" name="institution" value={form.institution} onChange={handleChange} error={errors.institution} options={[{ v: "", t: "בחרי/י מוסד" }, { v: "האוניברסיטה העברית בירושלים", t: "האוניברסיטה העברית בירושלים" }, { v: "אוניברסיטת תל אביב", t: "אוניברסיטת תל אביב" }, { v: "הטכניון", t: "הטכניון" }, { v: "אוניברסיטת בן גוריון", t: "אוניברסיטת בן גוריון" }, { v: "בר אילן", t: "אוניברסיטת בר אילן" }, { v: "אריאל", t: "אוניברסיטת אריאל" }]} />
-
-            {role === "mentor" && (
-              <SelectField label="שלב בהכשרה הרפואית" name="academicRank" value={form.academicRank} onChange={handleChange} options={[{ v: "", t: "בחרי שלב בהכשרה" }, { v: "סטאז׳", t: "סטאז׳" }, { v: "מתמחה", t: "מתמחה" }, { v: "מומחה/ית", t: "מומחה/ית" }, { v: "התמחות־על / עמית/ת", t: "התמחות־על / עמית/ת" }]} />
-            )}
-          </div>
-        </div>
-
-        {/* SECTION 2 */}
-        <div style={{ ...styles.section, borderTop: "1px solid #eee", paddingTop: 24 }}>
-          <h3 style={styles.sectionTitle}>ניסיון ומקום עבודה</h3>
-          <div className="mentor-grid" style={styles.grid}>
-            <InputField label="מקום עבודה" name="workplace" value={form.workplace} onChange={handleChange} error={role === "mentor" ? errors.workplace : null} placeholder={role === "mentor" ? "מקום העבודה" : "מקום עבודה (אם רלוונטי)"} />
-
-            {role === "apprentice" && (
-              <div style={styles.field}>
-                <label style={styles.label}>האם את/ה מועסק בשיבא?</label>
-                <div style={styles.inline}>
-                 {["כן", "לא"].map((opt) => (
-                  <button 
-                  key={opt} 
-                  type="button" 
-                  onClick={() => updateField("isShebaEmployee", opt)} 
-                  className={form.isShebaEmployee === opt ? "pill-btn-active" : ""}
-                  style={{ ...styles.pillBtn, ...(form.isShebaEmployee === opt ? styles.pillBtnActive : {}) }}
-                  >
-                  {opt}
-                  </button>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-
-          <DegreesField label="תארים" name="degrees" value={form.degrees} onToggle={toggleDegree} error={errors.degrees} options={["MD", "PhD", "MSc", "MPH", "MBA"]} />
-
-          {role === "mentor" ? (
-            <div style={{ marginTop: 15 }}>
-              <div style={styles.field}>
-                <label style={styles.label}>ניסיון בהנחיה <span style={{ color: ACCENT_PINK }}>*</span></label>
-                <div style={styles.inline}>
-                  {["כן", "לא"].map((opt) => (
-                    <button key={opt} type="button" onClick={() => updateField("hasMentoringExperience", opt)} style={{ ...styles.pillBtn, ...(form.hasMentoringExperience === opt ? styles.pillBtnActive : {}), ...(errors.hasMentoringExperience ? { borderColor: ACCENT_PINK } : {}) }}>{opt}</button>
-                  ))}
-                </div>
-                {errors.hasMentoringExperience && <div style={styles.error}>{errors.hasMentoringExperience}</div>}
-                <div style={{ marginTop: 10 }}>
-                  <InputField label="פירוט ניסיון בהנחיה" name="mentoringExperienceDetails" value={form.mentoringExperienceDetails} onChange={handleChange} disabled={form.hasMentoringExperience !== "כן"} />
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div style={{ marginTop: 15 }}>
-              <div style={styles.field}>
-                <label style={styles.label}>ניסיון במחקר</label>
-                <div style={styles.inline}>
-                  {["כן", "לא"].map((opt) => (
-                    <button key={opt} type="button" onClick={() => updateField("hasResearchExperience", opt)} style={{ ...styles.pillBtn, ...(form.hasResearchExperience === opt ? styles.pillBtnActive : {}) }}>{opt}</button>
-                  ))}
-                </div>
-                {form.hasResearchExperience === "כן" && <TextAreaField label="פירוט ניסיון מחקרי" name="researchExperienceDetails" value={form.researchExperienceDetails} onChange={handleChange} rows={3} />}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* SECTION 3 */}
-        <div style={{ ...styles.section, borderTop: "1px solid #eee", paddingTop: 24 }}>
-          {/* CHANGED TITLE FOR MENTOR */}
-          <h3 style={styles.sectionTitle}>
-            {role === "mentor" ? "רקע מחקרי ותחומי עניין" : "מחקר וזמינות"}
-          </h3>
-
-          {role === "apprentice" ? (
-            <>
-              <div className="mentor-grid" style={styles.grid}>
-                {/* REMOVED BRACKETS [] */}
-                <SelectField label="סוג העבודה המבוקשת" name="workType" value={form.workType} onChange={handleChange} options={[{ v: "", t: "בחרי עבודה" }, { v: "איסוף נתונים", t: "איסוף נתונים" }, { v: "כתיבה מדעית", t: "כתיבה מדעית" }, { v: "ניתוח סטטיסטי", t: "ניתוח סטטיסטי" }]} />
-                <SelectField label="העדפת תגמול" name="compensationPreference" value={form.compensationPreference} onChange={handleChange} options={[{ v: "", t: "בחרי סוג תגמול" }, { v: "מלגה", t: "מלגה" }, { v: "שכר", t: "שכר" }, { v: "קרדיט אקדמי", t: "קרדיט אקדמי" }, { v: "ללא תגמול / התנדבות", t: "ללא תגמול / התנדבות" }]} />
-                <SelectField label="אופן ההשתתפות" name="participationMode" value={form.participationMode} onChange={handleChange} options={[{ v: "", t: "בחרי מיקום" }, { v: "פרונטלי", t: "פרונטלי" }, { v: "מרחוק", t: "מרחוק" }, { v: "היברידי", t: "היברידי" }]} />
-
-                <div style={styles.field}>
-                  <label style={styles.label}>זמינות למחקר</label>
-                  <div style={styles.inline}>
-                    {["כן", "לא"].map((opt) => (
-                      <button key={opt} type="button" onClick={() => updateField("isAvailableForResearch", opt)} style={{ ...styles.pillBtn, ...(form.isAvailableForResearch === opt ? styles.pillBtnActive : {}) }}>{opt}</button>
-                    ))}
-                  </div>
-                  {errors.isAvailableForResearch && <div style={styles.error}>{errors.isAvailableForResearch}</div>}
-                </div>
-              </div>
-
-              <div className="mentor-grid" style={styles.grid}>
-                <InputField label="היקף שעות שבועי" name="weeklyHours" value={form.weeklyHours} onChange={handleChange} placeholder="מספר בלבד" />
-                <DatePickerField
-                  label="זמינות להתחלה"
-                  name="startDate"
-                  value={form.startDate}
-                  onChange={(date) => updateField("startDate", date)}
-                />
-              </div>
-
-              <div className="mentor-grid" style={styles.grid}>
-                <TextAreaField label="מיומנויות וכלים" name="softwareSkills" value={form.softwareSkills} onChange={handleChange} placeholder="למשל: SPSS, Python..." rows={2} />
-                <TextAreaField label="ניסיון מקצועי קודם" name="professionalExperience" value={form.professionalExperience} onChange={handleChange} placeholder="תאר/י ניסיון רלוונטי..." rows={2} />
-              </div>
-            </>
-          ) : (
-            <>
-              <div className="mentor-grid" style={styles.grid}>
-                {/* REMOVED BRACKETS [] */}
-                <SelectField label="תחומי עניין מחקר" name="researchInterests" value={form.researchInterests} onChange={handleChange} options={[{ v: "", t: "בחרי/י תחומים" }, { v: "AI ברפואה", t: "AI ברפואה" }, { v: "אפידמיולוגיה", t: "אפידמיולוגיה" }, { v: "רפואה דחופה", t: "רפואה דחופה" }, { v: "מחקר קליני", t: "מחקר קליני" }]} />
-              </div>
-              <TextAreaField label="תיאור מחקרים קודמים" name="previousResearchDescription" value={form.previousResearchDescription} onChange={handleChange} />
-            </>
-          )}
-        </div>
-
-        {/* SECTION 4 */}
-        <div style={{ ...styles.section, borderTop: "1px solid #eee", paddingTop: 24 }}>
-          <h3 style={styles.sectionTitle}>פרטים נוספים וקבצים</h3>
-          <TextAreaField label="תיאור רקע אישי ואקדמי" name="personalAcademicDescription" value={form.personalAcademicDescription} onChange={handleChange} error={errors.personalAcademicDescription} rows={4} />
-          <TextAreaField label="לקבלת חוות דעת ממנחים/מתלמדים" name="recommendationRequest" value={form.recommendationRequest} onChange={handleChange} placeholder="תואר + שם מלא + דואר אלקטרוני" rows={4} />
-
-          <div className="mentor-grid" style={{ ...styles.grid, marginTop: 15 }}>
-            <FileField label="העלאת קבצים (אופציונלי)" name="filesUpload" file={form.filesUpload} onChange={handleFileChange} />
-            {/* REMOVED CONTRACT UPLOAD */}
-          </div>
-        </div>
-
-        {/* הצגת שגיאות מהשרת */}
-        {serverError && (
-          <div style={styles.serverError}>
-            {serverError}
-          </div>
-        )}
-
-        <div style={styles.actions}>
+        <div style={styles.roleSwitch}>
           <button
-            type="submit"
+            type="button"
+            onClick={() => handleRoleSwitch("mentor")}
+            disabled={hasMentorProfile}
             style={{
-              ...styles.primaryBtn,
-              opacity: isLoading ? 0.7 : 1,
-              cursor: isLoading ? "not-allowed" : "pointer"
+              ...styles.roleBtn,
+              ...(role === "mentor" ? styles.roleBtnActive : {}),
+              ...(hasMentorProfile ? styles.disabled : {})
             }}
-            disabled={isLoading}
           >
-            {isLoading ? "שומר..." : "אישור ושמירה"}
+            מנחה
+          </button>
+          <button
+            type="button"
+            onClick={() => handleRoleSwitch("apprentice")}
+            disabled={hasApprenticeProfile}
+            style={{
+              ...styles.roleBtn,
+              ...(role === "apprentice" ? styles.roleBtnActive : {}),
+              ...(hasApprenticeProfile ? styles.disabled : {})
+            }}
+          >
+            מתלמד/ת
           </button>
         </div>
 
-        <style>{`
+        <form onSubmit={submit} style={styles.card} className="create-profile-card">
+
+          {/* SECTION 1 */}
+          <div style={styles.section}>
+            <h3 style={styles.sectionTitle}>פרטים כלליים ושלב הכשרה</h3>
+            <div className="mentor-grid" style={styles.grid}>
+              {role === "apprentice" && (
+                <>
+                  <SelectField
+                    label={<>שלב בהכשרה רפואית <MandatoryStar /></>}
+                    name="apprenticeStage"
+                    value={form.apprenticeStage}
+                    onChange={handleChange}
+                    error={errors.apprenticeStage}
+                    options={[{ v: "", t: "בחרי/י שלב" }, { v: "סטודנט", t: "סטודנט" }, { v: "לפני סטאז׳", t: "לפני סטאז׳" }, { v: "סטאז׳ר", t: "סטאז׳ר" }, { v: "אחרי סטאז׳", t: "אחרי סטאז׳" }, { v: "מתמחה", t: "מתמחה" }, { v: "רופא מתמחה", t: "רופא מתמחה" }, { v: "אחר", t: "אחר" }]}
+                  />
+                  <SelectField label="שנת תחילת הלימודים" name="startYear" value={form.startYear} onChange={handleChange} options={[{ v: "", t: "בחרי שנה" }, ...START_YEARS]} />
+                </>
+              )}
+
+              {role === "apprentice" && form.apprenticeStage === "סטודנט" && (
+                <div style={{ ...styles.field, gridColumn: "1 / -1" }}>
+                  <label style={styles.label}>שנת לימודים <MandatoryStar /></label>
+                  <div style={styles.inline}>
+                    {["א'", "ב'", "ג'", "ד'", "ה'", "ו'", "ז'"].map((y) => (
+                      <button key={y} type="button" onClick={() => updateField("yearOfStudy", y)} className={`pill-btn ${form.yearOfStudy === y ? "pill-btn-active" : ""}`} style={{ ...styles.pillBtn, ...(form.yearOfStudy === y ? styles.pillBtnActive : {}) }}>{y}</button>
+                    ))}
+                  </div>
+                  {errors.yearOfStudy && <div style={styles.error}>{errors.yearOfStudy}</div>}
+                </div>
+              )}
+
+              {isSpecialtyRelevant && (
+                <>
+                  <SelectField
+                    label={<>קטגוריית התמחות <MandatoryStar /></>}
+                    name="specialtyGroup"
+                    value={form.specialtyGroup}
+                    onChange={handleSpecialtyGroupChange}
+                    error={errors.specialtyGroup}
+                    options={SPECIALTY_GROUPS}
+                  />
+                  <SelectField
+                    label={<>התמחות / תחום מרכזי <MandatoryStar /></>}
+                    name="specialty"
+                    value={form.specialty}
+                    onChange={handleChange}
+                    error={errors.specialty}
+                    options={specialtyOptions}
+                    disabled={!selectedGroup}
+                  />
+                </>
+              )}
+
+              <SelectField
+                label={<>מוסד לימודים <MandatoryStar /></>}
+                name="institution"
+                value={form.institution}
+                onChange={handleChange}
+                error={errors.institution}
+                options={[{ v: "", t: "בחרי/י מוסד" }, { v: "האוניברסיטה העברית בירושלים", t: "האוניברסיטה העברית בירושלים" }, { v: "אוניברסיטת תל אביב", t: "אוניברסיטת תל אביב" }, { v: "הטכניון", t: "הטכניון" }, { v: "אוניברסיטת בן גוריון", t: "אוניברסיטת בן גוריון" }, { v: "בר אילן", t: "אוניברסיטת בר אילן" }, { v: "אריאל", t: "אוניברסיטת אריאל" }]}
+              />
+
+              {role === "mentor" && (
+                <SelectField label="שלב בהכשרה הרפואית" name="academicRank" value={form.academicRank} onChange={handleChange} options={[{ v: "", t: "בחרי שלב בהכשרה" }, { v: "סטאז׳", t: "סטאז׳" }, { v: "מתמחה", t: "מתמחה" }, { v: "מומחה/ית", t: "מומחה/ית" }, { v: "התמחות־על / עמית/ת", t: "התמחות־על / עמית/ת" }]} />
+              )}
+            </div>
+          </div>
+
+          {/* SECTION 2 */}
+          <div style={{ ...styles.section, borderTop: "1px solid #eee", paddingTop: 24 }}>
+            <h3 style={styles.sectionTitle}>ניסיון ומקום עבודה</h3>
+            <div className="mentor-grid" style={styles.grid}>
+              <InputField
+                label={role === "mentor" ? <>מקום עבודה <MandatoryStar /></> : "מקום עבודה"}
+                name="workplace"
+                value={form.workplace}
+                onChange={handleChange}
+                error={role === "mentor" ? errors.workplace : null}
+                placeholder={role === "mentor" ? "מקום העבודה" : "מקום עבודה (אם רלוונטי)"}
+              />
+
+              {role === "apprentice" && (
+                <div style={styles.field}>
+                  <label style={styles.label}>האם את/ה מועסק בשיבא?</label>
+                  <div style={styles.inline}>
+                    {["כן", "לא"].map((opt) => (
+                      <button
+                        key={opt}
+                        type="button"
+                        onClick={() => updateField("isShebaEmployee", opt)}
+                        className={`pill-btn ${form.isShebaEmployee === opt ? "pill-btn-active" : ""}`}
+                        style={{ ...styles.pillBtn, ...(form.isShebaEmployee === opt ? styles.pillBtnActive : {}) }}
+                      >
+                        {opt}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <DegreesField
+              label={<>תארים <MandatoryStar /></>}
+              name="degrees"
+              value={form.degrees}
+              onToggle={toggleDegree}
+              error={errors.degrees}
+              options={["MD", "PhD", "MSc", "MPH", "MBA", "ללא תואר קודם"]}
+            />
+
+            {role === "mentor" ? (
+              <div style={{ marginTop: 15 }}>
+                <div style={styles.field}>
+                  <label style={styles.label}>ניסיון בהנחיה <MandatoryStar /></label>
+                  <div style={styles.inline}>
+                    {["כן", "לא"].map((opt) => (
+                      <button key={opt} type="button" onClick={() => updateField("hasMentoringExperience", opt)} className={`pill-btn ${form.hasMentoringExperience === opt ? "pill-btn-active" : ""}`} style={{ ...styles.pillBtn, ...(form.hasMentoringExperience === opt ? styles.pillBtnActive : {}), ...(errors.hasMentoringExperience ? { borderColor: ACCENT_PINK } : {}) }}>{opt}</button>
+                    ))}
+                  </div>
+                  {errors.hasMentoringExperience && <div style={styles.error}>{errors.hasMentoringExperience}</div>}
+                  <div style={{ marginTop: 10 }}>
+                    <InputField label="פירוט ניסיון בהנחיה" name="mentoringExperienceDetails" value={form.mentoringExperienceDetails} onChange={handleChange} disabled={form.hasMentoringExperience !== "כן"} />
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div style={{ marginTop: 15 }}>
+                <div style={styles.field}>
+                  <label style={styles.label}>ניסיון במחקר</label>
+                  <div style={styles.inline}>
+                    {["כן", "לא"].map((opt) => (
+                      <button key={opt} type="button" onClick={() => updateField("hasResearchExperience", opt)} className={`pill-btn ${form.hasResearchExperience === opt ? "pill-btn-active" : ""}`} style={{ ...styles.pillBtn, ...(form.hasResearchExperience === opt ? styles.pillBtnActive : {}) }}>{opt}</button>
+                    ))}
+                  </div>
+                  {form.hasResearchExperience === "כן" && <TextAreaField label="פירוט ניסיון מחקרי" name="researchExperienceDetails" value={form.researchExperienceDetails} onChange={handleChange} rows={3} />}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* SECTION 3 */}
+          <div style={{ ...styles.section, borderTop: "1px solid #eee", paddingTop: 24 }}>
+            <h3 style={styles.sectionTitle}>
+              {role === "mentor" ? "רקע מחקרי ותחומי עניין" : "מחקר וזמינות"}
+            </h3>
+
+            {role === "apprentice" ? (
+              <>
+                <div className="mentor-grid" style={styles.grid}>
+                  <SelectField label="סוג העבודה המבוקשת" name="workType" value={form.workType} onChange={handleChange} options={[{ v: "", t: "בחרי עבודה" }, { v: "איסוף נתונים", t: "איסוף נתונים" }, { v: "כתיבה מדעית", t: "כתיבה מדעית" }, { v: "ניתוח סטטיסטי", t: "ניתוח סטטיסטי" }]} />
+                  <SelectField label="העדפת תגמול" name="compensationPreference" value={form.compensationPreference} onChange={handleChange} options={[{ v: "", t: "בחרי סוג תגמול" }, { v: "מלגה", t: "מלגה" }, { v: "שכר", t: "שכר" }, { v: "קרדיט אקדמי", t: "קרדיט אקדמי" }, { v: "ללא תגמול / התנדבות", t: "ללא תגמול / התנדבות" }]} />
+                  <SelectField label="אופן ההשתתפות" name="participationMode" value={form.participationMode} onChange={handleChange} options={[{ v: "", t: "בחרי מיקום" }, { v: "פרונטלי", t: "פרונטלי" }, { v: "מרחוק", t: "מרחוק" }, { v: "היברידי", t: "היברידי" }]} />
+
+                  <div style={styles.field}>
+                    <label style={styles.label}>זמינות למחקר <MandatoryStar /></label>
+                    <div style={styles.inline}>
+                      {["כן", "לא"].map((opt) => (
+                        <button key={opt} type="button" onClick={() => updateField("isAvailableForResearch", opt)} className={`pill-btn ${form.isAvailableForResearch === opt ? "pill-btn-active" : ""}`} style={{ ...styles.pillBtn, ...(form.isAvailableForResearch === opt ? styles.pillBtnActive : {}) }}>{opt}</button>
+                      ))}
+                    </div>
+                    {errors.isAvailableForResearch && <div style={styles.error}>{errors.isAvailableForResearch}</div>}
+                  </div>
+                </div>
+
+                <div className="mentor-grid" style={styles.grid}>
+                  <InputField label="היקף שעות שבועי" name="weeklyHours" value={form.weeklyHours} onChange={handleChange} placeholder="מספר בלבד" />
+                  <DatePickerField
+                    label="זמינות להתחלה"
+                    name="startDate"
+                    value={form.startDate}
+                    onChange={(date) => updateField("startDate", date)}
+                  />
+                </div>
+
+                <div className="mentor-grid" style={styles.grid}>
+                  <TextAreaField label="מיומנויות וכלים" name="softwareSkills" value={form.softwareSkills} onChange={handleChange} placeholder="למשל: SPSS, Python..." rows={2} />
+                  <TextAreaField label="ניסיון מקצועי קודם" name="professionalExperience" value={form.professionalExperience} onChange={handleChange} placeholder="תאר/י ניסיון רלוונטי..." rows={2} />
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="mentor-grid" style={styles.grid}>
+                  <SelectField label="תחומי עניין מחקר" name="researchInterests" value={form.researchInterests} onChange={handleChange} options={[{ v: "", t: "בחרי/י תחומים" }, { v: "AI ברפואה", t: "AI ברפואה" }, { v: "אפידמיולוגיה", t: "אפידמיולוגיה" }, { v: "רפואה דחופה", t: "רפואה דחופה" }, { v: "מחקר קליני", t: "מחקר קליני" }]} />
+                </div>
+                <TextAreaField label="תיאור מחקרים קודמים" name="previousResearchDescription" value={form.previousResearchDescription} onChange={handleChange} />
+              </>
+            )}
+          </div>
+
+          {/* SECTION 4 */}
+          <div style={{ ...styles.section, borderTop: "1px solid #eee", paddingTop: 24 }}>
+            <h3 style={styles.sectionTitle}>פרטים נוספים וקבצים</h3>
+            <TextAreaField
+              label={<>תיאור רקע אישי ואקדמי <MandatoryStar /></>}
+              name="personalAcademicDescription"
+              value={form.personalAcademicDescription}
+              onChange={handleChange}
+              error={errors.personalAcademicDescription}
+              rows={4}
+            />
+            <TextAreaField label="לקבלת חוות דעת ממנחים/מתלמדים" name="recommendationRequest" value={form.recommendationRequest} onChange={handleChange} placeholder="תואר + שם מלא + דואר אלקטרוני" rows={4} />
+
+            <div className="mentor-grid" style={{ ...styles.grid, marginTop: 15 }}>
+              <FileField label="העלאת קבצים (אופציונלי)" name="filesUpload" file={form.filesUpload} onChange={handleFileChange} />
+            </div>
+          </div>
+
+          {/* הצגת שגיאות מהשרת */}
+          {serverError && (
+            <div style={styles.serverError}>
+              {serverError}
+            </div>
+          )}
+
+          <div style={styles.actions}>
+            <button
+              type="submit"
+              style={{
+                ...styles.primaryBtn,
+                opacity: isLoading ? 0.7 : 1,
+                cursor: isLoading ? "not-allowed" : "pointer"
+              }}
+              disabled={isLoading}
+            >
+              {isLoading ? "שומר..." : "אישור ושמירה"}
+            </button>
+          </div>
+
+          <style>{`
           .mentor-grid { display: grid; grid-template-columns: 1fr; gap: 16px; }
           @media (min-width: 768px) { 
             .mentor-grid { grid-template-columns: 1fr 1fr; } 
           }
         `}</style>
-      </form>
-    </div >
+        </form>
+      </div >
     </div>
   );
 }
@@ -749,7 +808,6 @@ function DatePickerField({ label, value, onChange }) {
 
   const handleDayClick = (day) => {
     const d = new Date(year, month, day);
-    // Format as ISO date (YYYY-MM-DD) for backend compatibility
     const isoDate = d.toISOString().split('T')[0];
     onChange(isoDate);
     setShow(false);
@@ -758,7 +816,6 @@ function DatePickerField({ label, value, onChange }) {
   const nextMonth = () => setCurrentDate(new Date(year, month + 1, 1));
   const prevMonth = () => setCurrentDate(new Date(year, month - 1, 1));
 
-  // Format ISO date (YYYY-MM-DD) for display as DD/MM/YYYY
   const formatForDisplay = (isoDate) => {
     if (!isoDate) return "";
     const [y, m, d] = isoDate.split('-');
@@ -843,7 +900,7 @@ function DegreesField({ label, value, onToggle, options, error }) {
             key={opt}
             type="button"
             onClick={() => onToggle(opt)}
-            className={value.includes(opt) ? "pill-btn-active" : ""}
+            className={`pill-btn ${value.includes(opt) ? "pill-btn-active" : ""}`}
             style={{ ...styles.pillBtn, ...(value.includes(opt) ? styles.pillBtnActive : {}) }}
           >
             {opt}
@@ -895,7 +952,8 @@ const styles = {
   textarea: { padding: "10px 14px", borderRadius: 8, border: "1px solid #ddd", fontSize: 14, resize: "vertical", outlineColor: ACCENT_TEAL, fontFamily: "inherit", color: "#555" },
 
   inline: { display: "flex", gap: 8, flexWrap: "wrap" },
-  pillBtn: { padding: "8px 16px", borderRadius: 8, border: "1px solid #eee", background: "var(--field-bg)", cursor: "pointer", fontWeight: 600, fontSize: 13, color: "#666", transition: "0.2s" },
+  // Remove outline from inline styles as well to be safe
+  pillBtn: { padding: "8px 16px", borderRadius: 8, border: "1px solid #eee", background: "var(--field-bg)", cursor: "pointer", fontWeight: 600, fontSize: 13, color: "#666", transition: "0.2s", outline: "none" },
   pillBtnActive: { background: ACCENT_TEAL, color: "white", borderColor: ACCENT_TEAL },
   fileWrapper: { position: "relative", width: "100%" },
   fileInput: { opacity: 0, position: "absolute", zIndex: -1, width: "0.1px" },
@@ -915,9 +973,9 @@ const styles = {
     marginTop: 16,
     border: `1px solid ${ACCENT_PINK}`
   },
-disabled: { background: "rgba(255, 255, 255, 0.14)", cursor: "not-allowed", opacity: 1 },
+  disabled: { background: "rgba(255, 255, 255, 0.14)", cursor: "not-allowed", opacity: 1 },
 
-  calendarPopup: { position: "absolute", top: "105%", right: 0, width: "280px", background: "var(--popup-bg)", borderRadius: 12, boxShadow: "0 10px 30px rgba(0,0,0,0.15)", border: "1px solid var(--border-color) solid #eee", padding: 16, zIndex: 100, color: "var(--text-main)"},
+  calendarPopup: { position: "absolute", top: "105%", right: 0, width: "280px", background: "var(--popup-bg)", borderRadius: 12, boxShadow: "0 10px 30px rgba(0,0,0,0.15)", border: "1px solid var(--border-color) solid #eee", padding: 16, zIndex: 100, color: "var(--text-main)" },
   calendarHeader: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 },
   navBtn: { background: "none", border: "none", cursor: "pointer", fontSize: 16, color: "#666", padding: 4 },
   calendarGrid: { display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 6 },
