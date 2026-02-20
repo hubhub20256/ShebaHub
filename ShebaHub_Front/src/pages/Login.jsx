@@ -57,14 +57,12 @@ const Login = () => {
     setServerError("");
 
     try {
-      console.log("Sending login request to server...", formData);
 
       const response = await authAPI.login({
         email: formData.email,
         password: formData.password,
       });
 
-      console.log("Login successful:", response);
 
       // Update auth context with user data
       login(response.user);

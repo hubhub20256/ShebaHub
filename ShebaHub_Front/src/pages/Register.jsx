@@ -77,7 +77,6 @@ const Register = () => {
     e.preventDefault();
     
     if (!validateForm()) {
-      console.log("Validation Failed");
       return;
     }
 
@@ -85,8 +84,6 @@ const Register = () => {
     setServerError("");
 
     try {
-      console.log("Sending registration request to server...");
-
       const response = await authAPI.signup({
         email: formData.email,
         password: formData.password,
@@ -95,8 +92,6 @@ const Register = () => {
         lastName: formData.lastName,
         gender: formData.gender || undefined,
       });
-
-      console.log("Registration successful:", response);
 
       // Update auth context with user data
       login(response.user);
