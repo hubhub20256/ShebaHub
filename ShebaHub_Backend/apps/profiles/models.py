@@ -229,7 +229,7 @@ class StudentProfile(models.Model):
         db_column='specialty_group_id'
     )
     
-    # FE: specialty - התמחות / תחום מרכזי
+    # FE: specialty - התמחות / תחום מרכזי (legacy FK – kept for data migration)
     specialty = models.ForeignKey(
         Specialty,
         on_delete=models.SET_NULL,
@@ -237,7 +237,15 @@ class StudentProfile(models.Model):
         blank=True,
         related_name='student_profiles'
     )
-    
+
+    # FE: specialties - התמחויות (M2M for multi-selection)
+    specialties = models.ManyToManyField(
+        Specialty,
+        blank=True,
+        related_name='student_profiles_multi',
+        help_text="Multiple specialties (replaces single specialty FK)"
+    )
+
     # FE: workplace - מקום עבודה
     workplace = models.CharField(
         max_length=255,
@@ -282,14 +290,10 @@ class StudentProfile(models.Model):
         db_column='work_type_id'
     )
     
-    # FE: compensationPreference - העדפת תגמול
-    compensationPreference = models.ForeignKey(
-        CompensationPreference,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='student_profiles',
-        db_column='compensation_preference_id'
+    # FE: compensationPreference - העדפת תגמול (multi-select, stored as JSON list)
+    compensationPreference = models.JSONField(
+        default=list, blank=True,
+        help_text='Compensation preferences, e.g. ["מלגה", "שכר"]'
     )
     
     # FE: participationMode - אופן ההשתתפות
@@ -349,19 +353,28 @@ class StudentProfile(models.Model):
         help_text="Personal and academic background description"
     )
     
-    # FE: recommendationRequest - לקבלת חוות דעת
-    recommendationRequest = models.TextField(
+    # FE: recommenders - פרטי ממליצים (array of {name, email, phone})
+    recommenders = models.JSONField(
+        default=list,
         blank=True,
-        db_column='recommendation_request',
-        help_text="Request for recommendations (name + email)"
+        db_column='recommenders',
+        help_text="List of recommenders [{name, email, phone}, ...]"
     )
-    
+
+    # FE: linkedinUrl - קישור לפרופיל לינקדאין
+    linkedinUrl = models.URLField(
+        max_length=500,
+        blank=True,
+        db_column='linkedin_url',
+        help_text="LinkedIn profile URL"
+    )
+
     # -------------------------------------------------------------------------
     # Metadata
     # -------------------------------------------------------------------------
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
+
     class Meta:
         db_table = 'student_profiles'
         verbose_name = 'Student Profile'
@@ -410,7 +423,7 @@ class MentorProfile(models.Model):
         db_column='specialty_group_id'
     )
     
-    # FE: specialty - התמחות / תחום מרכזי
+    # FE: specialty - התמחות / תחום מרכזי (legacy FK – kept for data migration)
     specialty = models.ForeignKey(
         Specialty,
         on_delete=models.PROTECT,
@@ -418,7 +431,15 @@ class MentorProfile(models.Model):
         blank=True,
         related_name='mentor_profiles'
     )
-    
+
+    # FE: specialties - התמחויות (M2M for multi-selection)
+    specialties = models.ManyToManyField(
+        Specialty,
+        blank=True,
+        related_name='mentor_profiles_multi',
+        help_text="Multiple specialties (replaces single specialty FK)"
+    )
+
     # FE: institution - מוסד לימודים
     institution = models.ForeignKey(
         Institution,
@@ -500,19 +521,28 @@ class MentorProfile(models.Model):
         help_text="Personal and academic background description"
     )
     
-    # FE: recommendationRequest - לקבלת חוות דעת
-    recommendationRequest = models.TextField(
+    # FE: recommenders - פרטי ממליצים (array of {name, email, phone})
+    recommenders = models.JSONField(
+        default=list,
         blank=True,
-        db_column='recommendation_request',
-        help_text="Request for recommendations (name + email)"
+        db_column='recommenders',
+        help_text="List of recommenders [{name, email, phone}, ...]"
     )
-    
+
+    # FE: linkedinUrl - קישור לפרופיל לינקדאין
+    linkedinUrl = models.URLField(
+        max_length=500,
+        blank=True,
+        db_column='linkedin_url',
+        help_text="LinkedIn profile URL"
+    )
+
     # -------------------------------------------------------------------------
     # Metadata
     # -------------------------------------------------------------------------
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
+
     class Meta:
         db_table = 'mentor_profiles'
         verbose_name = 'Mentor Profile'

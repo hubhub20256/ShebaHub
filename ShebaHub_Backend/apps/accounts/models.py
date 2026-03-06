@@ -54,9 +54,9 @@ class User(AbstractBaseUser, PermissionsMixin):
     """
     
     class Gender(models.TextChoices):
-        MAN = 'man', 'Man'
-        WOMAN = 'woman', 'Woman'
-        OTHER = 'other', 'Other'
+        MALE = 'male', 'זכר'
+        FEMALE = 'female', 'נקבה'
+        OTHER = 'other', 'אחר'
     
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     email = models.EmailField(unique=True, max_length=255)
@@ -69,6 +69,13 @@ class User(AbstractBaseUser, PermissionsMixin):
         null=True
     )
     
+    # Email verification
+    email_verified = models.BooleanField(default=False)
+
+    # Account lockout fields
+    failed_login_attempts = models.PositiveIntegerField(default=0)
+    locked_until = models.DateTimeField(null=True, blank=True)
+
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     is_superuser = models.BooleanField(default=False)
@@ -99,6 +106,11 @@ class User(AbstractBaseUser, PermissionsMixin):
         Return the short name for the user (first name).
         """
         return self.firstName
+
+    def delete(self, *args, **kwargs):
+        if self.is_superuser:
+            raise PermissionError("Superuser accounts cannot be deleted.")
+        return super().delete(*args, **kwargs)
     
     @property
     def has_student_profile(self):

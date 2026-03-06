@@ -4,9 +4,6 @@ Backend for ShebaHub – a platform connecting students and mentors.
 
 Built with Django, Django REST Framework (DRF), and JWT authentication.
 
-Repository:
-- https://github.com/yonatanel-Dev/shebahub-backend
-
 ---
 
 ## Features
@@ -35,21 +32,45 @@ After running the server, access:
 
 ## Run locally
 
-### All OS (Windows / Linux / macOS)
+### 1) Clone
 
-1) Run the setup script (optional)
 ```bash
 git clone https://github.com/yonatanel-Dev/shebahub-backend.git
 cd shebahub-backend
-python setup.py
 ```
 
-Run server:
+### 2) Create a virtualenv + install dependencies
+
+Windows (PowerShell):
+
+```powershell
+py -m venv venv
+venv\Scripts\pip.exe install -r requirements.txt
+```
+
+Linux/macOS:
+
 ```bash
-venv/bin/python manage.py runserver  # Linux/macOS
-venv\\Scripts\\python.exe manage.py runserver  # Windows
+python3 -m venv venv
+venv/bin/pip install -r requirements.txt
 ```
 
-Open the API documentation in your browser:
+### 3) Migrate + run
+
+Windows:
+
+```powershell
+venv\Scripts\python.exe manage.py migrate
+venv\Scripts\python.exe manage.py runserver 8000
+```
+
+Linux/macOS:
+
+```bash
+venv/bin/python manage.py migrate
+venv/bin/python manage.py runserver 8000
+```
+
+Open Swagger UI:
 http://localhost:8000/api/docs/
 

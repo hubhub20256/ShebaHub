@@ -10,15 +10,17 @@ import logging
 
 from django.conf import settings
 from rest_framework import status
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
+from rest_framework.decorators import api_view, permission_classes, throttle_classes
+from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
+from apps.common.throttles import UploadRateThrottle
 from drf_spectacular.utils import extend_schema, OpenApiExample, OpenApiResponse
 
 from .models import (
     StudentProfile,
     MentorProfile,
     ProfileDocument,
+    ProfessionalRecommendation,
     Institution,
     Degree,
     AcademicRank,
@@ -37,7 +39,9 @@ from .serializers import (
     MentorProfileCreateSerializer,
     ProfileDocumentSerializer,
     ProfileDocumentUploadSerializer,
+    ProfessionalRecommendationSerializer,
     ReferenceSerializer,
+    ReferenceDataAllSerializer,
     PublicMentorSerializer,
     PublicStudentSerializer,
     PublicMentorDetailSerializer,
@@ -48,30 +52,118 @@ from rest_framework.parsers import MultiPartParser, FormParser
 # Audit logger for sensitive operations
 audit_logger = logging.getLogger('audit')
 
+# Avatar upload constraints
+AVATAR_MAX_SIZE_MB = 5
+AVATAR_MAX_SIZE_BYTES = AVATAR_MAX_SIZE_MB * 1024 * 1024
+AVATAR_ALLOWED_TYPES = {'image/jpeg', 'image/png', 'image/webp', 'image/gif'}
+AVATAR_ALLOWED_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.webp', '.gif'}
+
+
+def _validate_avatar(avatar_file):
+    """
+    Validate avatar file size, type, magic bytes, and virus scan.
+    Returns an error Response if invalid, or None if valid.
+    """
+    import os
+    from .file_security import validate_magic_bytes, scan_file_for_viruses
+
+    # Validate file size
+    if avatar_file.size > AVATAR_MAX_SIZE_BYTES:
+        return Response(
+            {
+                'code': 'VALIDATION_ERROR',
+                'message': f'Avatar file size ({avatar_file.size / (1024*1024):.1f} MB) exceeds '
+                           f'maximum allowed size ({AVATAR_MAX_SIZE_MB} MB).',
+            },
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    # Validate file extension
+    ext = os.path.splitext(avatar_file.name)[1].lower()
+    if ext not in AVATAR_ALLOWED_EXTENSIONS:
+        return Response(
+            {
+                'code': 'VALIDATION_ERROR',
+                'message': f"File type '{ext}' is not allowed. "
+                           f"Allowed types: {', '.join(sorted(AVATAR_ALLOWED_EXTENSIONS))}",
+            },
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    # Validate content type
+    if hasattr(avatar_file, 'content_type') and avatar_file.content_type not in AVATAR_ALLOWED_TYPES:
+        return Response(
+            {
+                'code': 'VALIDATION_ERROR',
+                'message': f"Content type '{avatar_file.content_type}' is not allowed. Must be an image.",
+            },
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    # Validate magic bytes
+    is_valid, error = validate_magic_bytes(avatar_file)
+    if not is_valid:
+        audit_logger.warning(
+            f"Avatar magic bytes mismatch: {avatar_file.name}",
+            extra={'filename': avatar_file.name},
+        )
+        return Response(
+            {'code': 'VALIDATION_ERROR', 'message': error},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    # Virus scan
+    is_clean, threat = scan_file_for_viruses(avatar_file)
+    if not is_clean:
+        return Response(
+            {'code': 'VALIDATION_ERROR', 'message': f'File rejected: malware detected ({threat}).'},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    return None
+
 
 # =============================================================================
 # PUBLIC DIRECTORY ENDPOINTS (Mentors/Students)
 # =============================================================================
 
 
+@extend_schema(
+    methods=['GET'],
+    summary="List public mentors",
+    description="Public directory endpoint returning mentor cards for browsing.",
+    responses={200: PublicMentorSerializer(many=True)},
+)
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def public_mentor_list(request):
+    from apps.admin_panel.models import SiteSetting
     qs = (
         MentorProfile.objects
+        .filter(user__is_staff=False)
         .select_related('user', 'specialty', 'institution')
-        .prefetch_related('degrees')
+        .prefetch_related('degrees', 'specialties')
         .order_by('-created_at')
     )
+    if SiteSetting.load().require_email_verification_to_apply:
+        qs = qs.filter(user__email_verified=True)
     return Response(PublicMentorSerializer(qs, many=True, context={'request': request}).data)
 
 
+@extend_schema(
+    methods=['GET'],
+    summary="Get public mentor details",
+    description="Public directory endpoint returning a mentor's public profile details.",
+    responses={
+        200: PublicMentorDetailSerializer,
+        404: OpenApiResponse(description="Mentor not found."),
+    },
+)
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def public_mentor_detail(request, mentor_id):
+    from apps.admin_panel.models import SiteSetting
     try:
+        qs = MentorProfile.objects.all()
+        if SiteSetting.load().require_email_verification_to_apply:
+            qs = qs.filter(user__email_verified=True)
         mentor = (
-            MentorProfile.objects
+            qs
             .select_related(
                 'user',
                 'academicRank',
@@ -87,23 +179,46 @@ def public_mentor_detail(request, mentor_id):
     return Response(PublicMentorDetailSerializer(mentor, context={'request': request}).data)
 
 
+@extend_schema(
+    methods=['GET'],
+    summary="List public students",
+    description="Public directory endpoint returning student cards for browsing.",
+    responses={200: PublicStudentSerializer(many=True)},
+)
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def public_student_list(request):
+    from apps.admin_panel.models import SiteSetting
     qs = (
         StudentProfile.objects
+        .filter(user__is_staff=False)
         .select_related('user', 'apprenticeStage', 'institution')
         .order_by('-created_at')
     )
+    if SiteSetting.load().require_email_verification_to_apply:
+        qs = qs.filter(user__email_verified=True)
     return Response(PublicStudentSerializer(qs, many=True, context={'request': request}).data)
 
 
+@extend_schema(
+    methods=['GET'],
+    summary="Get public student details",
+    description="Public directory endpoint returning a student's public profile details.",
+    responses={
+        200: PublicStudentDetailSerializer,
+        404: OpenApiResponse(description="Student not found."),
+    },
+)
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def public_student_detail(request, student_id):
+    from apps.admin_panel.models import SiteSetting
     try:
+        qs = StudentProfile.objects.all()
+        if SiteSetting.load().require_email_verification_to_apply:
+            qs = qs.filter(user__email_verified=True)
         student = (
-            StudentProfile.objects
+            qs
             .select_related(
                 'user',
                 'apprenticeStage',
@@ -112,14 +227,38 @@ def public_student_detail(request, student_id):
                 'specialty',
                 'workType',
                 'participationMode',
-                'compensationPreference',
             )
             .prefetch_related('degrees', 'documents', 'recommendations')
             .get(id=student_id)
         )
     except StudentProfile.DoesNotExist:
         return Response({'detail': 'Student not found.'}, status=status.HTTP_404_NOT_FOUND)
-    return Response(PublicStudentDetailSerializer(student, context={'request': request}).data)
+
+    data = PublicStudentDetailSerializer(student, context={'request': request}).data
+
+    # Restrict documents visibility: only the student themselves, staff,
+    # or a mentor whose research this student applied to can see documents.
+    can_see_docs = False
+    if request.user == student.user:
+        can_see_docs = True
+    elif request.user.is_staff:
+        can_see_docs = True
+    else:
+        from apps.research.models import ResearchApplication
+        can_see_docs = ResearchApplication.objects.filter(
+            research__owner=request.user,
+            applicant=student.user,
+        ).exclude(
+            status__in=[
+                ResearchApplication.Status.CANCELLED,
+                ResearchApplication.Status.REMOVED,
+            ]
+        ).exists()
+
+    if not can_see_docs:
+        data['documents'] = []
+
+    return Response(data)
 
 
 # =============================================================================
@@ -216,15 +355,15 @@ def student_profile_me(request):
     """
     Unified endpoint for current user's student profile.
     
-    GET /api/v1/profiles/student/me/
+    GET /api/profiles/student/me/
     - Returns current user's profile
     - Returns 404 if no profile exists
     
-    POST /api/v1/profiles/student/me/
+    POST /api/profiles/student/me/
     - Creates profile for authenticated user
     - Returns 409 Conflict if profile already exists
     
-    PATCH /api/v1/profiles/student/me/
+    PATCH /api/profiles/student/me/
     - Partial update of current user's profile
     - Returns 404 if no profile exists
     """
@@ -232,7 +371,15 @@ def student_profile_me(request):
     
     if request.method == 'GET':
         try:
-            profile = StudentProfile.objects.get(user=user)
+            profile = (
+                StudentProfile.objects
+                .select_related(
+                    'institution', 'apprenticeStage', 'specialtyGroup',
+                    'specialty', 'workType', 'participationMode',
+                )
+                .prefetch_related('degrees', 'specialties', 'documents', 'recommendations')
+                .get(user=user)
+            )
         except StudentProfile.DoesNotExist:
             return Response(
                 {
@@ -247,6 +394,16 @@ def student_profile_me(request):
         return Response(serializer.data)
     
     elif request.method == 'POST':
+        # Prevent dual-role: cannot create student profile if mentor profile exists
+        if MentorProfile.objects.filter(user=user).exists():
+            return Response(
+                {
+                    'code': 'ROLE_LOCKED',
+                    'message': 'You already have a mentor profile. Cannot create a student profile.',
+                },
+                status=status.HTTP_409_CONFLICT,
+            )
+
         # Check if profile already exists
         if StudentProfile.objects.filter(user=user).exists():
             audit_logger.warning(
@@ -369,12 +526,13 @@ def student_profile_me(request):
 )
 @api_view(['GET', 'POST'])
 @permission_classes([IsAuthenticated])
+@throttle_classes([UploadRateThrottle])
 def student_documents(request):
     """
-    GET /api/v1/profiles/student/me/documents/
+    GET /api/profiles/student/me/documents/
     - List all documents for current user's student profile
 
-    POST /api/v1/profiles/student/me/documents/
+    POST /api/profiles/student/me/documents/
     - Upload a document to student profile (multipart/form-data)
     """
     user = request.user
@@ -443,7 +601,7 @@ def student_documents(request):
 @permission_classes([IsAuthenticated])
 def student_document_detail(request, document_id):
     """
-    DELETE /api/v1/profiles/student/me/documents/<document_id>/
+    DELETE /api/profiles/student/me/documents/<document_id>/
     - Delete a specific document from student profile
     """
     user = request.user
@@ -582,15 +740,15 @@ def mentor_profile_me(request):
     """
     Unified endpoint for current user's mentor profile.
     
-    GET /api/v1/profiles/mentor/me/
+    GET /api/profiles/mentor/me/
     - Returns current user's mentor profile
     - Returns 404 if no profile exists
     
-    POST /api/v1/profiles/mentor/me/
+    POST /api/profiles/mentor/me/
     - Creates mentor profile for authenticated user
     - Returns 409 Conflict if profile already exists
     
-    PATCH /api/v1/profiles/mentor/me/
+    PATCH /api/profiles/mentor/me/
     - Partial update of current user's mentor profile
     - Returns 404 if no profile exists
     """
@@ -598,7 +756,15 @@ def mentor_profile_me(request):
     
     if request.method == 'GET':
         try:
-            profile = MentorProfile.objects.get(user=user)
+            profile = (
+                MentorProfile.objects
+                .select_related(
+                    'user', 'institution', 'academicRank',
+                    'specialtyGroup', 'specialty', 'researchInterests',
+                )
+                .prefetch_related('degrees', 'specialties', 'documents', 'recommendations')
+                .get(user=user)
+            )
         except MentorProfile.DoesNotExist:
             return Response(
                 {
@@ -613,6 +779,16 @@ def mentor_profile_me(request):
         return Response(serializer.data)
     
     elif request.method == 'POST':
+        # Prevent dual-role: cannot create mentor profile if student profile exists
+        if StudentProfile.objects.filter(user=user).exists():
+            return Response(
+                {
+                    'code': 'ROLE_LOCKED',
+                    'message': 'You already have a student profile. Cannot create a mentor profile.',
+                },
+                status=status.HTTP_409_CONFLICT,
+            )
+
         # Check if profile already exists
         if MentorProfile.objects.filter(user=user).exists():
             audit_logger.warning(
@@ -739,34 +915,38 @@ def mentor_avatar(request):
                 {'code': 'VALIDATION_ERROR', 'message': 'No avatar file provided.'},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        
+
+        validation_error = _validate_avatar(avatar_file)
+        if validation_error:
+            return validation_error
+
         # Delete old avatar if exists
         if profile.avatar:
             profile.avatar.delete(save=False)
-        
+
         profile.avatar = avatar_file
         profile.save()
-        
+
         avatar_url = request.build_absolute_uri(profile.avatar.url) if profile.avatar else None
-        
+
         audit_logger.info(
             f"Mentor avatar uploaded: {user.email}",
             extra={'user_id': str(user.id), 'profile_id': str(profile.id)}
         )
-        
+
         return Response({'avatarUrl': avatar_url})
-    
+
     elif request.method == 'DELETE':
         if profile.avatar:
             profile.avatar.delete(save=False)
             profile.avatar = None
             profile.save()
-            
+
             audit_logger.info(
                 f"Mentor avatar deleted: {user.email}",
                 extra={'user_id': str(user.id), 'profile_id': str(profile.id)}
             )
-        
+
         return Response({'message': 'Avatar deleted successfully.'})
 
 
@@ -810,34 +990,38 @@ def student_avatar(request):
                 {'code': 'VALIDATION_ERROR', 'message': 'No avatar file provided.'},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        
+
+        validation_error = _validate_avatar(avatar_file)
+        if validation_error:
+            return validation_error
+
         # Delete old avatar if exists
         if profile.avatar:
             profile.avatar.delete(save=False)
-        
+
         profile.avatar = avatar_file
         profile.save()
-        
+
         avatar_url = request.build_absolute_uri(profile.avatar.url) if profile.avatar else None
-        
+
         audit_logger.info(
             f"Student avatar uploaded: {user.email}",
             extra={'user_id': str(user.id), 'profile_id': str(profile.id)}
         )
-        
+
         return Response({'avatarUrl': avatar_url})
-    
+
     elif request.method == 'DELETE':
         if profile.avatar:
             profile.avatar.delete(save=False)
             profile.avatar = None
             profile.save()
-            
+
             audit_logger.info(
                 f"Student avatar deleted: {user.email}",
                 extra={'user_id': str(user.id), 'profile_id': str(profile.id)}
             )
-        
+
         return Response({'message': 'Avatar deleted successfully.'})
 
 
@@ -890,12 +1074,13 @@ def student_avatar(request):
 )
 @api_view(['GET', 'POST'])
 @permission_classes([IsAuthenticated])
+@throttle_classes([UploadRateThrottle])
 def mentor_documents(request):
     """
-    GET /api/v1/profiles/mentor/me/documents/
+    GET /api/profiles/mentor/me/documents/
     - List all documents for current user's mentor profile
     
-    POST /api/v1/profiles/mentor/me/documents/
+    POST /api/profiles/mentor/me/documents/
     - Upload a document to mentor profile (multipart/form-data)
     """
     user = request.user
@@ -972,7 +1157,7 @@ def mentor_documents(request):
 @permission_classes([IsAuthenticated])
 def mentor_document_detail(request, document_id):
     """
-    DELETE /api/v1/profiles/mentor/me/documents/<document_id>/
+    DELETE /api/profiles/mentor/me/documents/<document_id>/
     - Delete a specific document from mentor profile
     """
     user = request.user
@@ -1022,6 +1207,263 @@ def mentor_document_detail(request, document_id):
 
 
 # =============================================================================
+# SECURE DOCUMENT DOWNLOAD
+# =============================================================================
+
+@extend_schema(
+    methods=['GET'],
+    summary="Securely download a profile document",
+    description="Download a document by ID. Only the document owner can download.",
+    responses={
+        200: OpenApiResponse(description="File content"),
+        403: OpenApiResponse(description="Permission denied"),
+        404: OpenApiResponse(description="Document not found"),
+    },
+)
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def secure_document_download(request, document_id):
+    """
+    GET /api/profiles/documents/<document_id>/download/
+    Secure download endpoint that verifies ownership before serving the file.
+    """
+    from django.http import FileResponse
+
+    try:
+        document = ProfileDocument.objects.select_related(
+            'student_profile__user', 'mentor_profile__user'
+        ).get(id=document_id)
+    except ProfileDocument.DoesNotExist:
+        return Response(
+            {'code': 'NOT_FOUND', 'message': 'Document not found.', 'details': None},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+
+    # Determine document owner and enforce ownership check
+    if document.student_profile:
+        doc_owner = document.student_profile.user
+    elif document.mentor_profile:
+        doc_owner = document.mentor_profile.user
+    else:
+        return Response(
+            {'code': 'FORBIDDEN', 'message': 'Access denied.'},
+            status=status.HTTP_403_FORBIDDEN,
+        )
+
+    # Allow access if: owner, staff, or mentor whose research the student applied to
+    is_authorized = (doc_owner == request.user or request.user.is_staff)
+    if not is_authorized and document.student_profile:
+        from apps.research.models import ResearchApplication
+        is_authorized = ResearchApplication.objects.filter(
+            research__owner=request.user,
+            applicant=doc_owner,
+        ).exclude(
+            status__in=[
+                ResearchApplication.Status.CANCELLED,
+                ResearchApplication.Status.REMOVED,
+            ]
+        ).exists()
+
+    if not is_authorized:
+        return Response(
+            {'code': 'FORBIDDEN', 'message': 'Access denied.'},
+            status=status.HTTP_403_FORBIDDEN,
+        )
+
+    if not document.file:
+        return Response(
+            {'code': 'NOT_FOUND', 'message': 'File not found on disk.'},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+
+    audit_logger.info(
+        f"Document downloaded: {document.original_filename or document.file.name}",
+        extra={
+            'user_id': str(request.user.id),
+            'document_id': str(document.id),
+        },
+    )
+
+    response = FileResponse(
+        document.file.open('rb'),
+        content_type='application/octet-stream',
+    )
+    # Use original filename for the download, falling back to stored name
+    filename = document.original_filename or document.file.name.split('/')[-1]
+    # RFC 5987 encoding for safe Content-Disposition with non-ASCII filenames
+    from urllib.parse import quote
+    encoded_filename = quote(filename)
+    response['Content-Disposition'] = (
+        f"attachment; filename=\"{encoded_filename}\"; "
+        f"filename*=UTF-8''{encoded_filename}"
+    )
+    return response
+
+
+# =============================================================================
+# PROFESSIONAL RECOMMENDATION ENDPOINTS
+# =============================================================================
+
+
+@extend_schema(
+    methods=['GET'],
+    summary="List student recommendations",
+    description="List all professional recommendations for the current user's student profile.",
+    responses={
+        200: ProfessionalRecommendationSerializer(many=True),
+        404: OpenApiResponse(description="Student profile not found"),
+    },
+)
+@extend_schema(
+    methods=['POST'],
+    summary="Add student recommendation",
+    description="Add a professional recommendation to the current user's student profile.",
+    request=ProfessionalRecommendationSerializer,
+    responses={
+        201: ProfessionalRecommendationSerializer,
+        400: OpenApiResponse(description="Validation error"),
+        404: OpenApiResponse(description="Student profile not found"),
+    },
+)
+@api_view(['GET', 'POST'])
+@permission_classes([IsAuthenticated])
+def student_recommendations(request):
+    """GET/POST /api/profiles/student/me/recommendations/"""
+    user = request.user
+    try:
+        profile = StudentProfile.objects.get(user=user)
+    except StudentProfile.DoesNotExist:
+        return Response(
+            {'code': 'NOT_FOUND', 'message': 'Student profile not found.', 'details': None},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+
+    if request.method == 'GET':
+        qs = profile.recommendations.all()
+        return Response(ProfessionalRecommendationSerializer(qs, many=True).data)
+
+    serializer = ProfessionalRecommendationSerializer(data=request.data)
+    if not serializer.is_valid():
+        return Response(
+            {'code': 'VALIDATION_ERROR', 'message': 'Validation failed.', 'details': serializer.errors},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    serializer.save(student_profile=profile)
+    return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+@extend_schema(
+    methods=['DELETE'],
+    summary="Delete a student recommendation",
+    description="Delete a specific recommendation from the current user's student profile.",
+    responses={
+        204: OpenApiResponse(description="Recommendation deleted"),
+        404: OpenApiResponse(description="Not found"),
+    },
+)
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def student_recommendation_detail(request, recommendation_id):
+    """DELETE /api/profiles/student/me/recommendations/<id>/"""
+    user = request.user
+    try:
+        profile = StudentProfile.objects.get(user=user)
+    except StudentProfile.DoesNotExist:
+        return Response(
+            {'code': 'NOT_FOUND', 'message': 'Student profile not found.', 'details': None},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+    try:
+        rec = ProfessionalRecommendation.objects.get(id=recommendation_id, student_profile=profile)
+    except ProfessionalRecommendation.DoesNotExist:
+        return Response(
+            {'code': 'NOT_FOUND', 'message': 'Recommendation not found.', 'details': None},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+    rec.delete()
+    return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@extend_schema(
+    methods=['GET'],
+    summary="List mentor recommendations",
+    description="List all professional recommendations for the current user's mentor profile.",
+    responses={
+        200: ProfessionalRecommendationSerializer(many=True),
+        404: OpenApiResponse(description="Mentor profile not found"),
+    },
+)
+@extend_schema(
+    methods=['POST'],
+    summary="Add mentor recommendation",
+    description="Add a professional recommendation to the current user's mentor profile.",
+    request=ProfessionalRecommendationSerializer,
+    responses={
+        201: ProfessionalRecommendationSerializer,
+        400: OpenApiResponse(description="Validation error"),
+        404: OpenApiResponse(description="Mentor profile not found"),
+    },
+)
+@api_view(['GET', 'POST'])
+@permission_classes([IsAuthenticated])
+def mentor_recommendations(request):
+    """GET/POST /api/profiles/mentor/me/recommendations/"""
+    user = request.user
+    try:
+        profile = MentorProfile.objects.get(user=user)
+    except MentorProfile.DoesNotExist:
+        return Response(
+            {'code': 'NOT_FOUND', 'message': 'Mentor profile not found.', 'details': None},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+
+    if request.method == 'GET':
+        qs = profile.recommendations.all()
+        return Response(ProfessionalRecommendationSerializer(qs, many=True).data)
+
+    serializer = ProfessionalRecommendationSerializer(data=request.data)
+    if not serializer.is_valid():
+        return Response(
+            {'code': 'VALIDATION_ERROR', 'message': 'Validation failed.', 'details': serializer.errors},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    serializer.save(mentor_profile=profile)
+    return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+@extend_schema(
+    methods=['DELETE'],
+    summary="Delete a mentor recommendation",
+    description="Delete a specific recommendation from the current user's mentor profile.",
+    responses={
+        204: OpenApiResponse(description="Recommendation deleted"),
+        404: OpenApiResponse(description="Not found"),
+    },
+)
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def mentor_recommendation_detail(request, recommendation_id):
+    """DELETE /api/profiles/mentor/me/recommendations/<id>/"""
+    user = request.user
+    try:
+        profile = MentorProfile.objects.get(user=user)
+    except MentorProfile.DoesNotExist:
+        return Response(
+            {'code': 'NOT_FOUND', 'message': 'Mentor profile not found.', 'details': None},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+    try:
+        rec = ProfessionalRecommendation.objects.get(id=recommendation_id, mentor_profile=profile)
+    except ProfessionalRecommendation.DoesNotExist:
+        return Response(
+            {'code': 'NOT_FOUND', 'message': 'Recommendation not found.', 'details': None},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+    rec.delete()
+    return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+# =============================================================================
 # REFERENCE DATA ENDPOINTS
 # =============================================================================
 
@@ -1032,16 +1474,28 @@ def _is_admin_or_debug(request):
     return request.user.is_staff or request.user.is_superuser
 
 
+@extend_schema(
+    methods=['GET'],
+    summary="Get all reference data",
+    description=(
+        "Return all reference data (dropdown options) in a single response. "
+        "In production this endpoint is restricted to staff/superusers."
+    ),
+    responses={
+        200: ReferenceDataAllSerializer,
+        403: OpenApiResponse(description="Permission denied"),
+    },
+)
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def reference_data_all(request):
     """
-    GET /api/v1/reference-data/
+    GET /api/reference-data/
     Returns all reference data for dropdowns in a single request.
     
     NOTE: This endpoint is restricted to admin users in production.
     In development (DEBUG=True), it's accessible to all authenticated users.
-    Prefer using individual /api/v1/reference-data/{type}/ endpoints.
+    Prefer using individual /api/reference-data/{type}/ endpoints.
     """
     # Restrict to admin/staff in production
     if not _is_admin_or_debug(request):
@@ -1090,81 +1544,143 @@ def reference_data_all(request):
     return Response(data)
 
 
+@extend_schema(
+    methods=['GET'],
+    summary="List institutions",
+    description="List all active institutions for dropdowns.",
+    responses={200: ReferenceSerializer(many=True)},
+)
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def reference_institutions(request):
-    """GET /api/v1/reference-data/institutions/"""
+    """GET /api/reference-data/institutions/"""
     data = Institution.objects.filter(is_active=True).values('id', 'name', 'name_he')
     return Response(list(data))
 
 
+@extend_schema(
+    methods=['GET'],
+    summary="List degrees",
+    description="List all active degrees for dropdowns.",
+    responses={200: ReferenceSerializer(many=True)},
+)
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def reference_degrees(request):
-    """GET /api/v1/reference-data/degrees/"""
+    """GET /api/reference-data/degrees/"""
     data = Degree.objects.filter(is_active=True).values('id', 'name', 'name_he')
     return Response(list(data))
 
 
+@extend_schema(
+    methods=['GET'],
+    summary="List academic ranks",
+    description="List all active academic ranks for dropdowns.",
+    responses={200: ReferenceSerializer(many=True)},
+)
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def reference_academic_ranks(request):
-    """GET /api/v1/reference-data/academic-ranks/"""
+    """GET /api/reference-data/academic-ranks/"""
     data = AcademicRank.objects.filter(is_active=True).values('id', 'name', 'name_he')
     return Response(list(data))
 
 
+@extend_schema(
+    methods=['GET'],
+    summary="List medical training stages",
+    description="List all active medical training stages for dropdowns.",
+    responses={200: ReferenceSerializer(many=True)},
+)
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def reference_medical_training_stages(request):
-    """GET /api/v1/reference-data/medical-training-stages/"""
+    """GET /api/reference-data/medical-training-stages/"""
     data = MedicalTrainingStage.objects.filter(is_active=True).values('id', 'name', 'name_he')
     return Response(list(data))
 
 
+@extend_schema(
+    methods=['GET'],
+    summary="List specialties",
+    description="List all active specialties for dropdowns.",
+    responses={200: ReferenceSerializer(many=True)},
+)
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def reference_specialties(request):
-    """GET /api/v1/reference-data/specialties/"""
+    """GET /api/reference-data/specialties/"""
     data = Specialty.objects.filter(is_active=True).values('id', 'name', 'name_he')
     return Response(list(data))
 
 
+@extend_schema(
+    methods=['GET'],
+    summary="List research interests",
+    description="List all active research interests for dropdowns.",
+    responses={200: ReferenceSerializer(many=True)},
+)
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def reference_research_interests(request):
-    """GET /api/v1/reference-data/research-interests/"""
+    """GET /api/reference-data/research-interests/"""
     data = ResearchInterest.objects.filter(is_active=True).values('id', 'name', 'name_he')
     return Response(list(data))
 
 
+@extend_schema(
+    methods=['GET'],
+    summary="List work types",
+    description="List all active work types for dropdowns.",
+    responses={200: ReferenceSerializer(many=True)},
+)
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def reference_work_types(request):
-    """GET /api/v1/reference-data/work-types/"""
+    """GET /api/reference-data/work-types/"""
     data = WorkType.objects.filter(is_active=True).values('id', 'name', 'name_he')
     return Response(list(data))
 
 
+@extend_schema(
+    methods=['GET'],
+    summary="List participation modes",
+    description="List all active participation modes for dropdowns.",
+    responses={200: ReferenceSerializer(many=True)},
+)
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def reference_participation_modes(request):
-    """GET /api/v1/reference-data/participation-modes/"""
+    """GET /api/reference-data/participation-modes/"""
     data = ParticipationMode.objects.filter(is_active=True).values('id', 'name', 'name_he')
     return Response(list(data))
 
 
+@extend_schema(
+    methods=['GET'],
+    summary="List professional experience levels",
+    description="List all active professional experience levels for dropdowns.",
+    responses={200: ReferenceSerializer(many=True)},
+)
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def reference_professional_experience(request):
-    """GET /api/v1/reference-data/professional-experience/"""
+    """GET /api/reference-data/professional-experience/"""
     data = ProfessionalExperience.objects.filter(is_active=True).values('id', 'name', 'name_he')
     return Response(list(data))
 
 
+@extend_schema(
+    methods=['GET'],
+    summary="List compensation preferences",
+    description="List all active compensation preferences for dropdowns.",
+    responses={200: ReferenceSerializer(many=True)},
+)
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def reference_compensation_preferences(request):
-    """GET /api/v1/reference-data/compensation-preferences/"""
+    """GET /api/reference-data/compensation-preferences/"""
     data = CompensationPreference.objects.filter(is_active=True).values('id', 'name', 'name_he')
     return Response(list(data))
+
+

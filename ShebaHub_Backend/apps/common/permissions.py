@@ -113,9 +113,58 @@ class IsStudentOrMentor(permissions.BasePermission):
         )
 
 
+class IsEmailVerified(permissions.BasePermission):
+    """
+    Deny access unless the user's email is verified.
+    Staff and superusers are exempt.
+    Also skipped when the admin toggle require_email_verification_to_apply is off.
+    """
+    message = 'You must verify your email address before performing this action.'
+
+    def has_permission(self, request, view):
+        if not request.user or not request.user.is_authenticated:
+            return False
+        if request.user.is_staff or request.user.is_superuser:
+            return True
+        from apps.admin_panel.models import SiteSetting
+        site = SiteSetting.load()
+        if not site.require_email_verification_to_apply:
+            return True
+        return getattr(request.user, 'email_verified', False)
+
+
 class ReadOnly(permissions.BasePermission):
     """
     Allow read-only access (GET, HEAD, OPTIONS).
     """
     def has_permission(self, request, view):
         return request.method in permissions.SAFE_METHODS
+
+
+class RequireProfile(permissions.BasePermission):
+    """
+    Deny access to users who have no profile (student or mentor).
+    Allows: create-profile endpoints, auth endpoints, reference-data.
+    """
+    message = 'You must create a profile before accessing this resource.'
+
+    EXEMPT_PREFIXES = [
+        '/api/auth/',
+        '/api/profiles/student/me/',
+        '/api/profiles/mentor/me/',
+        '/api/reference-data/',
+        '/api/admin-panel/',
+    ]
+
+    def has_permission(self, request, view):
+        if not request.user or not request.user.is_authenticated:
+            return True  # Let IsAuthenticated handle this
+        # Staff and superusers are exempt from profile requirement
+        if request.user.is_staff or request.user.is_superuser:
+            return True
+        for prefix in self.EXEMPT_PREFIXES:
+            if request.path.startswith(prefix):
+                return True
+        if getattr(request.user, 'has_student_profile', False) or getattr(request.user, 'has_mentor_profile', False):
+            return True
+        return False

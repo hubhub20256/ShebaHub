@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     # Third-party apps
     'rest_framework',
     'rest_framework_simplejwt',
+    'rest_framework_simplejwt.token_blacklist',
     'corsheaders',
     'drf_spectacular',
     
@@ -58,10 +59,12 @@ INSTALLED_APPS = [
     'apps.profiles',
     'apps.common',
     'apps.research',
+    'apps.admin_panel',
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'apps.common.middleware.SecurityHeadersMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -158,16 +161,39 @@ DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10 MB
 ALLOWED_DOCUMENT_EXTENSIONS = ['.pdf', '.doc', '.docx', '.jpg', '.jpeg', '.png']
 MAX_DOCUMENT_SIZE_MB = 10  # Maximum file size in MB
 
+# ClamAV virus scanning (optional – set CLAMAV_ENABLED=True in .env to activate)
+CLAMAV_ENABLED = env.bool('CLAMAV_ENABLED', default=False)
+CLAMAV_HOST = env('CLAMAV_HOST', default='127.0.0.1')
+CLAMAV_PORT = env.int('CLAMAV_PORT', default=3310)
+CLAMAV_SOCKET = env('CLAMAV_SOCKET', default='')  # Unix socket path (overrides host/port)
+
+# Email configuration
+# Production uses AWS SES via SMTP (set EMAIL_* env vars).
+# Development defaults to the console backend (emails printed to stdout).
+EMAIL_BACKEND = env('EMAIL_BACKEND', default='django.core.mail.backends.console.EmailBackend')
+EMAIL_HOST = env('EMAIL_HOST', default='')
+EMAIL_PORT = env.int('EMAIL_PORT', default=587)
+EMAIL_USE_TLS = env.bool('EMAIL_USE_TLS', default=True)
+EMAIL_HOST_USER = env('EMAIL_HOST_USER', default='')
+EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD', default='')
+DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL', default='noreply@shebahub.hitheal.org.il')
+
+# Frontend URL for password reset links
+FRONTEND_URL = env('FRONTEND_URL', default='http://localhost:5173')
+if IS_PRODUCTION and FRONTEND_URL.startswith('http://'):
+    raise ValueError('FRONTEND_URL must use HTTPS in production!')
+
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # REST Framework settings
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'apps.common.authentication.ActiveUserJWTAuthentication',
     ),
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
+        'apps.common.permissions.RequireProfile',
     ),
     'DEFAULT_RENDERER_CLASSES': (
         'rest_framework.renderers.JSONRenderer',
@@ -185,8 +211,17 @@ REST_FRAMEWORK = {
     'DEFAULT_THROTTLE_RATES': {
         'anon': '100/hour',
         'user': '1000/hour',
+        'login': '10/minute',
+        'register': '5/minute',
+        'upload': '30/hour',
+        'contact': '10/hour',
+        'password_reset': '5/hour',
+        'research_application': '10/hour',
+        'chat_message': '60/minute',
     },
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 50,
 }
 
 # DRF Spectacular settings (OpenAPI/Swagger)
@@ -205,8 +240,8 @@ from datetime import timedelta
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(hours=1),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
-    'ROTATE_REFRESH_TOKENS': False,
-    'BLACKLIST_AFTER_ROTATION': False,
+    'ROTATE_REFRESH_TOKENS': True,
+    'BLACKLIST_AFTER_ROTATION': True,
     'UPDATE_LAST_LOGIN': True,
     'ALGORITHM': 'HS256',
     'SIGNING_KEY': SECRET_KEY,
@@ -228,11 +263,14 @@ CORS_ALLOW_CREDENTIALS = True  # ok for JWT; needed if you ever use cookies
 if IS_PRODUCTION:
     # Production: allow ONLY real frontend domain(s) from env
     CORS_ALLOWED_ORIGINS = env.list("CORS_ALLOWED_ORIGINS", default=[])
+    if not CORS_ALLOWED_ORIGINS:
+        raise ValueError('CORS_ALLOWED_ORIGINS must be set in production!')
 else:
     # Development: allow localhost/127.0.0.1 on ANY port (Vite may switch ports)
     CORS_ALLOWED_ORIGIN_REGEXES = [
         r"^http://localhost:\d+$",
         r"^http://127\.0\.0\.1:\d+$",
+        r"^https?://shebahub\.hitheal\.org\.il(:\d+)?$",
     ]
 
 
@@ -266,6 +304,27 @@ LOGGING = {
             'class': 'logging.StreamHandler',
             'formatter': 'audit',
         },
+        # Production file handlers (activated when LOG_DIR env var is set)
+        **(
+            {
+                'audit_file': {
+                    'class': 'logging.handlers.RotatingFileHandler',
+                    'filename': os.path.join(env('LOG_DIR', default=str(BASE_DIR / 'logs')), 'audit.log'),
+                    'maxBytes': 10 * 1024 * 1024,  # 10 MB
+                    'backupCount': 10,
+                    'formatter': 'audit',
+                },
+                'error_file': {
+                    'class': 'logging.handlers.RotatingFileHandler',
+                    'filename': os.path.join(env('LOG_DIR', default=str(BASE_DIR / 'logs')), 'error.log'),
+                    'maxBytes': 10 * 1024 * 1024,
+                    'backupCount': 10,
+                    'formatter': 'verbose',
+                },
+            }
+            if IS_PRODUCTION
+            else {}
+        ),
     },
     'root': {
         'handlers': ['console'],
@@ -273,18 +332,23 @@ LOGGING = {
     },
     'loggers': {
         'django': {
-            'handlers': ['console'],
+            'handlers': ['console'] + (['error_file'] if IS_PRODUCTION else []),
             'level': env('DJANGO_LOG_LEVEL', default='INFO'),
             'propagate': False,
         },
         'django.request': {
-            'handlers': ['console'],
+            'handlers': ['console'] + (['error_file'] if IS_PRODUCTION else []),
             'level': 'ERROR',
+            'propagate': False,
+        },
+        'django.security': {
+            'handlers': ['console'] + (['audit_file'] if IS_PRODUCTION else []),
+            'level': 'WARNING',
             'propagate': False,
         },
         # Audit logger for sensitive operations
         'audit': {
-            'handlers': ['audit_console'],
+            'handlers': ['audit_console'] + (['audit_file'] if IS_PRODUCTION else []),
             'level': 'INFO',
             'propagate': False,
         },
@@ -292,30 +356,32 @@ LOGGING = {
 }
 
 # =============================================================================
-# PRODUCTION SECURITY SETTINGS
+# SECURITY SETTINGS
 # =============================================================================
-# These settings are applied based on the ENVIRONMENT variable
+
+# Applied to ALL environments — basic defense-in-depth headers
+SECURE_CONTENT_TYPE_NOSNIFF = True
+X_FRAME_OPTIONS = 'DENY'
+SECURE_CROSS_ORIGIN_OPENER_POLICY = 'same-origin'
 
 if IS_PRODUCTION:
     # HTTPS/SSL Settings
     SECURE_SSL_REDIRECT = True
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-    
+
     # HSTS (HTTP Strict Transport Security)
     SECURE_HSTS_SECONDS = 31536000  # 1 year
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
-    
+
     # Cookie Security
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
     SESSION_COOKIE_HTTPONLY = True
     CSRF_COOKIE_HTTPONLY = True
-    
-    # Content Security
-    SECURE_CONTENT_TYPE_NOSNIFF = True
-    X_FRAME_OPTIONS = 'DENY'
-    
+    SESSION_COOKIE_SAMESITE = 'Lax'
+    CSRF_COOKIE_SAMESITE = 'Lax'
+
     # Referrer Policy
     SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
 else:

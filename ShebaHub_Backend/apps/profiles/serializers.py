@@ -17,13 +17,21 @@ from rest_framework import serializers
 # Only allow a constrained set of academic degree names from the frontend
 # (prevents unsupported options like Post-Doc/"התמחות" from being saved).
 ALLOWED_DEGREE_NAMES = {"MD", "PhD", "MSc", "MPH", "MBA"}
+# Sentinel value indicating the user has no prior degree – frontend sends this
+# as a degree selection; backend interprets it as "skip degree validation, store none".
+NO_DEGREE_SENTINEL = "ללא תואר קודם"
 
 
 def _validate_degree_names_input(data):
+    """Validate degree names, allowing the no-degree sentinel."""
     degrees = data.get('degrees') if isinstance(data, dict) else None
     if degrees is None:
         return
     if not isinstance(degrees, list):
+        return
+    # If user selected "no prior degree", treat as empty list (valid)
+    if NO_DEGREE_SENTINEL in degrees:
+        data['degrees'] = []
         return
     invalid = [d for d in degrees if d not in ALLOWED_DEGREE_NAMES]
     if invalid:
@@ -117,38 +125,6 @@ def convert_yes_no_to_bool(value):
     return bool(value)
 
 
-def get_reference_by_name(model_class, name_value):
-    """
-    Look up a reference table entry by name or name_he.
-    Returns the instance or None if not found.
-    """
-    if not name_value:
-        return None
-    
-    # If it's already an int (ID), return the object
-    if isinstance(name_value, int):
-        try:
-            return model_class.objects.get(id=name_value, is_active=True)
-        except model_class.DoesNotExist:
-            return None
-    
-    # Try to find by name or name_he
-    name_value = str(name_value).strip()
-    try:
-        return model_class.objects.get(
-            models.Q(name__iexact=name_value) | models.Q(name_he__iexact=name_value),
-            is_active=True
-        )
-    except model_class.DoesNotExist:
-        return None
-    except model_class.MultipleObjectsReturned:
-        # Return the first match
-        return model_class.objects.filter(
-            models.Q(name__iexact=name_value) | models.Q(name_he__iexact=name_value),
-            is_active=True
-        ).first()
-
-
 # Need to import models.Q for the query
 from django.db import models as django_models
 
@@ -160,14 +136,14 @@ def get_reference_by_name(model_class, name_value):
     """
     if not name_value:
         return None
-    
+
     # If it's already an int (ID), return the object
     if isinstance(name_value, int):
         try:
             return model_class.objects.get(id=name_value, is_active=True)
         except model_class.DoesNotExist:
             return None
-    
+
     # Try to find by name or name_he
     name_value = str(name_value).strip()
     try:
@@ -176,20 +152,13 @@ def get_reference_by_name(model_class, name_value):
             is_active=True
         )
     except model_class.DoesNotExist:
-        pass
+        return None
     except model_class.MultipleObjectsReturned:
         # Return the first match
         return model_class.objects.filter(
             django_models.Q(name__iexact=name_value) | django_models.Q(name_he__iexact=name_value),
             is_active=True
         ).first()
-
-    # אם לא נמצא ערך פעיל, צור ערך חדש כדי שלא לאבד נתונים מהפרונט
-    obj, _ = model_class.objects.get_or_create(
-        name=name_value,
-        defaults={'name_he': name_value, 'is_active': True}
-    )
-    return obj
 
 
 # =============================================================================
@@ -274,6 +243,21 @@ class CompensationPreferenceSerializer(ReferenceSerializer):
         fields = ['id', 'name', 'name_he']
 
 
+class ReferenceDataAllSerializer(serializers.Serializer):
+    """Schema serializer for the /api/reference-data/ aggregate endpoint."""
+
+    institutions = ReferenceSerializer(many=True)
+    degrees = ReferenceSerializer(many=True)
+    academic_ranks = ReferenceSerializer(many=True)
+    medical_training_stages = ReferenceSerializer(many=True)
+    specialties = ReferenceSerializer(many=True)
+    research_interests = ReferenceSerializer(many=True)
+    work_types = ReferenceSerializer(many=True)
+    participation_modes = ReferenceSerializer(many=True)
+    professional_experience_levels = ReferenceSerializer(many=True)
+    compensation_preferences = ReferenceSerializer(many=True)
+
+
 # =============================================================================
 # PROFESSIONAL RECOMMENDATION SERIALIZER
 # =============================================================================
@@ -327,10 +311,12 @@ class ProfileDocumentSerializer(serializers.ModelSerializer):
 class ProfileDocumentUploadSerializer(serializers.Serializer):
     """
     Serializer for uploading profile documents with validation.
-    
+
     Validates:
     - File extension (pdf, doc, docx, jpg, jpeg, png)
     - File size (max 10MB by default)
+    - Magic bytes (file content matches declared extension)
+    - Virus scan (ClamAV, if enabled)
     """
     file = serializers.FileField(required=True)
     document_type = serializers.ChoiceField(
@@ -338,34 +324,15 @@ class ProfileDocumentUploadSerializer(serializers.Serializer):
         default=ProfileDocument.DocumentType.OTHER
     )
     description = serializers.CharField(max_length=255, required=False, allow_blank=True)
-    
+
     def validate_file(self, value):
-        """Validate file extension and size."""
-        import os
-        from django.conf import settings
-        
-        # Get allowed extensions from settings
-        allowed_extensions = getattr(
-            settings, 
-            'ALLOWED_DOCUMENT_EXTENSIONS', 
-            ['.pdf', '.doc', '.docx', '.jpg', '.jpeg', '.png']
-        )
-        max_size_mb = getattr(settings, 'MAX_DOCUMENT_SIZE_MB', 10)
-        max_size_bytes = max_size_mb * 1024 * 1024
-        
-        # Validate extension
-        ext = os.path.splitext(value.name)[1].lower()
-        if ext not in allowed_extensions:
-            raise serializers.ValidationError(
-                f"File type '{ext}' is not allowed. Allowed types: {', '.join(allowed_extensions)}"
-            )
-        
-        # Validate file size
-        if value.size > max_size_bytes:
-            raise serializers.ValidationError(
-                f"File size ({value.size / (1024*1024):.2f} MB) exceeds maximum allowed size ({max_size_mb} MB)."
-            )
-        
+        """Full file validation: extension, size, magic bytes, virus scan."""
+        from .file_security import validate_upload
+
+        is_valid, error = validate_upload(value)
+        if not is_valid:
+            raise serializers.ValidationError(error)
+
         return value
 
 
@@ -392,9 +359,7 @@ class StudentProfileSerializer(serializers.ModelSerializer):
     participationMode_detail = ParticipationModeSerializer(
         source='participationMode', read_only=True
     )
-    compensationPreference_detail = CompensationPreferenceSerializer(
-        source='compensationPreference', read_only=True
-    )
+    compensationPreference_detail = serializers.SerializerMethodField()
     
     # Nested documents and recommendations
     documents = ProfileDocumentSerializer(many=True, read_only=True)
@@ -412,9 +377,19 @@ class StudentProfileSerializer(serializers.ModelSerializer):
     apprenticeStage = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     specialtyGroup = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     specialty = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    # M2M multi-specialization: accept list of specialty names/IDs
+    specialties = serializers.ListField(
+        child=serializers.CharField(),
+        required=False,
+        allow_empty=True,
+        write_only=True
+    )
+    specialties_detail = SpecialtySerializer(source='specialties', many=True, read_only=True)
     workType = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     participationMode = serializers.CharField(required=False, allow_null=True, allow_blank=True)
-    compensationPreference = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    compensationPreference = serializers.ListField(
+        child=serializers.CharField(), required=False, allow_empty=True
+    )
     
     # Boolean fields - accept כן/לא strings or boolean values
     isShebaEmployee = HebrewBooleanField(required=False, allow_null=True)
@@ -446,9 +421,11 @@ class StudentProfileSerializer(serializers.ModelSerializer):
             'specialtyGroup_detail',
             'specialty',
             'specialty_detail',
+            'specialties',
+            'specialties_detail',
             'workplace',
             'isShebaEmployee',
-            
+
             # Research experience (ניסיון במחקר)
             'hasResearchExperience',
             'researchExperienceDetails',
@@ -468,21 +445,28 @@ class StudentProfileSerializer(serializers.ModelSerializer):
             
             # Additional details (פרטים נוספים)
             'personalAcademicDescription',
-            'recommendationRequest',
-            
+            'recommenders',
+            'linkedinUrl',
+
             # Nested relations
             'documents',
             'recommendations',
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
-    
+        extra_kwargs = {
+            'researchExperienceDetails': {'max_length': 5000},
+            'softwareSkills': {'max_length': 5000},
+            'professionalExperience': {'max_length': 5000},
+            'personalAcademicDescription': {'max_length': 5000},
+        }
+
     def to_internal_value(self, data):
         """
         Convert Frontend text values to Backend objects before validation.
         """
         _validate_degree_names_input(data)
         # Note: Boolean fields (כן/לא) are handled by HebrewBooleanField directly
-        
+
         # Convert reference fields from text to objects
         reference_mappings = {
             'institution': Institution,
@@ -491,13 +475,21 @@ class StudentProfileSerializer(serializers.ModelSerializer):
             'specialty': Specialty,
             'workType': WorkType,
             'participationMode': ParticipationMode,
-            'compensationPreference': CompensationPreference,
         }
-        
+
         for field_name, model_class in reference_mappings.items():
             if field_name in data and data[field_name]:
                 obj = get_reference_by_name(model_class, data[field_name])
-                data[field_name] = obj.id if obj else None
+                if obj:
+                    data[field_name] = obj.id
+                elif field_name == 'institution':
+                    name_val = str(data[field_name]).strip()
+                    new_inst = Institution.objects.create(
+                        name=name_val, name_he=name_val, is_active=True,
+                    )
+                    data[field_name] = new_inst.id
+                else:
+                    data[field_name] = None
         
         # Convert degrees list from text to IDs
         if 'degrees' in data and data['degrees']:
@@ -507,9 +499,25 @@ class StudentProfileSerializer(serializers.ModelSerializer):
                 if obj:
                     degree_ids.append(obj.id)
             data['degrees'] = degree_ids
-        
+
+        # Convert specialties list from text to IDs
+        if 'specialties' in data and data['specialties']:
+            spec_ids = []
+            for spec_name in data['specialties']:
+                obj = get_reference_by_name(Specialty, spec_name)
+                if obj:
+                    spec_ids.append(obj.id)
+            data['specialties'] = spec_ids
+
         return super().to_internal_value(data)
-    
+
+    def get_compensationPreference_detail(self, obj):
+        """Return list of selected compensation preferences as objects."""
+        prefs = obj.compensationPreference
+        if not prefs or not isinstance(prefs, list):
+            return []
+        return [{"name": p, "name_he": p} for p in prefs]
+
     def validate_startYear(self, value):
         """Validate startYear is in reasonable range."""
         if value is not None:
@@ -527,6 +535,21 @@ class StudentProfileSerializer(serializers.ModelSerializer):
                 )
         return value
     
+    def validate_startDate(self, value):
+        """Validate startDate is not in the past."""
+        if value is not None:
+            if isinstance(value, str):
+                from datetime import datetime
+                try:
+                    value = datetime.strptime(value, "%Y-%m-%d").date()
+                except ValueError:
+                    raise serializers.ValidationError("Invalid date format")
+            if value < date.today():
+                raise serializers.ValidationError(
+                    "Start date cannot be in the past."
+                )
+        return value
+
     def validate_weeklyHours(self, value):
         """Validate weeklyHours is between 1 and 60."""
         if value is not None:
@@ -536,43 +559,29 @@ class StudentProfileSerializer(serializers.ModelSerializer):
                     value = int(value)
                 except ValueError:
                     raise serializers.ValidationError("weeklyHours must be a number")
-            
+
             if value < 1 or value > 60:
                 raise serializers.ValidationError(
                     "weeklyHours must be between 1 and 60"
                 )
         return value
-    
+
+    def validate_linkedinUrl(self, value):
+        if value and 'linkedin.com' not in value.lower():
+            raise serializers.ValidationError("URL חייב להיות מ-linkedin.com")
+        return value
+
     def validate(self, attrs):
-        """
-        Cross-field validation.
-        If hasResearchExperience is True, researchExperienceDetails is required.
-        """
-        has_experience = attrs.get('hasResearchExperience')
-        details = attrs.get('researchExperienceDetails', '')
-        
-        # For partial updates, check current instance values
-        if self.instance:
-            if has_experience is None:
-                has_experience = self.instance.hasResearchExperience
-            if not details:
-                details = self.instance.researchExperienceDetails
-        
-        if has_experience and not details:
-            raise serializers.ValidationError({
-                'researchExperienceDetails': 
-                    'This field is required when hasResearchExperience is True.'
-            })
-        
         return attrs
     
     def create(self, validated_data):
-        """Create profile with M2M degrees handling."""
+        """Create profile with M2M degrees and specialties handling."""
         degrees_data = validated_data.pop('degrees', [])
-        
+        specialties_data = validated_data.pop('specialties', [])
+
         # Convert FK IDs to objects
-        for fk_field in ['institution', 'apprenticeStage', 'specialtyGroup', 
-                         'specialty', 'workType', 'participationMode', 'compensationPreference']:
+        for fk_field in ['institution', 'apprenticeStage', 'specialtyGroup',
+                         'specialty', 'workType', 'participationMode']:
             if fk_field in validated_data and validated_data[fk_field]:
                 fk_id = validated_data[fk_field]
                 model_class = self.Meta.model._meta.get_field(fk_field).related_model
@@ -580,22 +589,31 @@ class StudentProfileSerializer(serializers.ModelSerializer):
                     validated_data[fk_field] = model_class.objects.get(id=fk_id)
                 except model_class.DoesNotExist:
                     validated_data[fk_field] = None
-        
+
         profile = StudentProfile.objects.create(**validated_data)
-        
+
         if degrees_data:
             degree_objects = Degree.objects.filter(id__in=degrees_data)
             profile.degrees.set(degree_objects)
-        
+
+        if specialties_data:
+            spec_objects = Specialty.objects.filter(id__in=specialties_data)
+            profile.specialties.set(spec_objects)
+            # Also set legacy FK to first specialty for backward compat
+            if not profile.specialty and spec_objects.exists():
+                profile.specialty = spec_objects.first()
+                profile.save(update_fields=['specialty'])
+
         return profile
-    
+
     def update(self, instance, validated_data):
-        """Update profile with M2M degrees handling."""
+        """Update profile with M2M degrees and specialties handling."""
         degrees_data = validated_data.pop('degrees', None)
-        
+        specialties_data = validated_data.pop('specialties', None)
+
         # Convert FK IDs to objects
-        for fk_field in ['institution', 'apprenticeStage', 'specialtyGroup', 
-                         'specialty', 'workType', 'participationMode', 'compensationPreference']:
+        for fk_field in ['institution', 'apprenticeStage', 'specialtyGroup',
+                         'specialty', 'workType', 'participationMode']:
             if fk_field in validated_data:
                 fk_id = validated_data[fk_field]
                 if fk_id:
@@ -606,15 +624,25 @@ class StudentProfileSerializer(serializers.ModelSerializer):
                         validated_data[fk_field] = None
                 else:
                     validated_data[fk_field] = None
-        
+
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         instance.save()
-        
+
         if degrees_data is not None:
             degree_objects = Degree.objects.filter(id__in=degrees_data)
             instance.degrees.set(degree_objects)
-        
+
+        if specialties_data is not None:
+            spec_objects = Specialty.objects.filter(id__in=specialties_data)
+            instance.specialties.set(spec_objects)
+            # Sync legacy FK
+            if spec_objects.exists():
+                instance.specialty = spec_objects.first()
+            else:
+                instance.specialty = None
+            instance.save(update_fields=['specialty'])
+
         return instance
     
     def get_avatarUrl(self, obj):
@@ -658,6 +686,14 @@ class MentorProfileSerializer(serializers.ModelSerializer):
     academicRank_detail = AcademicRankSerializer(source='academicRank', read_only=True)
     specialtyGroup_detail = SpecialtyGroupSerializer(source='specialtyGroup', read_only=True)
     specialty_detail = SpecialtySerializer(source='specialty', read_only=True)
+    # M2M multi-specialization
+    specialties = serializers.ListField(
+        child=serializers.CharField(),
+        required=False,
+        allow_empty=True,
+        write_only=True
+    )
+    specialties_detail = SpecialtySerializer(source='specialties', many=True, read_only=True)
     researchInterests_detail = ResearchInterestSerializer(
         source='researchInterests', read_only=True
     )
@@ -684,11 +720,16 @@ class MentorProfileSerializer(serializers.ModelSerializer):
     )
     
     # Boolean field - accept כן/לא strings or boolean values
-    hasMentoringExperience = HebrewBooleanField(required=True)
-    
+    # required=False in base serializer so partial updates work;
+    # MentorProfileCreateSerializer overrides to required=True.
+    hasMentoringExperience = HebrewBooleanField(required=False)
+
     # Avatar URL for reading
     avatarUrl = serializers.SerializerMethodField(read_only=True)
-    
+
+    # Active researches (owned + mentoring)
+    activeResearches = serializers.SerializerMethodField(read_only=True)
+
     class Meta:
         model = MentorProfile
         fields = [
@@ -697,7 +738,8 @@ class MentorProfileSerializer(serializers.ModelSerializer):
             'created_at',
             'updated_at',
             'avatarUrl',
-            
+            'activeResearches',
+
             # שלב הכשרה (Academic/Professional Info)
             'academicRank',
             'academicRank_detail',
@@ -705,6 +747,8 @@ class MentorProfileSerializer(serializers.ModelSerializer):
             'specialtyGroup_detail',
             'specialty',
             'specialty_detail',
+            'specialties',
+            'specialties_detail',
             'institution',
             'institution_detail',
             'degrees',
@@ -722,21 +766,27 @@ class MentorProfileSerializer(serializers.ModelSerializer):
             
             # פרטים נוספים (Additional Details)
             'personalAcademicDescription',
-            'recommendationRequest',
-            
+            'recommenders',
+            'linkedinUrl',
+
             # Nested relations
             'documents',
             'recommendations',
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
-    
+        extra_kwargs = {
+            'mentoringExperienceDetails': {'max_length': 5000},
+            'previousResearchDescription': {'max_length': 5000},
+            'personalAcademicDescription': {'max_length': 5000},
+        }
+
     def to_internal_value(self, data):
         """
         Convert Frontend text values to Backend objects before validation.
         """
         _validate_degree_names_input(data)
         # Note: Boolean field (כן/לא) is handled by HebrewBooleanField directly
-        
+
         # Convert reference fields from text to objects
         reference_mappings = {
             'academicRank': AcademicRank,
@@ -745,11 +795,20 @@ class MentorProfileSerializer(serializers.ModelSerializer):
             'researchInterests': ResearchInterest,
             'institution': Institution,
         }
-        
+
         for field_name, model_class in reference_mappings.items():
             if field_name in data and data[field_name]:
                 obj = get_reference_by_name(model_class, data[field_name])
-                data[field_name] = obj.id if obj else None
+                if obj:
+                    data[field_name] = obj.id
+                elif field_name == 'institution':
+                    name_val = str(data[field_name]).strip()
+                    new_inst = Institution.objects.create(
+                        name=name_val, name_he=name_val, is_active=True,
+                    )
+                    data[field_name] = new_inst.id
+                else:
+                    data[field_name] = None
         
         # Convert degrees list from text to IDs
         if 'degrees' in data and data['degrees']:
@@ -759,36 +818,31 @@ class MentorProfileSerializer(serializers.ModelSerializer):
                 if obj:
                     degree_ids.append(obj.id)
             data['degrees'] = degree_ids
-        
+
+        # Convert specialties list from text to IDs
+        if 'specialties' in data and data['specialties']:
+            spec_ids = []
+            for spec_name in data['specialties']:
+                obj = get_reference_by_name(Specialty, spec_name)
+                if obj:
+                    spec_ids.append(obj.id)
+            data['specialties'] = spec_ids
+
         return super().to_internal_value(data)
-    
+
     def validate(self, attrs):
-        """
-        Cross-field validation.
-        If hasMentoringExperience is True, mentoringExperienceDetails is required.
-        """
-        has_experience = attrs.get('hasMentoringExperience')
-        details = attrs.get('mentoringExperienceDetails', '')
-        
-        # For partial updates, check current instance values
-        if self.instance:
-            if has_experience is None:
-                has_experience = self.instance.hasMentoringExperience
-            if not details:
-                details = self.instance.mentoringExperienceDetails
-        
-        if has_experience and not details:
-            raise serializers.ValidationError({
-                'mentoringExperienceDetails': 
-                    'This field is required when hasMentoringExperience is True.'
-            })
-        
         return attrs
-    
+
+    def validate_linkedinUrl(self, value):
+        if value and 'linkedin.com' not in value.lower():
+            raise serializers.ValidationError("URL חייב להיות מ-linkedin.com")
+        return value
+
     def create(self, validated_data):
-        """Create profile with M2M handling."""
+        """Create profile with M2M degrees and specialties handling."""
         degrees_data = validated_data.pop('degrees', [])
-        
+        specialties_data = validated_data.pop('specialties', [])
+
         # Convert FK IDs to objects
         for fk_field in ['academicRank', 'specialtyGroup', 'specialty', 'researchInterests', 'institution']:
             if fk_field in validated_data and validated_data[fk_field]:
@@ -798,19 +852,28 @@ class MentorProfileSerializer(serializers.ModelSerializer):
                     validated_data[fk_field] = model_class.objects.get(id=fk_id)
                 except model_class.DoesNotExist:
                     validated_data[fk_field] = None
-        
+
         profile = MentorProfile.objects.create(**validated_data)
-        
+
         if degrees_data:
             degree_objects = Degree.objects.filter(id__in=degrees_data)
             profile.degrees.set(degree_objects)
-        
+
+        if specialties_data:
+            spec_objects = Specialty.objects.filter(id__in=specialties_data)
+            profile.specialties.set(spec_objects)
+            # Sync legacy FK to first specialty
+            if not profile.specialty and spec_objects.exists():
+                profile.specialty = spec_objects.first()
+                profile.save(update_fields=['specialty'])
+
         return profile
-    
+
     def update(self, instance, validated_data):
-        """Update profile with M2M handling."""
+        """Update profile with M2M degrees and specialties handling."""
         degrees_data = validated_data.pop('degrees', None)
-        
+        specialties_data = validated_data.pop('specialties', None)
+
         # Convert FK IDs to objects
         for fk_field in ['academicRank', 'specialtyGroup', 'specialty', 'researchInterests', 'institution']:
             if fk_field in validated_data:
@@ -823,15 +886,25 @@ class MentorProfileSerializer(serializers.ModelSerializer):
                         validated_data[fk_field] = None
                 else:
                     validated_data[fk_field] = None
-        
+
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         instance.save()
-        
+
         if degrees_data is not None:
             degree_objects = Degree.objects.filter(id__in=degrees_data)
             instance.degrees.set(degree_objects)
-        
+
+        if specialties_data is not None:
+            spec_objects = Specialty.objects.filter(id__in=specialties_data)
+            instance.specialties.set(spec_objects)
+            # Sync legacy FK
+            if spec_objects.exists():
+                instance.specialty = spec_objects.first()
+            else:
+                instance.specialty = None
+            instance.save(update_fields=['specialty'])
+
         return instance
     
     def get_avatarUrl(self, obj):
@@ -843,13 +916,43 @@ class MentorProfileSerializer(serializers.ModelSerializer):
             return obj.avatar.url
         return None
 
+    def get_activeResearches(self, obj):
+        from apps.research.models import Research, ResearchApplication
+        owned = Research.objects.filter(
+            owner=obj.user,
+            moderation_status="approved",
+        ).exclude(status="draft")
+        mentoring_ids = ResearchApplication.objects.filter(
+            applicant=obj.user,
+            status="approved",
+        ).values_list("research_id", flat=True)
+        mentoring = Research.objects.filter(
+            id__in=mentoring_ids,
+            moderation_status="approved",
+        ).exclude(status="draft")
+        qs = (owned | mentoring).distinct().order_by("-created_at")
+        return [
+            {
+                "id": r.id,
+                "researchName": r.researchName,
+                "researchArea": r.researchArea,
+                "status": r.status,
+            }
+            for r in qs
+        ]
+
 
 class MentorProfileCreateSerializer(MentorProfileSerializer):
     """
     Serializer specifically for creating a new MentorProfile.
     Ensures user cannot be set from request body.
+    Required fields on creation: specialtyGroup, specialty/specialties, institution, hasMentoringExperience.
     """
-    
+    specialtyGroup = serializers.CharField(required=True)
+    specialty = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    institution = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    hasMentoringExperience = HebrewBooleanField(required=True)
+
     def create(self, validated_data):
         """Create profile, attaching to request.user."""
         request = self.context.get('request')
@@ -869,11 +972,11 @@ class PublicMentorSerializer(serializers.ModelSerializer):
     """Public-facing mentor card data (used by FE mentor list)."""
 
     name = serializers.SerializerMethodField(read_only=True)
-    email = serializers.EmailField(source='user.email', read_only=True)
     gender = serializers.CharField(source='user.gender', read_only=True)
     genderDisplay = serializers.SerializerMethodField(read_only=True)
 
     specialty = serializers.SerializerMethodField(read_only=True)
+    specialties = serializers.SerializerMethodField(read_only=True)
     degrees = serializers.SerializerMethodField(read_only=True)
     institution = serializers.SerializerMethodField(read_only=True)
     avatarUrl = serializers.SerializerMethodField(read_only=True)
@@ -883,10 +986,10 @@ class PublicMentorSerializer(serializers.ModelSerializer):
         fields = [
             'id',
             'name',
-            'email',
             'gender',
             'genderDisplay',
             'specialty',
+            'specialties',
             'degrees',
             'institution',
             'avatarUrl',
@@ -894,9 +997,9 @@ class PublicMentorSerializer(serializers.ModelSerializer):
 
     def get_genderDisplay(self, obj):
         value = getattr(obj.user, 'gender', None)
-        if value == 'man':
+        if value == 'male':
             return 'זכר'
-        if value == 'woman':
+        if value == 'female':
             return 'נקבה'
         if value == 'other':
             return 'אחר'
@@ -909,6 +1012,9 @@ class PublicMentorSerializer(serializers.ModelSerializer):
         if not obj.specialty:
             return None
         return obj.specialty.name_he or obj.specialty.name
+
+    def get_specialties(self, obj):
+        return [(s.name_he or s.name) for s in obj.specialties.all()]
 
     def get_degrees(self, obj):
         return [(d.name_he or d.name) for d in obj.degrees.all()]
@@ -931,7 +1037,6 @@ class PublicStudentSerializer(serializers.ModelSerializer):
     """Public-facing student card data (used by FE apprentice list)."""
 
     name = serializers.SerializerMethodField(read_only=True)
-    email = serializers.EmailField(source='user.email', read_only=True)
     gender = serializers.CharField(source='user.gender', read_only=True)
     genderDisplay = serializers.SerializerMethodField(read_only=True)
 
@@ -946,7 +1051,6 @@ class PublicStudentSerializer(serializers.ModelSerializer):
         fields = [
             'id',
             'name',
-            'email',
             'gender',
             'genderDisplay',
             'startYear',
@@ -958,9 +1062,9 @@ class PublicStudentSerializer(serializers.ModelSerializer):
 
     def get_genderDisplay(self, obj):
         value = getattr(obj.user, 'gender', None)
-        if value == 'man':
+        if value == 'male':
             return 'זכר'
-        if value == 'woman':
+        if value == 'female':
             return 'נקבה'
         if value == 'other':
             return 'אחר'
@@ -992,7 +1096,7 @@ class PublicStudentDetailSerializer(StudentProfileSerializer):
     """Public-facing student detail data (used by FE public profile page)."""
 
     name = serializers.SerializerMethodField(read_only=True)
-    email = serializers.EmailField(source='user.email', read_only=True)
+    userId = serializers.CharField(source='user.id', read_only=True)
     gender = serializers.CharField(source='user.gender', read_only=True)
     genderDisplay = serializers.SerializerMethodField(read_only=True)
 
@@ -1000,7 +1104,7 @@ class PublicStudentDetailSerializer(StudentProfileSerializer):
         fields = [
             'id',
             'name',
-            'email',
+            'userId',
             'gender',
             'genderDisplay',
             *[f for f in StudentProfileSerializer.Meta.fields if f != 'id'],
@@ -1011,9 +1115,9 @@ class PublicStudentDetailSerializer(StudentProfileSerializer):
 
     def get_genderDisplay(self, obj):
         value = getattr(obj.user, 'gender', None)
-        if value == 'man':
+        if value == 'male':
             return 'זכר'
-        if value == 'woman':
+        if value == 'female':
             return 'נקבה'
         if value == 'other':
             return 'אחר'
@@ -1024,7 +1128,7 @@ class PublicMentorDetailSerializer(MentorProfileSerializer):
     """Public-facing mentor detail data (used by FE public profile page)."""
 
     name = serializers.SerializerMethodField(read_only=True)
-    email = serializers.EmailField(source='user.email', read_only=True)
+    userId = serializers.CharField(source='user.id', read_only=True)
     gender = serializers.CharField(source='user.gender', read_only=True)
     genderDisplay = serializers.SerializerMethodField(read_only=True)
 
@@ -1032,7 +1136,7 @@ class PublicMentorDetailSerializer(MentorProfileSerializer):
         fields = [
             'id',
             'name',
-            'email',
+            'userId',
             'gender',
             'genderDisplay',
             *[f for f in MentorProfileSerializer.Meta.fields if f != 'id'],
@@ -1043,9 +1147,9 @@ class PublicMentorDetailSerializer(MentorProfileSerializer):
 
     def get_genderDisplay(self, obj):
         value = getattr(obj.user, 'gender', None)
-        if value == 'man':
+        if value == 'male':
             return 'זכר'
-        if value == 'woman':
+        if value == 'female':
             return 'נקבה'
         if value == 'other':
             return 'אחר'

@@ -90,10 +90,25 @@ def main() -> int:
     else:
         _print("requirements-dev.txt not found - skipping dev dependencies.")
 
-    _print("[4/5] Running migrations...")
+    _print("[4/6] Running migrations...")
     _run([str(venv_py), "manage.py", "migrate"], cwd=project_dir)
 
-    _print("[5/5] Done.")
+    _print("[5/6] Creating default admin account...")
+    admin_script = (
+        "import django, os; "
+        "os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings'); "
+        "django.setup(); "
+        "from apps.accounts.models import User; "
+        "email='admin@sheba.com'; "
+        "pwd='ShebahubHit@@!#42'; "
+        "exists=User.objects.filter(email=email).exists(); "
+        "print(f'Admin already exists: {email}') if exists else "
+        "(User.objects.create_user(email=email, password=pwd, firstName='Admin', lastName='User', is_staff=True, is_superuser=True, is_active=True, email_verified=True), "
+        "print(f'Created admin: {email}'))"
+    )
+    _run([str(venv_py), "-c", admin_script], cwd=project_dir)
+
+    _print("[6/6] Done.")
     if os.name == "nt":
         _print("Run tests:\n  venv\\Scripts\\python.exe -m pytest")
         _print("Run server:\n  venv\\Scripts\\python.exe manage.py runserver")
