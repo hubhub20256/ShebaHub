@@ -1,9 +1,11 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom"; 
+import { useNavigate, Link } from "react-router-dom";
 import AuthLayout from "../components/AuthLayout";
 import { FormInput, FormButton, FormSelect } from "../components/forms";
 import { useAuth } from "../context/AuthContext";
 import { authAPI } from "../services/api";
+import usePageTitle from "../hooks/usePageTitle";
+import { scrollToFirstError } from "../utils/formValidation";
 import "../styles/Register.css";
 
 // תרגום שגיאות מאנגלית לעברית
@@ -28,6 +30,7 @@ const translateError = (error) => {
 };
 
 const Register = () => {
+  usePageTitle("הרשמה");
   const navigate = useNavigate();
   const { login } = useAuth();
 
@@ -35,6 +38,7 @@ const Register = () => {
     firstName: "",
     lastName: "",
     email: "",
+    confirmEmail: "",
     password: "",
     confirmPassword: "",
     gender: "",
@@ -43,6 +47,7 @@ const Register = () => {
   const [errors, setErrors] = useState({});
   const [serverError, setServerError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [registrationComplete, setRegistrationComplete] = useState(false);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -62,6 +67,8 @@ const Register = () => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!formData.email || !emailRegex.test(formData.email))
       newErrors.email = "נא להזין כתובת אימייל תקינה";
+    if (formData.email && formData.confirmEmail !== formData.email)
+      newErrors.confirmEmail = "כתובות האימייל אינן תואמות";
 
     if (!formData.password || formData.password.length < 8)
       newErrors.password = "הסיסמה חייבת להכיל לפחות 8 תווים";
@@ -70,6 +77,9 @@ const Register = () => {
     if (!formData.agreed) newErrors.agreed = "חובה לאשר את תנאי השימוש";
 
     setErrors(newErrors);
+    if (Object.keys(newErrors).length > 0) {
+      setTimeout(() => scrollToFirstError(newErrors), 100);
+    }
     return Object.keys(newErrors).length === 0;
   };
 
@@ -93,57 +103,54 @@ const Register = () => {
         gender: formData.gender || undefined,
       });
 
-      // Update auth context with user data
+      // Update auth context
       login(response.user);
-
-      // Redirect to create profile page
-      navigate("/create-profile");
+      // If already verified (e.g. dev mode), go straight to create-profile
+      if (response.user?.email_verified) {
+        navigate("/create-profile");
+        return;
+      }
+      // Otherwise show "check your email" message
+      setRegistrationComplete(true);
     } catch (error) {
-      console.error("Registration failed:", error);
-      
-      if (error.data) {
+      if (error.data && Object.keys(error.data).length > 0) {
         // Handle specific field errors from backend - translate to Hebrew
+        // Backend 409 returns {code, message, details: {field: [...]}}
+        const fieldErrors = error.data.details || error.data;
         const newErrors = {};
-        
-        if (error.data.email) {
-          const emailError = Array.isArray(error.data.email) 
-            ? error.data.email[0] 
-            : error.data.email;
-          newErrors.email = translateError(emailError);
+
+        // Map of backend field names to form field names
+        const fieldMap = ['email', 'password', 'confirmPassword', 'firstName', 'lastName'];
+        for (const field of fieldMap) {
+          if (fieldErrors[field]) {
+            const msg = Array.isArray(fieldErrors[field])
+              ? fieldErrors[field][0]
+              : fieldErrors[field];
+            newErrors[field] = translateError(msg);
+          }
         }
-        if (error.data.password) {
-          const passError = Array.isArray(error.data.password) 
-            ? error.data.password[0] 
-            : error.data.password;
-          newErrors.password = translateError(passError);
-        }
-        if (error.data.confirmPassword) {
-          const confirmError = Array.isArray(error.data.confirmPassword) 
-            ? error.data.confirmPassword[0] 
-            : error.data.confirmPassword;
-          newErrors.confirmPassword = translateError(confirmError);
-        }
-        if (error.data.firstName) {
-          const firstNameError = Array.isArray(error.data.firstName) 
-            ? error.data.firstName[0] 
-            : error.data.firstName;
-          newErrors.firstName = translateError(firstNameError);
-        }
-        if (error.data.lastName) {
-          const lastNameError = Array.isArray(error.data.lastName) 
-            ? error.data.lastName[0] 
-            : error.data.lastName;
-          newErrors.lastName = translateError(lastNameError);
-        }
-        
+
         if (Object.keys(newErrors).length > 0) {
           setErrors(newErrors);
+          setTimeout(() => scrollToFirstError(newErrors), 100);
+        } else if (error.data.message) {
+          setServerError(translateError(error.data.message));
         } else if (error.data.detail) {
           setServerError(translateError(error.data.detail));
         } else if (error.data.non_field_errors) {
           setServerError(translateError(error.data.non_field_errors[0]));
         } else {
-          setServerError("אירעה שגיאה בהרשמה, נסה שנית");
+          // Extract the first error from any unhandled field
+          const allKeys = Object.keys(fieldErrors);
+          const firstKey = allKeys.find(k => fieldErrors[k]);
+          if (firstKey) {
+            const msg = Array.isArray(fieldErrors[firstKey])
+              ? fieldErrors[firstKey][0]
+              : fieldErrors[firstKey];
+            setServerError(translateError(msg));
+          } else {
+            setServerError("אירעה שגיאה בהרשמה, נסה שנית");
+          }
         }
       } else {
         setServerError("אירעה שגיאה בתקשורת, נסה שנית מאוחר יותר");
@@ -155,9 +162,41 @@ const Register = () => {
 
   const description = (
     <>
-      ברוכה הבאה
+      ברוכ/ה הבא/ה
     </>
   );
+
+  if (registrationComplete) {
+    return (
+      <AuthLayout
+        title="הרשמה הושלמה"
+        subtitle=""
+        footerText=""
+        footerLinkText="לדף הבית"
+        footerPath="/"
+      >
+        <div style={{ textAlign: "center", padding: "20px 0" }}>
+          <p style={{ fontSize: "1.1rem", color: "var(--text-color)", marginBottom: "12px" }}>
+            נשלח אליך אימייל לאימות כתובת הדואר האלקטרוני
+          </p>
+          <p style={{ fontSize: "0.9rem", color: "var(--text-secondary)" }}>
+            בדוק/י את תיבת הדואר ולחץ/י על הקישור לאימות
+          </p>
+          <Link
+            to="/create-profile"
+            style={{
+              display: "inline-block",
+              marginTop: "20px",
+              color: "var(--profile-accent-teal, #00bfa5)",
+              fontWeight: 700,
+            }}
+          >
+            ליצירת פרופיל
+          </Link>
+        </div>
+      </AuthLayout>
+    );
+  }
 
   return (
     <AuthLayout
@@ -196,6 +235,15 @@ const Register = () => {
           disabled={isLoading}
         />
         <FormInput
+          type="email"
+          name="confirmEmail"
+          placeholder="אימות דואר אלקטרוני"
+          value={formData.confirmEmail}
+          onChange={handleChange}
+          error={errors.confirmEmail}
+          disabled={isLoading}
+        />
+        <FormInput
           type="password"
           name="password"
           placeholder="סיסמה (לפחות 8 תווים)"
@@ -215,20 +263,19 @@ const Register = () => {
         />
         <FormSelect
           name="gender"
-          placeholder="בחר מגדר..."
+          placeholder="לשון פנייה..."
           value={formData.gender}
           onChange={handleChange}
           error={errors.gender}
           disabled={isLoading}
           options={[
-            { value: "woman", label: "אישה" },
-            { value: "man", label: "גבר" },
+            { value: "male", label: "זכר" },
+            { value: "female", label: "נקבה" },
             { value: "other", label: "אחר" },
           ]}
         />
         <div className="register-checkbox-container">
           <label className="register-checkbox-label">
-            הסכמה לתנאי שימוש
             <input
               type="checkbox"
               name="agreed"
@@ -236,6 +283,7 @@ const Register = () => {
               onChange={handleChange}
               disabled={isLoading}
             />
+            <span>הסכמה ל<a href="/about" target="_blank" rel="noopener noreferrer" style={{ color: "inherit", textDecoration: "underline" }}>תנאי שימוש</a></span>
           </label>
         </div>
         {errors.agreed && (

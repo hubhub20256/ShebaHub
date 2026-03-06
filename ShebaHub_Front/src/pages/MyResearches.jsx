@@ -1,123 +1,310 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { researchAPI } from "../services/api";
 import { useAuth } from "../context/AuthContext";
+import { useNotifications } from "../context/NotificationContext";
+import usePageTitle from "../hooks/usePageTitle";
+import "../styles/MyResearches.css";
+
+const STATUS_TABS = [
+  { key: "all", label: "כל הבקשות" },
+  { key: "pending", label: "ממתין" },
+  { key: "approved", label: "אושר" },
+  { key: "rejected", label: "נדחה" },
+  { key: "invited", label: "הזמנות" },
+];
+
+const STATUS_LABELS = {
+  pending: "ממתין",
+  approved: "אושר",
+  rejected: "נדחה",
+  cancelled: "בוטל",
+  invited: "הוזמנת",
+};
+
+const STATUS_COLORS = {
+  pending: "#f59e0b",
+  approved: "#10b981",
+  rejected: "#ef4444",
+  cancelled: "#6b7280",
+  invited: "#6366f1",
+};
 
 export default function MyResearches() {
+  usePageTitle("המחקרים שלי");
   const { user } = useAuth();
+  const { refreshCount } = useNotifications();
   const navigate = useNavigate();
-  const [checkingRole, setCheckingRole] = useState(true);
-  const [isMentor, setIsMentor] = useState(false);
+  const isMentor = user?.has_mentor_profile === true;
 
+  const [activeTab, setActiveTab] = useState("all");
+  const [applications, setApplications] = useState([]);
+  const [appsLoading, setAppsLoading] = useState(true);
+  const [appsError, setAppsError] = useState(null);
+
+  const [createdResearches, setCreatedResearches] = useState([]);
   const [createdLoading, setCreatedLoading] = useState(false);
-  const [createdItems, setCreatedItems] = useState([]);
 
-  const [joinedLoading, setJoinedLoading] = useState(false);
-  const [joinedItems, setJoinedItems] = useState([]);
+  // Invitations state
+  const [invitations, setInvitations] = useState([]);
+  const [invitationsLoading, setInvitationsLoading] = useState(true);
+  const [invitationActionLoading, setInvitationActionLoading] = useState(null);
 
-  const [error, setError] = useState(null);
-  const [didRedirect, setDidRedirect] = useState(false);
+  // Reusable load functions
+  const loadApplications = useCallback(async () => {
+    setAppsLoading(true);
+    setAppsError(null);
+    try {
+      const data = await researchAPI.listMyApplications(activeTab);
+      setApplications(Array.isArray(data) ? data : []);
+    } catch (err) {
+      setAppsError(err?.data?.detail || "שגיאה בטעינת הבקשות");
+    } finally {
+      setAppsLoading(false);
+    }
+  }, [activeTab]);
 
-  const createdCount = useMemo(() => (Array.isArray(createdItems) ? createdItems.length : 0), [createdItems]);
-  const joinedCount = useMemo(() => (Array.isArray(joinedItems) ? joinedItems.length : 0), [joinedItems]);
+  const loadCreatedResearches = useCallback(async () => {
+    if (!isMentor) return;
+    setCreatedLoading(true);
+    try {
+      const data = await researchAPI.listMyResearches();
+      setCreatedResearches(Array.isArray(data) ? data : []);
+    } catch {
+      // Silently fail for created researches
+    } finally {
+      setCreatedLoading(false);
+    }
+  }, [isMentor]);
+
+  // Load user's applications
+  useEffect(() => {
+    loadApplications();
+  }, [loadApplications]);
+
+  // Load mentor's created researches
+  useEffect(() => {
+    loadCreatedResearches();
+  }, [loadCreatedResearches]);
+
+  // Re-fetch data when page regains focus (throttled to once per 30s)
+  const lastFocusRef = useRef(0);
+  useEffect(() => {
+    const onFocus = () => {
+      const now = Date.now();
+      if (now - lastFocusRef.current < 30000) return;
+      lastFocusRef.current = now;
+      loadApplications();
+      loadCreatedResearches();
+      loadInvitations();
+    };
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
+  }, [loadApplications, loadCreatedResearches]);
+
+  // Load invitations
+  const loadInvitations = async () => {
+    setInvitationsLoading(true);
+    try {
+      const data = await researchAPI.listMyApplications("invited");
+      setInvitations(Array.isArray(data) ? data : []);
+    } catch {
+      // Silently fail
+    } finally {
+      setInvitationsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    // Fast role check: rely on auth payload flag
-    setCheckingRole(true);
-    setIsMentor(user?.has_mentor_profile === true);
-    setCheckingRole(false);
-  }, [user]);
+    loadInvitations();
+  }, []);
 
-  useEffect(() => {
-    let cancelled = false;
-
-    const loadCreated = async () => {
-      if (checkingRole) return;
-      if (!isMentor) return;
-
-      setCreatedLoading(true);
-      try {
-        const data = await researchAPI.listMyResearches();
-        if (cancelled) return;
-        setCreatedItems(Array.isArray(data) ? data : []);
-      } catch (err) {
-        if (cancelled) return;
-        setError(err?.data?.detail || "לא הצלחתי לטעון את המחקרים שיצרת");
-      } finally {
-        if (!cancelled) setCreatedLoading(false);
+  const handleInvitationAction = async (researchId, action) => {
+    setInvitationActionLoading(researchId);
+    try {
+      if (action === "accept") {
+        await researchAPI.acceptInvite(researchId);
+      } else {
+        await researchAPI.declineInvite(researchId);
       }
-    };
+      await loadInvitations();
+      // Reload applications list (accepting changes application status)
+      loadApplications();
+      refreshCount();
+    } catch {
+      // Silently fail
+    } finally {
+      setInvitationActionLoading(null);
+    }
+  };
 
-    loadCreated();
-    return () => {
-      cancelled = true;
-    };
-  }, [checkingRole, isMentor]);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    const loadJoined = async () => {
-      if (checkingRole) return;
-      if (!user) return;
-
-      setJoinedLoading(true);
-      try {
-        const data = await researchAPI.listJoinedResearches();
-        if (cancelled) return;
-        setJoinedItems(Array.isArray(data) ? data : []);
-      } catch (err) {
-        if (cancelled) return;
-        setError(err?.data?.detail || "לא הצלחתי לטעון את המחקרים שנרשמת אליהם");
-      } finally {
-        if (!cancelled) setJoinedLoading(false);
-      }
-    };
-
-    loadJoined();
-    return () => {
-      cancelled = true;
-    };
-  }, [checkingRole, user]);
-
-  // Restore old UX: auto-redirect into a concrete research page (with dropdown there).
-  useEffect(() => {
-    if (didRedirect) return;
-    if (checkingRole) return;
-    if (createdLoading || joinedLoading) return;
-    if (error) return;
-
-    const firstCreatedId = Array.isArray(createdItems) && createdItems.length > 0 ? createdItems[0]?.id : null;
-    const firstJoinedId = Array.isArray(joinedItems) && joinedItems.length > 0 ? joinedItems[0]?.id : null;
-
-    const targetId = (isMentor && firstCreatedId) ? firstCreatedId : (firstJoinedId || null);
-    if (!targetId) return;
-
-    setDidRedirect(true);
-    navigate(`/research/${targetId}`, { state: { source: "real" }, replace: true });
-  }, [checkingRole, createdItems, createdLoading, didRedirect, error, isMentor, joinedItems, joinedLoading, navigate]);
+  const formatDate = (dateStr) => {
+    if (!dateStr) return "";
+    try {
+      return new Date(dateStr).toLocaleDateString("he-IL");
+    } catch {
+      return dateStr;
+    }
+  };
 
   return (
-    <div className="researches-page" dir="rtl">
-      <h1 className="researches-title">המחקרים שלי</h1>
+    <div className="my-researches-page" dir="rtl">
+      <div className="my-researches-header">
+        <h1 className="my-researches-title">המחקרים שלי</h1>
+        <div className="my-researches-underline"></div>
+      </div>
 
-      {checkingRole && <p className="researches-no-results">טוען...</p>}
-
-      {!checkingRole && (createdLoading || joinedLoading) && (
-        <p className="researches-no-results">טוען...</p>
+      {/* Mentor: Created Researches Section */}
+      {isMentor && (
+        <div className="my-researches-section">
+          <h2 className="my-researches-section-title">מחקרים שיצרתי</h2>
+          {createdLoading ? (
+            <p className="my-researches-loading">טוען...</p>
+          ) : createdResearches.length === 0 ? (
+            <p className="my-researches-empty">עדיין לא יצרת מחקרים.</p>
+          ) : (
+            <div className="my-researches-grid">
+              {createdResearches.map((r) => (
+                <div
+                  key={r.id}
+                  className="my-research-card my-research-card--created"
+                  onClick={() => navigate(`/research/${r.id}`)}
+                >
+                  <div className="my-research-card-name">{r.researchName}</div>
+                  {r.researchArea && (
+                    <div className="my-research-card-area">{r.researchArea}</div>
+                  )}
+                  <div className="my-research-card-meta">
+                    <span
+                      className="my-research-status-badge"
+                      style={{ backgroundColor: r.status === "open" ? "#10b981" : "#6b7280" }}
+                    >
+                      {r.status === "open" ? "פעיל" : r.status}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       )}
 
-      {!checkingRole && !createdLoading && !joinedLoading && error && (
-        <p className="researches-no-results">{error}</p>
-      )}
+      {/* Invitations Section */}
+      <div className="my-researches-section">
+        <h2 className="my-researches-section-title">הזמנות שקיבלתי</h2>
+        {invitationsLoading ? (
+          <p className="my-researches-loading">טוען...</p>
+        ) : invitations.length === 0 ? (
+          <p className="my-researches-empty">אין הזמנות ממתינות.</p>
+        ) : (
+          <div className="my-researches-grid">
+            {invitations.map((app) => (
+              <div
+                key={app.id}
+                className="my-research-card my-research-card--invited"
+              >
+                <div className="my-research-card-name">
+                  {app.research?.researchName || "מחקר"}
+                </div>
+                {app.research?.researchArea && (
+                  <div className="my-research-card-area">{app.research.researchArea}</div>
+                )}
+                <div className="my-research-card-meta">
+                  <span
+                    className="my-research-status-badge"
+                    style={{ backgroundColor: STATUS_COLORS.invited }}
+                  >
+                    {STATUS_LABELS.invited}
+                  </span>
+                  <span className="my-research-card-date">
+                    התקבלה: {formatDate(app.created_at)}
+                  </span>
+                </div>
+                <div className="my-research-card-actions">
+                  <button
+                    className="my-research-action-btn my-research-action-btn--accept"
+                    disabled={invitationActionLoading === app.research?.id}
+                    onClick={() => handleInvitationAction(app.research?.id, "accept")}
+                  >
+                    {invitationActionLoading === app.research?.id ? "..." : "קבל הזמנה"}
+                  </button>
+                  <button
+                    className="my-research-action-btn my-research-action-btn--decline"
+                    disabled={invitationActionLoading === app.research?.id}
+                    onClick={() => handleInvitationAction(app.research?.id, "decline")}
+                  >
+                    דחה
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
-      {!checkingRole && !createdLoading && !joinedLoading && !error && !didRedirect && createdCount === 0 && joinedCount === 0 && (
-        <p className="researches-no-results">עדיין לא נרשמת למחקר. נשלח לעזור לך למצוא את הפרוייקט הבא שלך!</p>
-      )}
+      {/* Applications Section */}
+      <div className="my-researches-section">
+        <h2 className="my-researches-section-title">בקשות שהגשתי</h2>
 
-      {!checkingRole && !createdLoading && !joinedLoading && !error && !didRedirect && (createdCount > 0 || joinedCount > 0) && (
-        <p className="researches-no-results">מעביר לעמוד מחקר...</p>
-      )}
+        {/* Tab Bar */}
+        <div className="my-researches-tabs">
+          {STATUS_TABS.map((tab) => (
+            <button
+              key={tab.key}
+              className={`my-researches-tab ${activeTab === tab.key ? "my-researches-tab--active" : ""}`}
+              onClick={() => setActiveTab(tab.key)}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Content */}
+        {appsLoading ? (
+          <p className="my-researches-loading">טוען...</p>
+        ) : appsError ? (
+          <p className="my-researches-error">{appsError}</p>
+        ) : applications.length === 0 ? (
+          <p className="my-researches-empty">
+            {activeTab === "all"
+              ? "עדיין לא הגשת בקשות למחקרים."
+              : `אין בקשות בסטטוס "${STATUS_TABS.find((t) => t.key === activeTab)?.label}".`}
+          </p>
+        ) : (
+          <div className="my-researches-grid">
+            {applications.map((app) => (
+              <div
+                key={app.id}
+                className="my-research-card"
+                onClick={() => app.research?.id && navigate(`/research/${app.research.id}`)}
+              >
+                <div className="my-research-card-name">
+                  {app.research?.researchName || "מחקר"}
+                </div>
+                {app.research?.researchArea && (
+                  <div className="my-research-card-area">{app.research.researchArea}</div>
+                )}
+                <div className="my-research-card-meta">
+                  <span
+                    className="my-research-status-badge"
+                    style={{ backgroundColor: STATUS_COLORS[app.status] || "#6b7280" }}
+                  >
+                    {STATUS_LABELS[app.status] || app.status}
+                  </span>
+                  <span className="my-research-card-date">
+                    הוגש: {formatDate(app.created_at)}
+                  </span>
+                </div>
+                {app.mentor_note && (
+                  <div className="my-research-card-note">
+                    <strong>הערת מנחה:</strong> {app.mentor_note}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

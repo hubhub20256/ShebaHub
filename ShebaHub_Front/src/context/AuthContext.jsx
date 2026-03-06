@@ -15,16 +15,42 @@ export const AuthProvider = ({ children }) => {
     }
     if (!authAPI.isAuthenticated()) return null;
     const savedUser = localStorage.getItem('user');
-    return savedUser ? JSON.parse(savedUser) : null;
+    if (!savedUser) return null;
+    try {
+      return JSON.parse(savedUser);
+    } catch {
+      localStorage.removeItem('user');
+      return null;
+    }
   });
   const [loading, setLoading] = useState(true);
 
-  // Check authentication status on mount
+  // Refresh user data from the server (syncs email_verified, profiles, etc.)
+  const refreshUser = async () => {
+    if (!authAPI.isAuthenticated()) return;
+    try {
+      const freshUser = await authAPI.fetchMe();
+      setUser(freshUser);
+      localStorage.setItem('user', JSON.stringify(freshUser));
+    } catch {
+      // If the token is invalid the interceptor will clear it
+    }
+  };
+
+  // Check authentication status on mount and sync with server
   useEffect(() => {
-    const checkAuth = () => {
+    const checkAuth = async () => {
       if (authAPI.isAuthenticated()) {
         const savedUser = authAPI.getCurrentUser();
         setUser(savedUser);
+        // Fetch fresh data from server to sync email_verified etc.
+        try {
+          const freshUser = await authAPI.fetchMe();
+          setUser(freshUser);
+          localStorage.setItem('user', JSON.stringify(freshUser));
+        } catch {
+          // Keep using cached user if fetch fails
+        }
       } else {
         // Ensure localStorage is clean so navbar shows login/register.
         if (localStorage.getItem('accessToken') || localStorage.getItem('user')) {
@@ -80,8 +106,10 @@ export const AuthProvider = ({ children }) => {
     login,
     logout,
     updateUser,
+    refreshUser,
     hasProfile,
     isAuthenticated: !!user,
+    isAdmin: !!user?.is_staff,
   };
 
   return (
@@ -91,6 +119,7 @@ export const AuthProvider = ({ children }) => {
   );
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {

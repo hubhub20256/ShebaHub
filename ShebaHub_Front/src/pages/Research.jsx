@@ -6,39 +6,34 @@
  * - **Research Overview**: Displays the research name, description, requirements, skills, and logistics.
  * - **Accepted Apprentices**: Shows a grid of apprentices who have been approved to join the research.
  * - **Pending Applicants**: (Mentor only) Displays applicants awaiting approval, with Approve/Decline actions.
- * - **Mock Mode**: Supports mock data for UI development and testing when the backend is unavailable.
- * - **Real Mode**: Fetches real research data from the API based on URL params.
  * - **Mobile Responsive**: Fully responsive layout that stacks elements vertically on small screens.
  *
  * ## Key Components
  * - `ResearchApprenticeCard`: A locally-defined card component for displaying apprentice/applicant info.
  * - `Section`, `DetailItem`, `SidebarItem`: Helper components for structured content display.
  *
- * ## State Management
- * - `useReal`: Toggles between mock and real data modes.
- * - `realResearch`: Holds the fetched research data in real mode.
- * - `pendingApplications`, `approvedApplications`: Server data for mentor's applicant management.
- * - `myApplication`: (Student) Tracks the current user's application status.
- *
- * ## CSS
- * - Styles are embedded inline via a `<style>` tag for page-specific customization.
- * - Mobile responsiveness is handled via `@media (max-width: 768px)` queries.
- *
  * @author ShebaHub Team
  * @since 2024
  */
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
+import toast from "react-hot-toast";
 import { profilesAPI, researchAPI } from "../services/api";
 import { useAuth } from "../context/AuthContext";
-import ApprenticeCard from "../components/apprenticeCard"; // Main existing card (used in compact view)
+import { useNotifications } from "../context/NotificationContext";
+import usePageTitle from "../hooks/usePageTitle";
+import LoadingSpinner from "../components/LoadingSpinner";
+import ResearchChat from "./ResearchChat";
 import "../styles/Research.css";
 
-// --- Mock Images ---
-import img1 from "../assets/student1.png";
-import img2 from "../assets/student2.png";
-import img3 from "../assets/student3.png";
+const STATUS_MAP = {
+  open: "פתוח",
+  in_progress: "בתהליך",
+  completed: "הושלם",
+  closed: "סגור",
+  draft: "טיוטה",
+};
 
 /**
  * ResearchApprenticeCard
@@ -65,6 +60,10 @@ const ResearchApprenticeCard = ({ apprentice, onClick, children }) => {
   
   return (
     <div className="research-apprentice-card" onClick={onClick} dir="rtl">
+      {/* Mentor/Owner tag */}
+      {!apprentice.hasStudentProfile && (
+        <span className="rac-mentor-tag">{apprentice.isOwner ? "חוקר ראשי" : "מנחה"}</span>
+      )}
       {/* Top section with avatar */}
       <div className="rac-avatar-container">
         {avatarUrl ? (
@@ -120,130 +119,25 @@ const ACCENT_TEAL = "#6cd5bf";
 const ACCENT_PINK = "#ef67a0";
 const BG_GRAY = "#f8f9fa";
 
-// --- Mock Data ---
-
-/**
- * Mock data for apprentices.
- * Used when the backend response does not contain actual apprentice data.
- */
-const mockApprentices = [
-  {
-    name: "דנה כהן",
-    id: 1,
-    gender: "נקבה",
-    email: "dana.k@med-example.com",
-    school_beginner_year: "2019",
-    medical_level: "סטודנט שנה 3",
-    Educational_institution: "אוניברסיטת תל אביב - הפקולטה לרפואה",
-    profileImage: img1,
-  },
-  {
-    name: "יותם לוי",
-    id: 2,
-    gender: "זכר",
-    email: "yotam.lev@hospital-demo.co.il",
-    school_beginner_year: "2015",
-    medical_level: "סטאזר",
-    Educational_institution: "האוניברסיטה העברית והדסה עין כרם",
-    profileImage: img2,
-  },
-  {
-    name: "מיכל שמש",
-    id: 3,
-    gender: "נקבה",
-    email: "michal.s@clinic-test.org",
-    school_beginner_year: "20214",
-    medical_level: "מתמחה בביורפואה",
-    Educational_institution: "אוניברסיטת בן-גוריון בנגב",
-    profileImage: img3,
-  },
-];
-
-/**
- * Mock data for pending applicants (people who applied but not yet approved).
- * Same structure as apprentices for card compatibility.
- */
-const mockApplicants = [
-  {
-    name: "נועם אברהם",
-    id: 101,
-    gender: "זכר",
-    email: "noam.a@student-demo.com",
-    school_beginner_year: "2022",
-    medical_level: "סטודנט שנה 2",
-    Educational_institution: "אוניברסיטת חיפה",
-    profileImage: img2,
-  },
-  {
-    name: "שירה גולדמן",
-    id: 102,
-    gender: "נקבה",
-    email: "shira.g@med-apply.org",
-    school_beginner_year: "2021",
-    medical_level: "סטודנט שנה 4",
-    Educational_institution: "אוניברסיטת תל אביב - הפקולטה לרפואה",
-    profileImage: img1,
-  },
-];
-
-const researchData = {
-  id: 1,
-  researchName: "שימוש בבינה מלאכותית לזיהוי מוקדם של מחלות לב",
-  description:
-    "מחקר זה מתמקד בפיתוח אלגוריתמים מתקדמים של למידת מכונה (Machine Learning) לצורך ניתוח נתוני אקג.",
-  researchArea: "קרדיולוגיה, מדעי הנתונים",
-  mentors: "פרופ' דניאל כהן, ד\"ר רונית לוי",
-  teamSize: 4,
-  startDate: "2023-11-01",
-  weeklyHours: 10,
-  durationWeeks: 12,
-  compensation: "מלגה",
-  workMode: "היברידי",
-  requirements:
-    "ידע ב-Python, רקע בסיסי בביולוגיה/רפואה, יכולת קריאת מאמרים באנגלית.",
-  skillsAndTools: "PyTorch, TensorFlow, Pandas, SQL",
-  output: "מאמר אקדמי ופיתוח אב-טיפוס",
-  location: "תל אביב-יפו (שיבא תל השומר)",
-  status: "מגייס",
-  helsinkiApproval: "H-2023-9988",
-  dataType: "רטרוספקטיבי",
-  contractFileName: "Research_Contract_v2.pdf",
-  apprentices: mockApprentices, // Attach mock apprentices to the mock research
-  applicants: mockApplicants, // Attach mock applicants
-};
-
-/**
- * Research Component
- * The main page component for displaying a single research project's details.
- *
- * Supports two modes:
- * - **Mock Mode**: Uses local mock data for UI testing.
- * - **Real Mode**: Fetches data from the backend API based on the URL param `id`.
- *
- * Mentors can manage applicants (approve/decline) when viewing their own research.
- * Students can apply to join the research.
- *
- * @returns {JSX.Element}
- */
+/** Research Component */
 export default function Research() {
+  usePageTitle("מחקר");
   const { user } = useAuth();
+  const { refreshCount } = useNotifications();
   const { id } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
 
-  const isRealFromNav = location?.state?.source === "real";
-  const [useReal, setUseReal] = useState(isRealFromNav);
-  const isReal = useReal;
-  const [realResearch, setRealResearch] = useState(null);
+  const [research, setResearch] = useState(null);
   const [myResearches, setMyResearches] = useState([]);
   const [joinedResearches, setJoinedResearches] = useState([]);
 
-  const [realLoading, setRealLoading] = useState(false);
-  const [realError, setRealError] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const [isMentor, setIsMentor] = useState(false);
-  const [roleChecked, setRoleChecked] = useState(false);
-  const [isApprenticesOpen, setIsApprenticesOpen] = useState(false);
-  const [isApplicantsOpen, setIsApplicantsOpen] = useState(false);
+  const [isApprenticesOpen, setIsApprenticesOpen] = useState(true);
+  const [isMentorsOpen, setIsMentorsOpen] = useState(true);
+  const [isApplicantsOpen, setIsApplicantsOpen] = useState(true);
 
   // --- Applications (Real server data) ---
   const [pendingApplications, setPendingApplications] = useState([]);
@@ -260,9 +154,7 @@ export default function Research() {
   // Student view: my application status
   const [myApplication, setMyApplication] = useState(null);
   const [myApplicationLoading, setMyApplicationLoading] = useState(false);
-
-  // Mock mode: local "as-if applied" state (never touches server)
-  const [mockMyApplicationStatus, setMockMyApplicationStatus] = useState(null);
+  const [confirmDialog, setConfirmDialog] = useState(null); // { message, onConfirm }
 
   useEffect(() => {
     let cancelled = false;
@@ -272,7 +164,6 @@ export default function Research() {
       if (user && typeof user.has_mentor_profile === "boolean") {
         if (!cancelled) {
           setIsMentor(user.has_mentor_profile);
-          setRoleChecked(true);
         }
         return;
       }
@@ -281,7 +172,6 @@ export default function Research() {
       if (!user) {
         if (!cancelled) {
           setIsMentor(false);
-          setRoleChecked(true);
         }
         return;
       }
@@ -292,7 +182,7 @@ export default function Research() {
       } catch {
         if (!cancelled) setIsMentor(false);
       } finally {
-        if (!cancelled) setRoleChecked(true);
+        // role check complete
       }
     };
 
@@ -302,88 +192,67 @@ export default function Research() {
     };
   }, [user]);
 
-  // Do not force students into real mode.
-  // Users can manually toggle between mock/real, and navigation may default to real.
-
-  // If navigation explicitly says "real", switch to real (e.g., coming from lists).
-  // This runs when route params or nav state changes, but won't override manual toggles on the same page.
-  useEffect(() => {
-    if (isRealFromNav) setUseReal(true);
-  }, [id, isRealFromNav]);
-
+  // Combined data loading: research detail + myResearches + joinedResearches (parallel)
   useEffect(() => {
     let cancelled = false;
 
-    const load = async () => {
-      if (!isReal) return;
+    const loadAll = async () => {
       if (!id) return;
 
-      setRealError(null);
-      setRealLoading(true);
+      setError(null);
+      setLoading(true);
       try {
-        const data = await researchAPI.getResearch(id);
-        if (!cancelled) setRealResearch(data);
+        const [researchData, myRes, joined] = await Promise.all([
+          researchAPI.getResearch(id),
+          isMentor
+            ? researchAPI.listMyResearches().catch(() => [])
+            : Promise.resolve(null),
+          user
+            ? researchAPI.listJoinedResearches().catch(() => [])
+            : Promise.resolve(null),
+        ]);
+        if (cancelled) return;
+        setResearch(researchData);
+        if (myRes !== null) setMyResearches(Array.isArray(myRes) ? myRes : []);
+        if (joined !== null) setJoinedResearches(Array.isArray(joined) ? joined : []);
       } catch (err) {
         if (!cancelled)
-          setRealError(err?.data?.detail || "לא הצלחתי לטעון את המחקר");
+          setError(err?.data?.detail || "לא הצלחתי לטעון את המחקר");
       } finally {
-        if (!cancelled) setRealLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
 
-    load();
+    loadAll();
     return () => {
       cancelled = true;
     };
-  }, [id, isReal]);
+  }, [id, location.key, isMentor, user]);
 
+  // Silent refresh (no loading spinner) — used by visibility listener
+  const refreshResearch = useCallback(async () => {
+    if (!id) return;
+    try {
+      const data = await researchAPI.getResearch(id);
+      setResearch(data);
+    } catch { /* non-blocking */ }
+  }, [id]);
+
+  // Re-fetch research when tab becomes visible again (30s throttle)
+  const lastRefreshRef = useRef(0);
   useEffect(() => {
-    let cancelled = false;
-
-    const loadList = async () => {
-      if (!isReal) return;
-      if (!isMentor) return;
-      try {
-        const data = await researchAPI.listMyResearches();
-        if (cancelled) return;
-        setMyResearches(Array.isArray(data) ? data : []);
-      } catch {
-        // Non-blocking: details view can still work without list.
-      }
+    const onVisibility = () => {
+      if (document.hidden) return;
+      const now = Date.now();
+      if (now - lastRefreshRef.current < 30_000) return;
+      lastRefreshRef.current = now;
+      refreshResearch();
     };
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => document.removeEventListener("visibilitychange", onVisibility);
+  }, [refreshResearch]);
 
-    loadList();
-    return () => {
-      cancelled = true;
-    };
-  }, [isReal, isMentor]);
-
-  // Load researches the current user has joined (approved)
-  useEffect(() => {
-    let cancelled = false;
-
-    const loadJoined = async () => {
-      if (!isReal) return;
-      if (!user) return;
-      try {
-        const data = await researchAPI.listJoinedResearches();
-        if (cancelled) return;
-        setJoinedResearches(Array.isArray(data) ? data : []);
-      } catch {
-        // Non-blocking
-      }
-    };
-
-    loadJoined();
-    return () => {
-      cancelled = true;
-    };
-  }, [isReal, user]);
-
-  const data = useMemo(() => {
-    if (!isReal) return researchData;
-    return realResearch || null;
-  }, [isReal, realResearch]);
+  const data = research;
 
   const skills = useMemo(() => {
     const s = data?.skillsAndTools;
@@ -395,23 +264,24 @@ export default function Research() {
   }, [data]);
 
   /**
-   * Determine key logic values
+   * Determine key logic values — granular per-mentor permissions
    */
-  const canEditThis =
-    isReal && myResearches.some((r) => String(r.id) === String(id));
-  const showEditButton = isMentor && (!isReal || canEditThis);
-  const showMockToggle = true;
+  const myResearchEntry = myResearches.find((r) => String(r.id) === String(id));
+  const isOwner = myResearchEntry?.is_owner === true;
+  const canEditThis = isOwner || myResearchEntry?.my_permissions?.can_edit === true;
+  const canApproveThis = isOwner || myResearchEntry?.my_permissions?.can_approve === true;
+  const canInviteThis = isOwner || myResearchEntry?.my_permissions?.can_invite === true;
+  const canRemoveThis = isOwner || myResearchEntry?.my_permissions?.can_remove === true;
+  const canManageChatThis = isOwner || myResearchEntry?.my_permissions?.can_manage_chat === true;
+  const hasAnyPermission = canEditThis || canApproveThis || canInviteThis || canRemoveThis || canManageChatThis;
+  const showEditButton = isMentor && canEditThis;
 
-  /**
-   * Safe list of apprentices.
-   * If `data.apprentices` is missing (common with real API data initially),
-   * fall back to `mockApprentices` so the UI isn't empty.
-   */
   const mapApplicationToApprenticeCard = (app) => {
     if (!app) return null;
     return {
       applicationId: app.id,
       id: app.applicantProfileId || app.applicantMentorProfileId || app.applicantId,
+      applicantUserId: app.applicantId,
       name: app.name,
       email: app.email,
       gender: app.gender,
@@ -422,64 +292,72 @@ export default function Research() {
       isAvailableForResearch: app.researchAvailability,
       hasStudentProfile: app.hasStudentProfile,
       application_status: app.status,
+      can_edit: app.can_edit,
+      can_approve: app.can_approve,
+      can_invite: app.can_invite,
+      can_remove: app.can_remove,
+      can_manage_chat: app.can_manage_chat,
     };
   };
 
-  const activeApprentices = useMemo(() => {
-    // Real mode: use actual server data
-    if (isReal && canEditThis) {
+  const allApproved = useMemo(() => {
+    if (hasAnyPermission) {
       return (Array.isArray(approvedApplications) ? approvedApplications : [])
         .map(mapApplicationToApprenticeCard)
         .filter(Boolean);
     }
+    return (Array.isArray(publicApprovedApplications)
+      ? publicApprovedApplications
+      : [])
+      .map(mapApplicationToApprenticeCard)
+      .filter(Boolean);
+  }, [approvedApplications, hasAnyPermission, publicApprovedApplications]);
 
-    if (isReal) {
-      return (Array.isArray(publicApprovedApplications)
-        ? publicApprovedApplications
-        : [])
-        .map(mapApplicationToApprenticeCard)
-        .filter(Boolean);
+  const activeApprentices = useMemo(() => allApproved.filter((a) => a.hasStudentProfile), [allApproved]);
+  const activeMentors = useMemo(() => {
+    const mentors = [];
+    const seenUserIds = new Set();
+
+    // Always add the research owner first
+    if (data?.ownerName) {
+      mentors.push({
+        id: data.ownerProfileId || data.ownerId,
+        applicantUserId: data.ownerId,
+        name: data.ownerName,
+        profileImage: data.ownerAvatarUrl,
+        hasStudentProfile: false,
+        isOwner: true,
+      });
+      if (data.ownerId) seenUserIds.add(String(data.ownerId));
     }
 
-    // Mock mode: Only show mock data when NOT in real mode
-    // This ensures mock data appears only in mock mode
-    if (Array.isArray(data?.apprentices) && data.apprentices.length > 0) {
-      return data.apprentices;
+    // Add other approved mentors (excluding the owner to avoid duplicates)
+    for (const a of allApproved) {
+      if (a.hasStudentProfile) continue;
+      const uid = String(a.applicantUserId);
+      if (seenUserIds.has(uid)) continue;
+      seenUserIds.add(uid);
+      mentors.push(a);
     }
-    // Default mock apprentices for mock mode
-    return mockApprentices;
-  }, [approvedApplications, canEditThis, data, isReal, publicApprovedApplications]);
 
-  /**
-   * Safe list of pending applicants.
-   * Same fallback pattern as activeApprentices.
-   */
+    return mentors;
+  }, [allApproved, data?.ownerName, data?.ownerAvatarUrl, data?.ownerProfileId, data?.ownerId]);
+
   const activeApplicants = useMemo(() => {
-    // Real mode: only mentor can see pending applications
-    if (isReal && canEditThis) {
+    if (canApproveThis) {
       return (Array.isArray(pendingApplications) ? pendingApplications : [])
         .map(mapApplicationToApprenticeCard)
         .filter(Boolean);
     }
+    return [];
+  }, [canApproveThis, pendingApplications]);
 
-    if (isReal) {
-      return [];
-    }
-
-    // Mock mode: show mock applicants
-    if (Array.isArray(data?.applicants) && data.applicants.length > 0) {
-      return data.applicants;
-    }
-    return mockApplicants;
-  }, [canEditThis, data, isReal, pendingApplications]);
-
-  // Load applications for mentor's own research
+  // Load applications for mentor's own research (or permitted mentor)
   useEffect(() => {
     let cancelled = false;
 
     const loadApplications = async () => {
-      if (!isReal) return;
-      if (!canEditThis) return;
+      if (!hasAnyPermission) return;
       if (!id) return;
 
       setApplicationsError(null);
@@ -504,16 +382,15 @@ export default function Research() {
     return () => {
       cancelled = true;
     };
-  }, [canEditThis, id, isReal]);
+  }, [hasAnyPermission, id]);
 
-  // Load approved applicants for real research when viewer is NOT the owner
+  // Load approved applicants for real research when viewer is NOT the owner/permitted
   useEffect(() => {
     let cancelled = false;
 
     const loadPublicApproved = async () => {
-      if (!isReal) return;
       if (!id) return;
-      if (canEditThis) return;
+      if (hasAnyPermission) return;
 
       setPublicApprovedError(null);
       setPublicApprovedLoading(true);
@@ -542,16 +419,15 @@ export default function Research() {
     return () => {
       cancelled = true;
     };
-  }, [canEditThis, id, isReal]);
+  }, [hasAnyPermission, id]);
 
   // Load student's own application status
   useEffect(() => {
     let cancelled = false;
 
     const loadMyApplication = async () => {
-      if (!isReal) return;
       if (!id) return;
-      if (canEditThis) return; // owner doesn't apply
+      if (hasAnyPermission) return; // owner/permitted mentor doesn't need this
       if (!user) {
         setMyApplication(null);
         return;
@@ -579,59 +455,90 @@ export default function Research() {
     return () => {
       cancelled = true;
     };
-  }, [canEditThis, id, isReal, user]);
+  }, [hasAnyPermission, id, user]);
 
   const handleEditClick = () => {
-    if (isReal && id && myResearches.some((r) => String(r.id) === String(id))) {
-      navigate(`/research/${id}/edit`, { state: { source: "real" } });
-      return;
+    if (id && canEditThis) {
+      navigate(`/research/${id}/edit`);
     }
-    if (isMentor) navigate("/create-research");
   };
 
-  // handle delete research
-  const handleDeleteResearch = async () => {
+  const handleStatusChange = async (newStatus) => {
+    if (!id || !canEditThis) return;
+    try {
+      const updated = await researchAPI.updateMyResearch(id, { status: newStatus });
+      setResearch(updated);
+      // Re-fetch approved applicants (public list) so counts stay in sync
+      try {
+        const [pending, approved] = await Promise.all([
+          researchAPI.listMyResearchApplications(id, "pending"),
+          researchAPI.listMyResearchApplications(id, "approved"),
+        ]);
+        setPendingApplications(Array.isArray(pending) ? pending : []);
+        setApprovedApplications(Array.isArray(approved) ? approved : []);
+      } catch { /* non-blocking */ }
+      toast.success("סטטוס המחקר עודכן בהצלחה");
+    } catch (err) {
+      toast.error(err?.data?.detail || "לא הצלחתי לעדכן את סטטוס המחקר");
+    }
+  };
+
+  const handleToggleApplications = async () => {
+    if (!id || !canEditThis) return;
+    const newValue = !data.accepting_applications;
+    try {
+      const updated = await researchAPI.updateMyResearch(id, { accepting_applications: newValue });
+      setResearch(updated);
+      // Re-fetch from server to get canonical accepting_applications value
+      try {
+        const fresh = await researchAPI.getResearch(id);
+        setResearch(fresh);
+      } catch { /* non-blocking */ }
+    } catch (err) {
+      toast.error(err?.data?.detail || "לא הצלחתי לעדכן");
+    }
+  };
+
+  // handle delete research — owner only
+  const handleDeleteResearch = () => {
     if (!id) return;
-    if (!canEditThis) {
-      alert("אין לך הרשאה למחוק מחקר זה");
+    if (!isOwner) {
+      toast.error("רק בעל המחקר יכול למחוק אותו");
       return;
     }
 
     const researchTitle = data?.researchName ? `"${data.researchName}"` : `ב־ID ${id}`;
 
-    const confirmDelete = window.confirm(
-      `האם אתה בטוח שברצונך למחוק את המחקר ${researchTitle}?
-לא ניתן לשחזר פעולה זו.`
-    );
-    if (!confirmDelete) return;
-
-    try {
-      await researchAPI.deleteMyResearch(id);
-      alert("המחקר נמחק בהצלחה");
-      navigate("/my-researches", { replace: true });
-    } catch (err) {
-      alert(err?.data?.detail || "לא הצלחתי למחוק את המחקר");
-    }
+    setConfirmDialog({
+      message: `האם אתה בטוח שברצונך למחוק את המחקר ${researchTitle}?\nלא ניתן לשחזר פעולה זו.`,
+      onConfirm: async () => {
+        try {
+          await researchAPI.deleteMyResearch(id);
+          toast.success("המחקר נמחק בהצלחה");
+          navigate("/my-researches", { replace: true });
+        } catch (err) {
+          toast.error(err?.data?.detail || "לא הצלחתי למחוק את המחקר");
+        }
+      },
+    });
   };
 
-  const handleToggleReal = () => {
-    setUseReal((v) => !v);
-    setRealError(null);
-  };
-
-  // --- Applicant Actions (Placeholder) ---
+  // --- Applicant Actions ---
   const handleApproveApplicant = async (applicationId) => {
     if (!id) return;
     try {
       await researchAPI.approveResearchApplication(id, applicationId);
-      const [pending, approved] = await Promise.all([
+      const [pending, approved, updated] = await Promise.all([
         researchAPI.listMyResearchApplications(id, "pending"),
         researchAPI.listMyResearchApplications(id, "approved"),
+        researchAPI.getResearch(id),
       ]);
       setPendingApplications(Array.isArray(pending) ? pending : []);
       setApprovedApplications(Array.isArray(approved) ? approved : []);
+      setResearch(updated);
+      refreshCount();
     } catch (err) {
-      alert(err?.data?.detail || "לא הצלחתי לאשר מועמד");
+      toast.error(err?.data?.detail || "לא הצלחתי לאשר מועמד");
     }
   };
 
@@ -639,53 +546,166 @@ export default function Research() {
     if (!id) return;
     try {
       await researchAPI.rejectResearchApplication(id, applicationId);
-      const pending = await researchAPI.listMyResearchApplications(id, "pending");
+      const [pending, updated] = await Promise.all([
+        researchAPI.listMyResearchApplications(id, "pending"),
+        researchAPI.getResearch(id),
+      ]);
       setPendingApplications(Array.isArray(pending) ? pending : []);
+      setResearch(updated);
+      refreshCount();
     } catch (err) {
-      alert(err?.data?.detail || "לא הצלחתי לדחות מועמד");
+      toast.error(err?.data?.detail || "לא הצלחתי לדחות מועמד");
     }
+  };
+
+  const handleRemoveStudent = (applicationId) => {
+    if (!id) return;
+    setConfirmDialog({
+      message: "האם אתה בטוח שברצונך להסיר מתלמד/ת זו מהמחקר?",
+      onConfirm: async () => {
+        try {
+          await researchAPI.removeResearchStudent(id, applicationId);
+          const [approved, updated] = await Promise.all([
+            researchAPI.listMyResearchApplications(id, "approved"),
+            researchAPI.getResearch(id),
+          ]);
+          setApprovedApplications(Array.isArray(approved) ? approved : []);
+          setResearch(updated);
+          refreshCount();
+          toast.success("המתלמד/ת הוסר/ה מהמחקר בהצלחה");
+        } catch (err) {
+          toast.error(err?.data?.detail || "לא הצלחתי להסיר מתלמד/ת");
+        }
+      },
+    });
   };
 
   const handleApplyToResearch = async () => {
     if (!id) return;
     if (!user) {
-      alert("עליך להיות מחובר כדי להגיש מועמדות");
+      toast.error("עליך להיות מחובר כדי להגיש מועמדות");
       navigate("/login");
-      return;
-    }
-
-    // Mock research IDs are not real server IDs (often numeric).
-    // In mock mode, keep the UX local and do not call the backend.
-    if (!isReal) {
-      setMockMyApplicationStatus("pending");
-      alert("הבקשה נשלחה בהצלחה (מוק)");
       return;
     }
 
     try {
       const app = await researchAPI.applyToResearch(id);
       setMyApplication(app);
-      alert("הבקשה נשלחה בהצלחה");
+      refreshCount();
+      toast.success("הבקשה נשלחה בהצלחה");
     } catch (err) {
-      alert(err?.data?.detail || "לא הצלחתי להגיש מועמדות");
+      const errMsg = err?.data?.message || err?.data?.detail || "";
+      const isEmailNotVerified =
+        err?.status === 403 &&
+        typeof errMsg === "string" &&
+        errMsg.toLowerCase().includes("verify your email");
+      toast.error(
+        isEmailNotVerified
+          ? "יש לאמת את כתובת האימייל לפני הגשת מועמדות למחקר. בדוק/י את תיבת הדואר הנכנס."
+          : errMsg || "לא הצלחתי להגיש מועמדות"
+      );
     }
   };
 
   const handleCancelMyApplication = async () => {
     if (!id) return;
 
-    if (!isReal) {
-      setMockMyApplicationStatus("cancelled");
-      alert("המועמדות בוטלה (מוק)");
-      return;
-    }
-
     try {
       const app = await researchAPI.cancelMyApplication(id);
       setMyApplication(app);
-      alert("המועמדות בוטלה");
+      // Re-fetch research to update application count display
+      try {
+        const updated = await researchAPI.getResearch(id);
+        setResearch(updated);
+      } catch { /* non-blocking */ }
+      refreshCount();
+      toast.success("המועמדות בוטלה");
     } catch (err) {
-      alert(err?.data?.detail || "לא הצלחתי לבטל מועמדות");
+      toast.error(err?.data?.detail || "לא הצלחתי לבטל מועמדות");
+    }
+  };
+
+  const handleAcceptInvite = async () => {
+    if (!id) return;
+    try {
+      const app = await researchAPI.acceptInvite(id);
+      setMyApplication(app);
+      // Re-fetch approved applicants and research so counts update immediately
+      try {
+        const [approved, updated] = await Promise.all([
+          researchAPI.listApprovedApplicants(id),
+          researchAPI.getResearch(id),
+        ]);
+        setPublicApprovedApplications(Array.isArray(approved) ? approved : []);
+        setResearch(updated);
+      } catch { /* non-blocking */ }
+      refreshCount();
+      toast.success("ההזמנה התקבלה בהצלחה!");
+    } catch (err) {
+      toast.error(err?.data?.detail || "לא הצלחתי לקבל את ההזמנה");
+    }
+  };
+
+  const handleDeclineInvite = async () => {
+    if (!id) return;
+    try {
+      const app = await researchAPI.declineInvite(id);
+      setMyApplication(app);
+      // Re-fetch research to update counts
+      try {
+        const updated = await researchAPI.getResearch(id);
+        setResearch(updated);
+      } catch { /* non-blocking */ }
+      refreshCount();
+      toast.success("ההזמנה נדחתה");
+    } catch (err) {
+      toast.error(err?.data?.detail || "לא הצלחתי לדחות את ההזמנה");
+    }
+  };
+
+  const handleLeaveResearch = () => {
+    if (!id) return;
+    setConfirmDialog({
+      message: "האם את/ה בטוח/ה שברצונך לעזוב את המחקר?",
+      onConfirm: async () => {
+        try {
+          const app = await researchAPI.leaveResearch(id);
+          setMyApplication(app);
+          // Re-fetch approved applicants
+          try {
+            const approved = await researchAPI.listApprovedApplicants(id);
+            setPublicApprovedApplications(Array.isArray(approved) ? approved : []);
+          } catch { /* non-blocking */ }
+          // Re-fetch research to update isFull / accepting_applications
+          try {
+            const updated = await researchAPI.getResearch(id);
+            setResearch(updated);
+          } catch { /* non-blocking */ }
+          refreshCount();
+          toast.success("עזבת את המחקר בהצלחה");
+        } catch (err) {
+          toast.error(err?.data?.detail || "לא הצלחתי לעזוב את המחקר");
+        }
+      },
+    });
+  };
+
+  const handlePermissionToggle = async (applicationId, field, currentValue) => {
+    if (!id || !isOwner) return;
+    try {
+      const updated = await researchAPI.updateMentorPermissions(id, applicationId, {
+        [field]: !currentValue,
+      });
+      // Update the approved applications list with the new permission values
+      setApprovedApplications((prev) =>
+        prev.map((app) =>
+          app.id === applicationId
+            ? { ...app, can_edit: updated.can_edit, can_approve: updated.can_approve, can_invite: updated.can_invite, can_remove: updated.can_remove, can_manage_chat: updated.can_manage_chat }
+            : app
+        )
+      );
+    } catch (err) {
+      toast.error(err?.data?.detail || "לא הצלחתי לעדכן הרשאות");
     }
   };
 
@@ -695,7 +715,9 @@ export default function Research() {
     const fileName = data?.contractFileName || "contract";
 
     try {
-      const res = await fetch(url);
+      const token = localStorage.getItem("accessToken");
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      const res = await fetch(url, { headers });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const blob = await res.blob();
       const objectUrl = window.URL.createObjectURL(blob);
@@ -707,15 +729,14 @@ export default function Research() {
       a.remove();
       window.URL.revokeObjectURL(objectUrl);
     } catch {
-      // Fallback: open the file in a new tab (works even if CORS blocks fetch-to-blob)
-      window.open(url, "_blank", "noopener,noreferrer");
+      toast.error("לא ניתן להוריד את הקובץ. ייתכן שאין לך הרשאה.");
     }
   };
 
   const handleSelectMyResearch = (e) => {
     const nextId = e.target.value;
     if (!nextId) return;
-    navigate(`/research/${nextId}`, { state: { source: "real" } });
+    navigate(`/research/${nextId}`);
   };
 
   const distinctResearchesById = (arr) => {
@@ -734,34 +755,32 @@ export default function Research() {
   const createdResearchOptions = isMentor ? distinctResearchesById(myResearches) : [];
   const joinedResearchOptions = distinctResearchesById(joinedResearches);
   const hasCreatedAndJoined = createdResearchOptions.length > 0 && joinedResearchOptions.length > 0;
-  const showResearchDropdown = isReal && (createdResearchOptions.length > 0 || joinedResearchOptions.length > 0);
+  const showResearchDropdown = createdResearchOptions.length > 0 || joinedResearchOptions.length > 0;
 
-  if (isReal && realLoading) {
+  if (loading) {
     return (
-      <div style={styles.page} dir="rtl">
-        <div style={styles.header}>
-          <div style={styles.title}>טוען מחקר...</div>
-        </div>
+      <div className="research-detail-page" style={styles.page} dir="rtl">
+        <LoadingSpinner text="טוען מחקר..." />
       </div>
     );
   }
 
-  if (isReal && realError) {
+  if (error) {
     return (
-      <div style={styles.page} dir="rtl">
+      <div className="research-detail-page" style={styles.page} dir="rtl">
         <div style={styles.header}>
           <div style={styles.title}>שגיאה</div>
           <div style={{ marginTop: 10, color: "#b91c1c", fontWeight: 700 }}>
-            {realError}
+            {error}
           </div>
         </div>
       </div>
     );
   }
 
-  if (isReal && !data) {
+  if (!data) {
     return (
-      <div style={styles.page} dir="rtl">
+      <div className="research-detail-page" style={styles.page} dir="rtl">
         <div style={styles.header}>
           <div style={styles.title}>לא נמצא מחקר</div>
         </div>
@@ -770,14 +789,25 @@ export default function Research() {
   }
 
   return (
-    <div style={styles.page} dir="rtl">
+    <div className="research-detail-page" style={styles.page} dir="rtl">
+      {confirmDialog && (
+        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.5)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 9999 }} onClick={() => setConfirmDialog(null)}>
+          <div style={{ background: "var(--card-bg, #fff)", color: "var(--text-color, #333)", borderRadius: 12, padding: "24px 28px", maxWidth: "min(400px, 90vw)", width: "90%", boxShadow: "0 8px 30px rgba(0,0,0,0.2)", direction: "rtl" }} onClick={(e) => e.stopPropagation()}>
+            <div style={{ fontSize: 15, lineHeight: 1.6, marginBottom: 20, whiteSpace: "pre-line" }}>{confirmDialog.message}</div>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
+              <button onClick={() => setConfirmDialog(null)} style={{ padding: "8px 20px", borderRadius: 20, border: "1px solid var(--border-color, #ddd)", background: "var(--card-bg, #fff)", color: "var(--text-color, #666)", cursor: "pointer", fontWeight: 600, fontSize: 14 }}>ביטול</button>
+              <button onClick={() => { setConfirmDialog(null); confirmDialog.onConfirm(); }} style={{ padding: "8px 20px", borderRadius: 20, border: "none", background: THEME_COLOR, color: "#fff", cursor: "pointer", fontWeight: 600, fontSize: 14 }}>אישור</button>
+            </div>
+          </div>
+        </div>
+      )}
       <div style={styles.header}>
         <div style={styles.title}>{data.researchName}</div>
         <div style={styles.titleUnderline}></div>
       </div>
 
-      <div className="main-card" style={styles.card}>
-        <div className="action-bar" style={styles.actionBar}>
+      <div className="main-card research-detail-card" style={styles.card}>
+        <div className="action-bar rd-action-bar" style={styles.actionBar}>
           <div
             className="status-group"
             style={{
@@ -787,8 +817,76 @@ export default function Research() {
               flexWrap: "wrap",
             }}
           >
-            <span style={styles.statusBadge}>{data.status}</span>
-            <span style={styles.idBadge}>ID: {data.helsinkiApproval}</span>
+            {canEditThis ? (
+              <select
+                value={data.status}
+                onChange={(e) => handleStatusChange(e.target.value)}
+                style={{
+                  padding: "4px 12px",
+                  borderRadius: 20,
+                  border: "1px solid #d1d5db",
+                  fontSize: 12,
+                  fontWeight: 700,
+                  color: "#0d9488",
+                  background: "#e6fffa",
+                  cursor: "pointer",
+                }}
+              >
+                <option value="draft">טיוטה</option>
+                <option value="open">פתוח</option>
+                <option value="in_progress">בתהליך</option>
+                <option value="closed">סגור</option>
+                <option value="completed">הושלם</option>
+              </select>
+            ) : (
+              <span style={styles.statusBadge}>{STATUS_MAP[data.status] || data.status}</span>
+            )}
+            {canEditThis ? (
+              data.isFull ? (
+                <span
+                  style={{
+                    padding: "4px 14px",
+                    borderRadius: 20,
+                    fontSize: 12,
+                    fontWeight: 700,
+                    background: "#fee2e2",
+                    color: "#dc2626",
+                  }}
+                >
+                  לא זמין להצטרפות (הצוות מלא)
+                </span>
+              ) : (
+              <button
+                onClick={handleToggleApplications}
+                style={{
+                  padding: "4px 14px",
+                  borderRadius: 20,
+                  border: "none",
+                  fontSize: 12,
+                  fontWeight: 700,
+                  cursor: "pointer",
+                  background: data.accepting_applications ? "#dcfce7" : "#fee2e2",
+                  color: data.accepting_applications ? "#16a34a" : "#dc2626",
+                }}
+              >
+                {data.accepting_applications ? "הגשות פתוחות" : "הגשות סגורות"}
+              </button>
+              )
+            ) : (
+              <span
+                style={{
+                  padding: "4px 14px",
+                  borderRadius: 20,
+                  fontSize: 12,
+                  fontWeight: 700,
+                  background: data.isFull ? "#fee2e2" : data.accepting_applications ? "#dcfce7" : "#fee2e2",
+                  color: data.isFull ? "#dc2626" : data.accepting_applications ? "#16a34a" : "#dc2626",
+                }}
+              >
+                {data.isFull ? "לא זמין להצטרפות" : data.accepting_applications ? "הגשות פתוחות" : "הגשות סגורות"}
+              </span>
+            )}
+            <span style={styles.idBadge}>ID: {id}</span>
           </div>
 
           <div className="action-bar-controls" style={{ display: "flex", gap: 10, alignItems: "center" }}>
@@ -849,23 +947,9 @@ export default function Research() {
               </div>
             )}
 
-            {showMockToggle && (
-              <button
-                onClick={handleToggleReal}
-                style={{
-                  ...styles.editButton,
-                  background: isReal ? "#111827" : "white",
-                  color: isReal ? "white" : THEME_COLOR,
-                }}
-                title="כפתור זמני: החלפה בין מוק למחקר אמיתי"
-              >
-                {isReal ? "מציג אמיתי (לחץ למוק)" : "הצג אמיתי (זמני)"}
-              </button>
-            )}
-
             {showEditButton && (
             
-                <button onClick={handleEditClick} style={styles.editButton}>
+                <button className="rd-edit-btn" onClick={handleEditClick} style={styles.editButton}>
                   <EditIcon />
                   עריכה
                 </button>
@@ -885,20 +969,20 @@ export default function Research() {
             }}
           >
             <Section title="תיאור המחקר">
-              <p style={styles.text}>{data.description}</p>
+              <p className="rd-text" style={styles.text}>{data.description}</p>
             </Section>
 
             <Section title="דרישות ומיומנויות">
-              <div style={styles.infoBox}>
-                <h4 style={styles.infoTitle}>דרישות סף:</h4>
-                <p style={styles.text}>{data.requirements}</p>
+              <div className="rd-info-box" style={styles.infoBox}>
+                <h4 className="rd-info-title" style={styles.infoTitle}>דרישות סף:</h4>
+                <p className="rd-text" style={styles.text}>{data.requirements}</p>
 
-                <div style={styles.divider}></div>
+                <div className="rd-divider" style={styles.divider}></div>
 
-                <h4 style={styles.infoTitle}>כלים וטכנולוגיות:</h4>
+                <h4 className="rd-info-title" style={styles.infoTitle}>כלים וטכנולוגיות:</h4>
                 <div style={styles.tagsContainer}>
                   {skills.map((skill, idx) => (
-                    <span key={idx} style={styles.skillTag}>
+                    <span className="rd-skill-tag" key={idx} style={styles.skillTag}>
                       {skill.trim()}
                     </span>
                   ))}
@@ -908,27 +992,28 @@ export default function Research() {
 
             <Section title="תוצרים ותגמול">
               <div className="details-grid">
-                <DetailItem label="סוג תגמול" value={data.compensation} />
+                <DetailItem label="סוג תגמול" value={Array.isArray(data.compensation) ? data.compensation.join(", ") : data.compensation} />
                 <DetailItem label="תוצרי מחקר מצופים" value={data.output} />
               </div>
             </Section>
 
             {data.contractFileName && (
-              <div className="file-card" style={styles.fileCard}>
+              <div className="file-card rd-file-card" style={styles.fileCard}>
                 <div style={styles.fileIcon}>📄</div>
                 <div style={styles.fileInfo}>
-                  <div style={styles.fileName}>{data.contractFileName}</div>
+                  <div className="rd-file-name" style={styles.fileName}>{data.contractFileName}</div>
                   <div style={styles.fileAction}>לחץ להורדת חוזה</div>
                 </div>
                 {data.contractUrl ? (
                   <button
+                    className="rd-download-btn"
                     onClick={handleDownloadContract}
                     style={styles.downloadBtn}
                   >
                     הורדה
                   </button>
                 ) : (
-                  <button style={styles.downloadBtn} disabled>
+                  <button className="rd-download-btn" style={styles.downloadBtn} disabled>
                     הורדה
                   </button>
                 )}
@@ -936,13 +1021,13 @@ export default function Research() {
             )}
           </div>
 
-          <div style={styles.sidebar}>
+          <div className="rd-sidebar" style={styles.sidebar}>
             <h3 style={styles.sidebarHeaderTitle}>לוגיסטיקה וצוות</h3>
 
             <SidebarItem label="מיקום" value={data.location} />
             <SidebarItem label="תחום" value={data.researchArea} />
             <SidebarItem label="אופן עבודה" value={data.workMode} />
-            <div style={styles.divider}></div>
+            <div className="rd-divider" style={styles.divider}></div>
             <SidebarItem label="מנחים" value={data.mentors} />
             <SidebarItem
               label="תאריך התחלה"
@@ -954,52 +1039,218 @@ export default function Research() {
             />
             <SidebarItem
               label="משך המחקר"
-              value={data.durationWeeks ? `${data.durationWeeks} שבועות` : ""}
+              value={data.durationMonths ? `${data.durationMonths} חודשים` : ""}
             />
             <SidebarItem
               label="שעות שבועיות"
               value={data.weeklyHours ? `${data.weeklyHours} שעות` : ""}
             />
             <SidebarItem
-              label="גודל צוות"
+              label="גודל צוות, לא כולל מנחים"
               value={data.teamSize ? `${data.teamSize} מתלמדים` : ""}
             />
             <SidebarItem label="סוג נתונים" value={data.dataType} />
 
-            {!canEditThis && (
-              <div style={{ marginTop: 24 }}>
-                {(
-                  (isReal && myApplication?.status === "pending") ||
-                  (!isReal && mockMyApplicationStatus === "pending")
-                ) ? (
-                  <button style={styles.primaryBtn} disabled>
-                    הבקשה נשלחה
-                  </button>
-                ) : (isReal && myApplication?.status === "approved") ? (
-                  <button style={styles.primaryBtn} disabled>
-                    התקבלת למחקר
-                  </button>
-                ) : (
-                  <button
-                    style={styles.primaryBtn}
-                    onClick={handleApplyToResearch}
-                    disabled={myApplicationLoading}
-                  >
-                    הגש מועמדות למחקר
-                  </button>
-                )}
+            {data.ownerName && (
+              <>
+                <div className="rd-divider" style={styles.divider}></div>
+                <div
+                  className="rd-owner-ticket"
+                  onClick={() => data.ownerProfileId && navigate(`/user/${data.ownerProfileId}`)}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 10,
+                    padding: "8px 10px",
+                    borderRadius: 10,
+                    border: "1px solid #e5e7eb",
+                    background: "#fafafa",
+                    cursor: data.ownerProfileId ? "pointer" : "default",
+                    transition: "all 0.2s ease",
+                  }}
+                  onMouseEnter={(e) => { if (data.ownerProfileId) e.currentTarget.style.borderColor = "#6cd5bf"; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = "#e5e7eb"; }}
+                >
+                  <div style={{
+                    width: 36,
+                    height: 36,
+                    borderRadius: "50%",
+                    overflow: "hidden",
+                    flexShrink: 0,
+                    background: "#f0fdf9",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    border: "1px solid #e8f5f2",
+                  }}>
+                    {data.ownerAvatarUrl ? (
+                      <img src={data.ownerAvatarUrl} alt={data.ownerName} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    ) : (
+                      <span style={{ fontSize: 16, color: "#94a3b8" }}>👤</span>
+                    )}
+                  </div>
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: THEME_COLOR, lineHeight: 1.2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {data.ownerName}
+                    </div>
+                    <div style={{ fontSize: 11, color: "#6b7280", lineHeight: 1.2, marginTop: 1 }}>
+                      {data.ownerRole || "חוקר ראשי"}
+                    </div>
+                  </div>
+                  {data.ownerProfileId && (
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                      <path d="M15 18l-6-6 6-6" />
+                    </svg>
+                  )}
+                </div>
+              </>
+            )}
 
-                {(
-                  (isReal && myApplication?.status === "pending") ||
-                  (!isReal && mockMyApplicationStatus === "pending")
-                ) && (
-                  <button
-                    style={{ ...styles.secondaryBtn, marginTop: 10 }}
-                    onClick={handleCancelMyApplication}
-                    disabled={myApplicationLoading}
+            {activeMentors.filter((m) => !m.isOwner).length > 0 && (
+              <>
+                {activeMentors.filter((m) => !m.isOwner).map((mentor) => (
+                  <div
+                    key={mentor.id}
+                    className="rd-owner-ticket"
+                    onClick={() => mentor.id && navigate(`/user/${mentor.id}`)}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 10,
+                      padding: "8px 10px",
+                      borderRadius: 10,
+                      border: "1px solid #e5e7eb",
+                      background: "#fafafa",
+                      cursor: mentor.id ? "pointer" : "default",
+                      transition: "all 0.2s ease",
+                      marginTop: 6,
+                    }}
+                    onMouseEnter={(e) => { if (mentor.id) e.currentTarget.style.borderColor = "#6cd5bf"; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.borderColor = "#e5e7eb"; }}
                   >
-                    בטל מועמדות
-                  </button>
+                    <div style={{
+                      width: 36, height: 36, borderRadius: "50%", overflow: "hidden", flexShrink: 0,
+                      background: "#f0fdf9", display: "flex", alignItems: "center", justifyContent: "center",
+                      border: "1px solid #e8f5f2",
+                    }}>
+                      {mentor.profileImage ? (
+                        <img src={mentor.profileImage} alt={mentor.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                      ) : (
+                        <span style={{ fontSize: 16, color: "#94a3b8" }}>👤</span>
+                      )}
+                    </div>
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: THEME_COLOR, lineHeight: 1.2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {mentor.name}
+                      </div>
+                      <div style={{ fontSize: 11, color: "#6b7280", lineHeight: 1.2, marginTop: 1 }}>
+                        מנחה
+                      </div>
+                    </div>
+                    {mentor.id && (
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                        <path d="M15 18l-6-6 6-6" />
+                      </svg>
+                    )}
+                  </div>
+                ))}
+              </>
+            )}
+
+            {!hasAnyPermission && (
+              <div style={{ marginTop: 24 }}>
+                {myApplication?.status === "invited" ? (
+                  <div>
+                    <div style={{
+                      background: "#eef2ff",
+                      border: "1px solid #c7d2fe",
+                      borderRadius: 12,
+                      padding: "12px 16px",
+                      marginBottom: 12,
+                      textAlign: "center",
+                      fontSize: 14,
+                      fontWeight: 600,
+                      color: "#4338ca",
+                    }}>
+                      קיבלת הזמנה למחקר זה
+                    </div>
+                    <button
+                      style={{ ...styles.primaryBtn, background: "#10b981" }}
+                      onClick={handleAcceptInvite}
+                      disabled={myApplicationLoading}
+                    >
+                      קבל הזמנה
+                    </button>
+                    <button
+                      className="rd-secondary-btn"
+                      style={{ ...styles.secondaryBtn, marginTop: 10 }}
+                      onClick={handleDeclineInvite}
+                      disabled={myApplicationLoading}
+                    >
+                      דחה הזמנה
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    {myApplication?.status === "pending" ? (
+                      <button style={styles.primaryBtn} disabled>
+                        הבקשה נשלחה
+                      </button>
+                    ) : myApplication?.status === "approved" ? (
+                      <>
+                        <button style={styles.primaryBtn} disabled>
+                          התקבלת למחקר
+                        </button>
+                        <button
+                          className="rd-secondary-btn"
+                          style={{ ...styles.secondaryBtn, marginTop: 10, color: "#dc2626", borderColor: "#dc2626" }}
+                          onClick={handleLeaveResearch}
+                          disabled={myApplicationLoading}
+                        >
+                          עזוב מחקר
+                        </button>
+                      </>
+                    ) : (data.isFull && !isMentor) ? (
+                      <div style={{
+                        textAlign: "center",
+                        color: "#dc2626",
+                        fontSize: 14,
+                        fontWeight: 600,
+                        padding: "10px 0",
+                      }}>
+                        הצוות מלא - לא זמין להצטרפות
+                      </div>
+                    ) : (!data.accepting_applications && !isMentor) ? (
+                      <div style={{
+                        textAlign: "center",
+                        color: "#dc2626",
+                        fontSize: 14,
+                        fontWeight: 600,
+                        padding: "10px 0",
+                      }}>
+                        ההגשות למחקר זה סגורות כרגע
+                      </div>
+                    ) : (
+                      <button
+                        style={styles.primaryBtn}
+                        onClick={handleApplyToResearch}
+                        disabled={myApplicationLoading}
+                      >
+                        הגש מועמדות למחקר
+                      </button>
+                    )}
+
+                    {myApplication?.status === "pending" && (
+                      <button
+                        className="rd-secondary-btn"
+                        style={{ ...styles.secondaryBtn, marginTop: 10 }}
+                        onClick={handleCancelMyApplication}
+                        disabled={myApplicationLoading}
+                      >
+                        בטל מועמדות
+                      </button>
+                    )}
+                  </>
                 )}
               </div>
             )}
@@ -1007,7 +1258,7 @@ export default function Research() {
         </div>
 
         {/* --- Accepted Apprentices Section --- */}
-        {(isReal || canEditThis || activeApprentices.length > 0) && (
+        {(hasAnyPermission || myApplication?.status === "approved") && (
           <div style={{ marginTop: 32 }}>
             <div
               className="accordion-header"
@@ -1050,15 +1301,13 @@ export default function Research() {
                 transition: "all 0.6s cubic-bezier(0.4, 0, 0.2, 1)",
               }}
             >
-              {/* Only show error in real mode */}
-              {isReal && (canEditThis ? applicationsError : publicApprovedError) && (
+              {(hasAnyPermission ? applicationsError : publicApprovedError) && (
                 <div style={{ marginTop: 12, color: "#b91c1c", fontWeight: 700 }}>
-                  {canEditThis ? applicationsError : publicApprovedError}
+                  {hasAnyPermission ? applicationsError : publicApprovedError}
                 </div>
               )}
 
-              {/* Only show loading state in real mode - mock mode shows data immediately */}
-              {isReal && (canEditThis ? applicationsLoading : publicApprovedLoading) ? (
+              {(hasAnyPermission ? applicationsLoading : publicApprovedLoading) ? (
                 <div style={{ marginTop: 12, color: "#6b7280", fontWeight: 700 }}>
                   טוען מתלמדים מהשרת...
                 </div>
@@ -1075,8 +1324,21 @@ export default function Research() {
                     <ResearchApprenticeCard
                       key={student.id}
                       apprentice={student}
-                      /* onClick handler removed: using profile button instead */
-                    />
+                    >
+                      {canRemoveThis && (
+                        <div className="applicant-actions">
+                          <button
+                            className="btn-remove"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleRemoveStudent(student.applicationId);
+                            }}
+                          >
+                            הסר מהמחקר
+                          </button>
+                        </div>
+                      )}
+                    </ResearchApprenticeCard>
                   ))}
                 </div>
               )}
@@ -1084,8 +1346,122 @@ export default function Research() {
           </div>
         )}
 
-        {/* --- Pending Applicants Section (Mentor Only in Real, or Mock mode with applicants) --- */}
-        {(canEditThis || (!isReal && activeApplicants.length > 0)) && (
+        {/* --- Mentors in Research Section --- */}
+        {(hasAnyPermission || activeMentors.length > 0 || publicApprovedLoading || activeApprentices.length > 0) && (
+          <div style={{ marginTop: 32 }}>
+            <div
+              className="accordion-header"
+              onClick={() => setIsMentorsOpen(!isMentorsOpen)}
+            >
+              <h3 style={{ ...styles.sectionTitle, marginBottom: 0 }}>
+                מנחים במחקר
+                <span
+                  style={{
+                    fontWeight: 400,
+                    color: "#9ca3af",
+                    marginRight: 8,
+                    fontSize: "0.9em",
+                  }}
+                >
+                  ({activeMentors.length})
+                </span>
+              </h3>
+
+              <div
+                style={{
+                  transition: "transform 0.5s cubic-bezier(0.4, 0, 0.2, 1)",
+                  transform: isMentorsOpen ? "rotate(0deg)" : "rotate(180deg)",
+                  display: "flex",
+                  marginTop: 4,
+                  color: "#6b7280",
+                }}
+              >
+                <ChevronIcon />
+              </div>
+            </div>
+
+            <div
+              style={{
+                maxHeight: isMentorsOpen ? "2000px" : "0",
+                opacity: isMentorsOpen ? 1 : 0,
+                overflow: "hidden",
+                transition: "all 0.6s cubic-bezier(0.4, 0, 0.2, 1)",
+              }}
+            >
+              {(hasAnyPermission ? applicationsLoading : publicApprovedLoading) ? (
+                <div style={{ marginTop: 12, color: "#6b7280", fontWeight: 700 }}>
+                  טוען מנחים מהשרת...
+                </div>
+              ) : activeMentors.length === 0 ? (
+                <div style={{ marginTop: 12, color: "#6b7280", fontWeight: 700 }}>
+                  אין מנחים נוספים במחקר.
+                </div>
+              ) : (
+                <div
+                  className="research-apprentices-grid"
+                  style={{ marginTop: 16 }}
+                >
+                  {activeMentors.map((mentor) => (
+                    <ResearchApprenticeCard
+                      key={mentor.id}
+                      apprentice={mentor}
+                    >
+                      {isOwner && !mentor.isOwner && (
+                        <div className="mentor-permissions-toggles" onClick={(e) => e.stopPropagation()}>
+                          <div className="permissions-title">הרשאות:</div>
+                          {[
+                            { field: "can_edit", label: "עריכת מחקר" },
+                            { field: "can_approve", label: "אישור/דחיית מועמדים" },
+                            { field: "can_invite", label: "הזמנת משתמשים" },
+                            { field: "can_remove", label: "הסרת חברי צוות" },
+                            { field: "can_manage_chat", label: "ניהול צ'אט" },
+                          ].map(({ field, label }) => (
+                            <label key={field} className="permission-toggle-label">
+                              <input
+                                type="checkbox"
+                                checked={!!mentor[field]}
+                                onChange={() => handlePermissionToggle(mentor.applicationId, field, mentor[field])}
+                                className="permission-checkbox"
+                              />
+                              <span>{label}</span>
+                            </label>
+                          ))}
+                        </div>
+                      )}
+                      {isOwner && !mentor.isOwner && (
+                        <div className="applicant-actions">
+                          <button
+                            className="btn-remove"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleRemoveStudent(mentor.applicationId);
+                            }}
+                          >
+                            הסר מהמחקר
+                          </button>
+                        </div>
+                      )}
+                    </ResearchApprenticeCard>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* --- Research Chat Section --- */}
+        {(isOwner || joinedResearches.some((r) => String(r.id) === String(id))) && (
+          <ResearchChat
+            researchId={id}
+            isOwner={isOwner}
+            canManageChat={canManageChatThis}
+            isMentor={isMentor}
+            user={user}
+          />
+        )}
+
+        {/* --- Pending Applicants Section (Mentor Only) --- */}
+        {canApproveThis && (
           <div style={{ marginTop: 32 }}>
             <div
               className="accordion-header"
@@ -1128,15 +1504,13 @@ export default function Research() {
                 transition: "all 0.6s cubic-bezier(0.4, 0, 0.2, 1)",
               }}
             >
-              {/* Only show error in real mode */}
-              {isReal && applicationsError && (
+              {applicationsError && (
                 <div style={{ marginTop: 12, color: "#b91c1c", fontWeight: 700 }}>
                   {applicationsError}
                 </div>
               )}
 
-              {/* Only show loading state in real mode */}
-              {isReal && applicationsLoading ? (
+              {applicationsLoading ? (
                 <div style={{ marginTop: 12, color: "#6b7280", fontWeight: 700 }}>
                   טוען מועמדים מהשרת...
                 </div>
@@ -1155,9 +1529,7 @@ export default function Research() {
                         apprentice={applicant}
                         /* onClick handler removed: using profile button instead */
                       >
-                        {/* Only show approve/decline buttons in real mode */}
-                        {isReal && (
-                          <div className="applicant-actions">
+                        <div className="applicant-actions">
                             <button
                               className="btn-approve"
                               onClick={(e) => {
@@ -1176,8 +1548,7 @@ export default function Research() {
                             >
                               ✗ דחה
                             </button>
-                          </div>
-                        )}
+                        </div>
                       </ResearchApprenticeCard>
                     </div>
                   ))}
@@ -1188,7 +1559,7 @@ export default function Research() {
         )}
 
 
-        {isReal && canEditThis && (
+        {isOwner && (
           <div style={styles.bottomActionsContainer}>
             <button
               style={styles.deleteButton}
@@ -1243,6 +1614,7 @@ export default function Research() {
         
         /* Research Apprentice Card Styles (Local) */
         .research-apprentice-card {
+          position: relative;
           box-sizing: border-box; /* CRITICAL fix for sizing */
           background: #ffffff;
           border-radius: 12px; /* Slightly tighter radius */
@@ -1291,6 +1663,20 @@ export default function Research() {
           background: linear-gradient(135deg, #e8f5f2 0%, #f0fdf9 100%);
           font-size: 1.5rem; /* Reduced icon size */
           color: #94a3b8;
+        }
+
+        .rac-mentor-tag {
+          position: absolute;
+          top: 8px;
+          right: 8px;
+          background: #eef2ff;
+          color: #4338ca;
+          font-size: 0.7rem;
+          font-weight: 700;
+          padding: 2px 10px;
+          border-radius: 12px;
+          border: 1px solid #c7d2fe;
+          z-index: 1;
         }
 
         .rac-name {
@@ -1556,6 +1942,57 @@ export default function Research() {
           transform: translateY(-1px);
         }
 
+        .btn-remove {
+          background: #1f2937;
+          color: white;
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+        }
+        .btn-remove:hover {
+          background: #111827;
+          transform: translateY(-1px);
+          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Mentor Permission Toggles */
+        .mentor-permissions-toggles {
+          width: 100%;
+          margin-top: 0.5rem;
+          padding: 0.5rem 0;
+          border-top: 1px solid #f3f4f6;
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+        }
+
+        .permissions-title {
+          font-size: 0.7rem;
+          font-weight: 600;
+          color: #4338ca;
+          margin-bottom: 2px;
+        }
+
+        .permission-toggle-label {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          font-size: 0.75rem;
+          color: #4b5563;
+          cursor: pointer;
+          padding: 2px 0;
+        }
+
+        .permission-toggle-label:hover {
+          color: #2c2c6c;
+        }
+
+        .permission-checkbox {
+          width: 14px;
+          height: 14px;
+          accent-color: #6cd5bf;
+          cursor: pointer;
+          flex-shrink: 0;
+        }
+
         /* Mobile Responsive Adjustments */
         @media (max-width: 768px) {
           .research-layout { 
@@ -1593,6 +2030,7 @@ export default function Research() {
           .researchSelect {
             width: 100% !important;
             max-width: 100% !important;
+            min-width: 0 !important;
           }
           
           /* Container for Dropdown and Toggle: Force Stack */
@@ -1620,6 +2058,40 @@ export default function Research() {
              gap: 12px;
           }
         }
+
+        /* Tablet: action bar wraps more aggressively */
+        @media (max-width: 1024px) {
+          .rd-action-bar {
+            flex-direction: column !important;
+            align-items: stretch !important;
+          }
+          .rd-action-bar > div {
+            width: 100% !important;
+            justify-content: center !important;
+            flex-wrap: wrap !important;
+          }
+          .action-bar-controls {
+            flex-wrap: wrap !important;
+          }
+        }
+
+        /* Small mobile: accordion padding, file card, owner ticket */
+        @media (max-width: 640px) {
+          .accordion-header {
+            padding: 12px 16px;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .rd-file-card {
+            flex-direction: column;
+            align-items: flex-start;
+          }
+          .rd-owner-ticket {
+            gap: 6px !important;
+            padding: 6px 8px !important;
+          }
+        }
       `}</style>
     </div>
   );
@@ -1629,22 +2101,22 @@ export default function Research() {
 
 const Section = ({ title, children }) => (
   <div style={{ marginBottom: 20 }}>
-    <h3 style={styles.sectionTitle}>{title}</h3>
+    <h3 className="rd-section-title" style={styles.sectionTitle}>{title}</h3>
     {children}
   </div>
 );
 
 const DetailItem = ({ label, value }) => (
   <div>
-    <div style={styles.label}>{label}</div>
-    <div style={styles.value}>{value}</div>
+    <div className="rd-label" style={styles.label}>{label}</div>
+    <div className="rd-value" style={styles.value}>{value}</div>
   </div>
 );
 
 const SidebarItem = ({ label, value }) => (
   <div style={styles.sidebarItem}>
-    <div style={styles.sidebarLabel}>{label}</div>
-    <div style={styles.sidebarValue}>{value}</div>
+    <div className="rd-sidebar-label" style={styles.sidebarLabel}>{label}</div>
+    <div className="rd-sidebar-value" style={styles.sidebarValue}>{value}</div>
   </div>
 );
 
@@ -1816,6 +2288,7 @@ const styles = {
   sidebarItem: {
     display: "flex",
     justifyContent: "space-between",
+    flexWrap: "wrap",
     marginBottom: 12,
     fontSize: 14,
     gap: 10,

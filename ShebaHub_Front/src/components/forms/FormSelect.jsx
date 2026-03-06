@@ -8,6 +8,7 @@ const FormSelect = ({
   options,
   error,
   placeholder,
+  disabled,
 }) => {
   return (
     <div style={{ marginBottom: "1rem" }}>
@@ -18,6 +19,7 @@ const FormSelect = ({
         name={name}
         value={value}
         onChange={onChange}
+        disabled={disabled}
         style={{
           ...styles.select,
           borderColor: error ? "red" : "#ccc",

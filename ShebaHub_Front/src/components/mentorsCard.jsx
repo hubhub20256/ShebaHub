@@ -98,20 +98,6 @@ export default function MentorsCard({ mentor }) {
           </div>
 
           <div className="apprentice-detail-row">
-            <span className="apprentice-detail-label">מוסד לימודים:</span>
-            <span className="apprentice-detail-value" title={mentor.Educational_institution}>
-              {mentor.Educational_institution}
-            </span>
-          </div>
-
-          <div className="apprentice-detail-row">
-            <span className="apprentice-detail-label">אימייל:</span>
-            <span className="apprentice-detail-value" title={mentor.email}>
-              {mentor.email}
-            </span>
-          </div>
-
-          <div className="apprentice-detail-row">
             <span className="apprentice-detail-label">מין:</span>
             <span className="apprentice-detail-value">{mentor.gender || "לא צוין"}</span>
           </div>

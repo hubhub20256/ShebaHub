@@ -1,8 +1,10 @@
 import React from 'react';
+import usePageTitle from '../hooks/usePageTitle';
 // שים לב לנתיב המעודכן: יוצאים מ-pages ונכנסים ל-styles
-import '../styles/About.css'; 
+import '../styles/About.css';
 
 const About = () => {
+  usePageTitle("אודות");
   return (
     <div className="about-container">
       <h1 className="about-header">אודות Sheba-Hub</h1>
