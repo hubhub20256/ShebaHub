@@ -1,27 +1,28 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import toast from "react-hot-toast";
 import "../styles/CreateResearch.css";
 import { profilesAPI, researchAPI } from "../services/api";
-
-const ISRAEL_CITIES = [
-  "תל אביב-יפו", "ירושלים", "חיפה", "ראשון לציון", "פתח תקווה", "אשדוד", "נתניה", 
-  "באר שבע", "בני ברק", "חולון", "רמת גן", "רחובות", "אשקלון", "בת ים", "הרצליה", "כפר סבא", "אחר"
-];
+import usePageTitle from "../hooks/usePageTitle";
+import { scrollToFirstError, validateFile } from "../utils/formValidation";
+import { HOSPITAL_GROUPS, ALL_HOSPITALS } from "../data/hospitals";
 
 export default function CreateResearch() {
   const { id } = useParams();
   const isEditMode = Boolean(id);
+  usePageTitle(isEditMode ? "עריכת מחקר" : "יצירת מחקר");
   const navigate = useNavigate();
   const [form, setForm] = useState({
     researchName: "",
     description: "",
     researchArea: "",
     mentors: "",
-    teamSize: "", 
+    teamSize: "",
     startDate: "",
+    estimatedCompletionDate: "",
     weeklyHours: "",
-    durationWeeks: "",
-    compensation: "",
+    durationMonths: "",
+    compensation: [],
     workMode: "",
     requirements: "",
     skillsAndTools: "",
@@ -29,7 +30,7 @@ export default function CreateResearch() {
     location: "",
     status: "",
     helsinkiApproval: "",
-    dataType: "", 
+    dataType: "",
     contract: null
   });
 
@@ -41,6 +42,7 @@ export default function CreateResearch() {
 
   const [isSaving, setIsSaving] = useState(false);
   const [submitError, setSubmitError] = useState(null);
+  const [errors, setErrors] = useState({});
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -53,8 +55,17 @@ export default function CreateResearch() {
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
+    if (file) {
+      const error = validateFile(file, { type: 'document' });
+      if (error) {
+        setErrors(prev => ({ ...prev, contract: error }));
+        e.target.value = '';
+        return;
+      }
+      setErrors(prev => { const next = { ...prev }; delete next.contract; return next; });
+      setRemoveContract(false);
+    }
     setForm(prev => ({ ...prev, contract: file }));
-    if (file) setRemoveContract(false);
   };
 
   useEffect(() => {
@@ -62,8 +73,14 @@ export default function CreateResearch() {
 
     const checkMentor = async () => {
       try {
-        await profilesAPI.getMyMentorProfile();
-        if (!cancelled) setIsMentor(true);
+        const profile = await profilesAPI.getMyMentorProfile();
+        if (!cancelled) {
+          setIsMentor(true);
+          // Auto-add owner as default mentor on create (not edit)
+          if (!isEditMode && profile?.name) {
+            setForm(prev => prev.mentors ? prev : { ...prev, mentors: profile.name });
+          }
+        }
       } catch {
         if (!cancelled) {
           setIsMentor(false);
@@ -76,7 +93,7 @@ export default function CreateResearch() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [isEditMode]);
 
   useEffect(() => {
     let cancelled = false;
@@ -98,9 +115,10 @@ export default function CreateResearch() {
           mentors: data?.mentors || "",
           teamSize: data?.teamSize != null ? String(data.teamSize) : "",
           startDate: data?.startDate || "",
+          estimatedCompletionDate: data?.estimatedCompletionDate || "",
           weeklyHours: data?.weeklyHours != null ? String(data.weeklyHours) : "",
-          durationWeeks: data?.durationWeeks != null ? String(data.durationWeeks) : "",
-          compensation: data?.compensation || "",
+          durationMonths: data?.durationMonths != null ? String(data.durationMonths) : "",
+          compensation: Array.isArray(data?.compensation) ? data.compensation : [],
           workMode: data?.workMode || "",
           requirements: data?.requirements || "",
           skillsAndTools: data?.skillsAndTools || "",
@@ -135,22 +153,83 @@ export default function CreateResearch() {
     setSubmitError(null);
     setIsSaving(true);
 
+    // Client-side validation
+    const newErrors = {};
+    if (!form.researchName) newErrors.researchName = "שדה חובה";
+    if (!form.description) newErrors.description = "שדה חובה";
+    if (!form.researchArea) newErrors.researchArea = "שדה חובה";
+    if (!form.mentors) newErrors.mentors = "שדה חובה";
+    if (!form.teamSize) newErrors.teamSize = "שדה חובה";
+    if (!form.startDate) newErrors.startDate = "שדה חובה";
+    if (!form.weeklyHours) newErrors.weeklyHours = "שדה חובה";
+    if (!form.durationMonths) newErrors.durationMonths = "שדה חובה";
+    if (!form.compensation || form.compensation.length === 0) newErrors.compensation = "שדה חובה";
+    if (!form.workMode) newErrors.workMode = "שדה חובה";
+    if (!form.location) newErrors.location = "שדה חובה";
+    if (!form.status) newErrors.status = "שדה חובה";
+
+    // Bounds validation
+    if (form.weeklyHours && (Number(form.weeklyHours) < 1 || Number(form.weeklyHours) > 168)) {
+      newErrors.weeklyHours = "שעות שבועיות חייבות להיות בין 1 ל-168";
+    }
+    if (form.durationMonths && (Number(form.durationMonths) < 1 || Number(form.durationMonths) > 120)) {
+      newErrors.durationMonths = "משך מחקר חייב להיות בין 1 ל-120 חודשים";
+    }
+    if (form.teamSize && (Number(form.teamSize) < 1 || Number(form.teamSize) > 500)) {
+      newErrors.teamSize = "גודל צוות חייב להיות בין 1 ל-500";
+    }
+    const today = new Date().toISOString().split('T')[0];
+    if (form.startDate && form.startDate < today) {
+      newErrors.startDate = "לא ניתן לבחור תאריך שעבר";
+    }
+    if (form.estimatedCompletionDate && form.estimatedCompletionDate < today) {
+      newErrors.estimatedCompletionDate = "לא ניתן לבחור תאריך שעבר";
+    }
+    if (form.startDate && form.estimatedCompletionDate && form.estimatedCompletionDate <= form.startDate) {
+      newErrors.estimatedCompletionDate = "תאריך סיום חייב להיות אחרי תאריך התחלה";
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      setTimeout(() => scrollToFirstError(newErrors), 100);
+      setIsSaving(false);
+      return;
+    }
+    setErrors({});
+
     try {
       if (isEditMode) {
         await researchAPI.updateMyResearch(id, form, { removeContract });
-        alert("המחקר עודכן בהצלחה");
-        navigate(`/research/${id}`, { state: { source: "real" } });
+        toast.success("המחקר עודכן בהצלחה");
+        navigate(`/research/${id}`);
       } else {
         await researchAPI.createMyResearch(form);
-        alert("המחקר נשמר בהצלחה");
-        navigate("/researches", { state: { showReal: true } });
+        toast.success("המחקר נשמר בהצלחה");
+        navigate("/researches");
       }
     } catch (err) {
-      const message =
-        err?.data?.detail ||
-        (typeof err?.data === "object" ? "שגיאה בשמירת המחקר" : null) ||
-        "שגיאה בשמירת המחקר";
+      const errMsg = err?.data?.message || err?.data?.detail || "";
+      const isEmailNotVerified =
+        err?.status === 403 &&
+        typeof errMsg === "string" &&
+        errMsg.toLowerCase().includes("verify your email");
+      const message = isEmailNotVerified
+        ? "יש לאמת את כתובת האימייל לפני יצירת מחקר. בדוק/י את תיבת הדואר הנכנס."
+        : errMsg ||
+          (typeof err?.data === "object" ? "שגיאה בשמירת המחקר" : null) ||
+          "שגיאה בשמירת המחקר";
       setSubmitError(message);
+      if (typeof err?.data === "object" && err.data) {
+        const serverErrors = {};
+        for (const [key, val] of Object.entries(err.data.details || err.data)) {
+          if (Array.isArray(val)) serverErrors[key] = val[0];
+          else if (typeof val === 'string' && key !== 'detail' && key !== 'code' && key !== 'message') serverErrors[key] = val;
+        }
+        if (Object.keys(serverErrors).length > 0) {
+          setErrors(serverErrors);
+          setTimeout(() => scrollToFirstError(serverErrors), 100);
+        }
+      }
     } finally {
       setIsSaving(false);
     }
@@ -176,10 +255,10 @@ export default function CreateResearch() {
         
         {/* Full Width Section for Name and Description for better mobile/desktop flow */}
         <div className="cr-full-width">
-          <InputField label="שם המחקר" name="researchName" value={form.researchName} onChange={handleChange} required={true} />
+          <InputField label="שם המחקר" name="researchName" value={form.researchName} onChange={handleChange} required={true} error={errors.researchName} />
         </div>
         <div className="cr-full-width">
-          <TextAreaField label="תיאור המחקר" name="description" value={form.description} onChange={handleChange} required={true} />
+          <TextAreaField label="תיאור המחקר" name="description" value={form.description} onChange={handleChange} required={true} error={errors.description} />
         </div>
 
         {/* 2-Column Grid */}
@@ -194,93 +273,128 @@ export default function CreateResearch() {
               onChange={handleChange}
               placeholder={`לדוגמה: בינה מלאכותית, למידת מכונה, קרדיולוגיה`}
               required={true}
+              error={errors.researchArea}
             />
-            <InputField
+            <MentorSearchField
               label="מנחים"
-              name="mentors"
               value={form.mentors}
+              onChange={(val) => updateField("mentors", val)}
+              required={true}
+              error={errors.mentors}
+            />
+            
+            <InputField
+              label="גודל צוות, לא כולל מנחים"
+              name="teamSize"
+              value={form.teamSize}
               onChange={handleChange}
-              placeholder={`לדוגמה: ד"ר כהן, פרופ' לוי`}
+              type="number"
+              min="1"
+              placeholder="סה״כ חברי צוות"
               required={true}
+              error={errors.teamSize}
             />
-            
-            <InputField 
-              label="גודל הצוות" 
-              name="teamSize" 
-              value={form.teamSize} 
-              onChange={handleChange} 
-              type="number" 
-              min="1" 
-              placeholder="מספר מתלמדים"
+            <DatePickerField
+              label="תאריך תחילת המחקר"
+              name="startDate"
+              value={form.startDate}
+              onChange={(val) => updateField("startDate", val)}
               required={true}
+              minDate={new Date().toISOString().split('T')[0]}
+              error={errors.startDate}
             />
-            
-            <DatePickerField 
-              label="תאריך תחילת המחקר" 
-              name="startDate" 
-              value={form.startDate} 
-              onChange={(val) => updateField("startDate", val)} 
-              required={true}
-            />
-
-            <InputField 
-              label="היקף שעות זמינות שבועי" 
-              name="weeklyHours" 
-              value={form.weeklyHours} 
-              onChange={handleChange} 
-              type="number" 
-              min="1" 
-              required={true}
+            <DatePickerField
+              label="תאריך סיום משוער"
+              name="estimatedCompletionDate"
+              value={form.estimatedCompletionDate}
+              onChange={(val) => updateField("estimatedCompletionDate", val)}
+              required={false}
+              minDate={form.startDate || new Date().toISOString().split('T')[0]}
+              error={errors.estimatedCompletionDate}
             />
 
-            <InputField 
-              label="משך המחקר (בשבועות)" 
-              name="durationWeeks" 
-              value={form.durationWeeks} 
-              onChange={handleChange} 
-              type="number" 
-              min="1" 
+            <InputField
+              label="היקף שעות זמינות שבועי"
+              name="weeklyHours"
+              value={form.weeklyHours}
+              onChange={handleChange}
+              type="number"
+              min="1"
               required={true}
+              error={errors.weeklyHours}
             />
 
-            <CustomSelectField 
-              label="תגמול" 
-              value={form.compensation} 
-              onChange={(val) => updateField("compensation", val)}
-              options={["מלגה", "שכר", "קרדיט אקדמי", "ללא תגמול / התנדבות"]}
-              placeholder="בחרי סוג תגמול"
+            <InputField
+              label="משך המחקר (בחודשים)"
+              name="durationMonths"
+              value={form.durationMonths}
+              onChange={handleChange}
+              type="number"
+              min="1"
               required={true}
+              error={errors.durationMonths}
             />
+
+            <div className="cr-field">
+              <label className="cr-label">סוגי תגמול <span className="cr-required-star">*</span></label>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 4 }}>
+                {["מלגה", "שכר", "קרדיט אקדמי", "ללא תגמול / התנדבות", "גמיש"].map((opt) => (
+                  <button
+                    key={opt}
+                    type="button"
+                    onClick={() => {
+                      setForm((prev) => {
+                        const types = [...(prev.compensation || [])];
+                        if (types.includes(opt)) return { ...prev, compensation: types.filter(t => t !== opt) };
+                        return { ...prev, compensation: [...types, opt] };
+                      });
+                    }}
+                    className={`cr-toggle-btn ${(form.compensation || []).includes(opt) ? "cr-toggle-btn-active" : ""}`}
+                    style={{ fontSize: 12, padding: "5px 10px" }}
+                  >
+                    {opt}
+                  </button>
+                ))}
+              </div>
+              {errors.compensation && <span className="cr-error">{errors.compensation}</span>}
+            </div>
              
-             <CustomSelectField 
-              label="מיקום" 
-              value={form.location} 
+             <HospitalSelectField
+              label="מיקום"
+              value={form.location}
               onChange={(val) => updateField("location", val)}
-              options={ISRAEL_CITIES}
-              placeholder="בחרי עיר"
               required={true}
+              error={errors.location}
             />
           </div>
 
           {/* Left Column (RTL) */}
           <div className="cr-column">
             
-            <CustomSelectField 
-              label="אופן העבודה" 
-              value={form.workMode} 
+            <CustomSelectField
+              label="אופן העבודה"
+              value={form.workMode}
               onChange={(val) => updateField("workMode", val)}
               options={["פרונטלי", "היברידי", "מרחוק"]}
               placeholder="בחרי אופן עבודה"
               required={true}
+              error={errors.workMode}
             />
 
-            <CustomSelectField 
-              label="סטטוס המחקר" 
-              value={form.status} 
+            <CustomSelectField
+              label="סטטוס המחקר"
+              value={form.status}
               onChange={(val) => updateField("status", val)}
-              options={["פעיל", "מגייס", "הסתיים", "בהקפאה"]}
+              options={[
+                { value: "open", label: "פעיל" },
+                { value: "in_progress", label: "מגייס" },
+                { value: "completed", label: "הסתיים" },
+                { value: "closed", label: "בהקפאה" },
+                { value: "draft", label: "טיוטה" },
+              ]}
               placeholder="בחרי סטטוס"
               required={true}
+              error={errors.status}
             />
             
             <InputField label="אישור הלסינקי" name="helsinkiApproval" value={form.helsinkiApproval} onChange={handleChange} placeholder="מספר אישור / סטטוס" required={false} />
@@ -314,9 +428,9 @@ export default function CreateResearch() {
                     type="button"
                     onClick={() => setRemoveContract((v) => !v)}
                     style={{
-                      border: "1px solid rgba(0,0,0,0.12)",
-                      background: removeContract ? "#111827" : "white",
-                      color: removeContract ? "white" : "#111827",
+                      border: "1px solid var(--border-color, rgba(0,0,0,0.12))",
+                      background: removeContract ? "#111827" : "var(--card-bg, white)",
+                      color: removeContract ? "white" : "var(--text-color, #111827)",
                       padding: "6px 10px",
                       borderRadius: 10,
                       fontWeight: 800,
@@ -340,6 +454,7 @@ export default function CreateResearch() {
               file={form.contract}
               onChange={handleFileChange}
               required={!isEditMode && !existingContractName}
+              error={errors.contract}
             />
           </div>
 
@@ -366,40 +481,44 @@ function Label({ text, required }) {
   );
 }
 
-function InputField({ label, name, value, onChange, type = "text", placeholder, min, required = false }) {
+function InputField({ label, name, value, onChange, type = "text", placeholder, min, required = false, error }) {
   return (
     <div className="cr-field">
       <Label text={label} required={required} />
-      <input 
-        type={type} 
-        name={name} 
-        value={value} 
-        onChange={onChange} 
-        placeholder={placeholder} 
+      <input
+        type={type}
+        name={name}
+        value={value}
+        onChange={onChange}
+        placeholder={placeholder}
         min={min}
         className="cr-input"
+        style={error ? { borderColor: '#b91c1c' } : undefined}
         required={required}
       />
+      {error && <span style={{ color: '#b91c1c', fontSize: '0.75rem' }}>{error}</span>}
     </div>
   );
 }
 
-function TextAreaField({ label, name, value, onChange, required = false }) {
+function TextAreaField({ label, name, value, onChange, required = false, error }) {
   return (
     <div className="cr-field">
       <Label text={label} required={required} />
-      <textarea 
-        name={name} 
-        value={value} 
-        onChange={onChange} 
+      <textarea
+        name={name}
+        value={value}
+        onChange={onChange}
         className="cr-textarea"
+        style={error ? { borderColor: '#b91c1c' } : undefined}
         required={required}
       />
+      {error && <span style={{ color: '#b91c1c', fontSize: '0.75rem' }}>{error}</span>}
     </div>
   );
 }
 
-function CustomSelectField({ label, value, onChange, options, placeholder, required = false }) {
+function CustomSelectField({ label, value, onChange, options, placeholder, required = false, error }) {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef(null);
 
@@ -413,20 +532,26 @@ function CustomSelectField({ label, value, onChange, options, placeholder, requi
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Support both plain strings and {value, label} objects
+  const getOptionValue = (opt) => typeof opt === 'object' ? opt.value : opt;
+  const getOptionLabel = (opt) => typeof opt === 'object' ? opt.label : opt;
+  const displayLabel = options.find(opt => getOptionValue(opt) === value);
+
   const handleSelect = (option) => {
-    onChange(option);
+    onChange(getOptionValue(option));
     setIsOpen(false);
   };
 
   return (
     <div className="cr-field" ref={containerRef}>
       <Label text={label} required={required} />
-      <div 
-        onClick={() => setIsOpen(!isOpen)} 
+      <div
+        onClick={() => setIsOpen(!isOpen)}
         className="cr-select-trigger"
+        style={error ? { borderColor: '#b91c1c' } : undefined}
       >
         <span style={{ color: value ? "inherit" : "#999" }}>
-          {value || placeholder}
+          {displayLabel ? getOptionLabel(displayLabel) : placeholder}
         </span>
         <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
           <path d="M7 10l5 5 5-5z" />
@@ -437,15 +562,330 @@ function CustomSelectField({ label, value, onChange, options, placeholder, requi
         <div className="cr-dropdown-menu">
           {options.map((option) => (
             <div
-              key={option}
+              key={getOptionValue(option)}
               onClick={() => handleSelect(option)}
-              className={`cr-dropdown-item ${value === option ? "cr-dropdown-item-selected" : ""}`}
+              className={`cr-dropdown-item ${value === getOptionValue(option) ? "cr-dropdown-item-selected" : ""}`}
             >
-              {option}
+              {getOptionLabel(option)}
             </div>
           ))}
         </div>
       )}
+      {error && <span style={{ color: '#b91c1c', fontSize: '0.75rem' }}>{error}</span>}
+    </div>
+  );
+}
+
+function HospitalSelectField({ label, value, onChange, required = false, error }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const [isOther, setIsOther] = useState(false);
+  const [customValue, setCustomValue] = useState("");
+  const containerRef = useRef(null);
+
+  // Detect custom (non-hospital) value on mount / when value changes externally (edit mode)
+  useEffect(() => {
+    if (value && value !== "אחר" && !ALL_HOSPITALS.includes(value)) {
+      setIsOther(true);
+      setCustomValue(value);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (containerRef.current && !containerRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const filteredGroups = HOSPITAL_GROUPS.map((group) => {
+    if (!search.trim()) return group;
+    const filtered = group.hospitals.filter((h) =>
+      h.toLowerCase().includes(search.trim().toLowerCase())
+    );
+    return filtered.length > 0 ? { ...group, hospitals: filtered } : null;
+  }).filter(Boolean);
+
+  const handleSelect = (hospital) => {
+    if (hospital === "אחר") {
+      setIsOther(true);
+      setCustomValue("");
+      onChange("");
+      setIsOpen(false);
+      setSearch("");
+      return;
+    }
+    onChange(hospital);
+    setIsOpen(false);
+    setSearch("");
+  };
+
+  const handleBackToList = () => {
+    setIsOther(false);
+    setCustomValue("");
+    onChange("");
+  };
+
+  if (isOther) {
+    return (
+      <div className="cr-field" style={{ position: "relative" }}>
+        <Label text={label} required={required} />
+        <input
+          type="text"
+          value={customValue}
+          onChange={(e) => {
+            setCustomValue(e.target.value);
+            onChange(e.target.value);
+          }}
+          placeholder="הזיני מיקום..."
+          className="cr-select-trigger"
+          style={{
+            ...(error ? { borderColor: '#b91c1c' } : {}),
+            fontSize: 13,
+            direction: "rtl",
+            cursor: "text",
+          }}
+        />
+        <button
+          type="button"
+          onClick={handleBackToList}
+          style={{
+            background: "none",
+            border: "none",
+            color: "var(--cr-accent-teal, #00897b)",
+            fontSize: 12,
+            cursor: "pointer",
+            padding: "4px 0",
+            textDecoration: "underline",
+          }}
+        >
+          חזרה לרשימה
+        </button>
+        {error && <span style={{ color: '#b91c1c', fontSize: '0.75rem' }}>{error}</span>}
+      </div>
+    );
+  }
+
+  return (
+    <div className="cr-field" ref={containerRef} style={{ position: "relative" }}>
+      <Label text={label} required={required} />
+      <div
+        onClick={() => setIsOpen(!isOpen)}
+        className="cr-select-trigger"
+        style={error ? { borderColor: '#b91c1c' } : undefined}
+      >
+        <span style={{ color: value ? "inherit" : "#999", fontSize: value ? 12 : 14 }}>
+          {value || "בחרי בית חולים"}
+        </span>
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M7 10l5 5 5-5z" />
+        </svg>
+      </div>
+
+      {isOpen && (
+        <div className="cr-dropdown-menu" style={{ maxHeight: 300, overflowY: "auto" }}>
+          <div style={{ position: "sticky", top: 0, background: "var(--card-bg, #fff)", padding: "6px 8px", borderBottom: "1px solid var(--border-color, #eee)", zIndex: 1 }}>
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="חיפוש בית חולים..."
+              autoFocus
+              style={{
+                width: "100%",
+                padding: "6px 10px",
+                border: "1px solid var(--border-color, #ddd)",
+                borderRadius: 6,
+                fontSize: 13,
+                outline: "none",
+                direction: "rtl",
+                background: "var(--card-bg, #fff)",
+                color: "var(--text-color, #333)",
+              }}
+              onClick={(e) => e.stopPropagation()}
+            />
+          </div>
+          {filteredGroups.length === 0 && (
+            <div style={{ padding: "10px 12px", color: "var(--text-color, #999)", fontSize: 13, textAlign: "center" }}>
+              לא נמצאו תוצאות
+            </div>
+          )}
+          {filteredGroups.map((group) => (
+            <div key={group.region}>
+              <div style={{
+                padding: "6px 12px",
+                fontSize: 11,
+                fontWeight: 700,
+                color: "var(--cr-accent-teal, #00897b)",
+                background: "var(--card-bg, #f5f5f5)",
+                position: "sticky",
+                top: 42,
+                zIndex: 1,
+              }}>
+                {group.region}
+              </div>
+              {group.hospitals.map((hospital) => (
+                <div
+                  key={hospital}
+                  onClick={() => handleSelect(hospital)}
+                  className={`cr-dropdown-item ${value === hospital ? "cr-dropdown-item-selected" : ""}`}
+                  style={{ fontSize: 12, paddingRight: 20 }}
+                >
+                  {hospital}
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+      )}
+      {error && <span style={{ color: '#b91c1c', fontSize: '0.75rem' }}>{error}</span>}
+    </div>
+  );
+}
+
+function MentorSearchField({ label, value, onChange, required = false, error }) {
+  const [mentors, setMentors] = useState([]);
+  const [search, setSearch] = useState("");
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const containerRef = useRef(null);
+
+  useEffect(() => {
+    profilesAPI.listMentors().then((data) => {
+      if (Array.isArray(data)) setMentors(data);
+    }).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (containerRef.current && !containerRef.current.contains(e.target)) {
+        setShowSuggestions(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Parse current value into array of names
+  const selectedNames = value ? value.split(",").map((s) => s.trim()).filter(Boolean) : [];
+
+  const filtered = mentors.filter((m) => {
+    if (!search.trim()) return false;
+    const name = m.name || "";
+    return name.includes(search.trim()) && !selectedNames.includes(name);
+  });
+
+  const addMentor = (name) => {
+    const updated = [...selectedNames, name];
+    onChange(updated.join(", "));
+    setSearch("");
+    setShowSuggestions(false);
+  };
+
+  const removeMentor = (name) => {
+    const updated = selectedNames.filter((n) => n !== name);
+    onChange(updated.join(", "));
+  };
+
+  const handleInputChange = (e) => {
+    setSearch(e.target.value);
+    setShowSuggestions(true);
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter" && search.trim()) {
+      e.preventDefault();
+      addMentor(search.trim());
+    }
+  };
+
+  const handleBlur = () => {
+    // Small delay so dropdown click can fire first
+    setTimeout(() => {
+      if (search.trim()) {
+        addMentor(search.trim());
+      }
+      setShowSuggestions(false);
+    }, 150);
+  };
+
+  return (
+    <div className="cr-field" ref={containerRef} style={{ position: "relative" }}>
+      <Label text={label} required={required} />
+      {selectedNames.length > 0 && (
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 8 }}>
+          {selectedNames.map((name) => (
+            <span
+              key={name}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 4,
+                background: "var(--card-bg, #e0f2f1)",
+                color: "#6cd5bf",
+                border: "1px solid var(--border-color, #b2dfdb)",
+                borderRadius: 16,
+                padding: "4px 10px",
+                fontSize: 13,
+                fontWeight: 500,
+              }}
+            >
+              {name}
+              <button
+                type="button"
+                onClick={() => removeMentor(name)}
+                style={{
+                  background: "none",
+                  border: "none",
+                  color: "var(--text-color, #00897b)",
+                  cursor: "pointer",
+                  fontSize: 15,
+                  lineHeight: 1,
+                  padding: 0,
+                  marginRight: 2,
+                }}
+              >
+                ×
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+      <input
+        type="text"
+        value={search}
+        onChange={handleInputChange}
+        onFocus={() => { if (search.trim()) setShowSuggestions(true); }}
+        onBlur={handleBlur}
+        onKeyDown={handleKeyDown}
+        placeholder="הקלידו שם מנחה וחפשו מהרשימה, או הקישו Enter להוספה ידנית"
+        className="cr-input"
+        style={error ? { borderColor: "#b91c1c" } : undefined}
+      />
+      {showSuggestions && filtered.length > 0 && (
+        <div
+          className="cr-dropdown-menu"
+          style={{ maxHeight: 200, overflowY: "auto", position: "absolute", left: 0, right: 0, zIndex: 10 }}
+        >
+          {filtered.map((m) => (
+            <div
+              key={m.id}
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => addMentor(m.name)}
+              className="cr-dropdown-item"
+              style={{ fontSize: 13, padding: "8px 12px", cursor: "pointer" }}
+            >
+              <span>{m.name}</span>
+              {m.institution && (
+                <span style={{ opacity: 0.6, fontSize: 11, marginRight: 8 }}>{m.institution}</span>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+      {error && <span style={{ color: "#b91c1c", fontSize: "0.75rem" }}>{error}</span>}
     </div>
   );
 }
@@ -473,21 +913,22 @@ function ToggleField({ label, value, onChange, options, required = false }) {
   );
 }
 
-function FileField({ label, name, file, onChange, required = false }) {
+function FileField({ label, name, file, onChange, required = false, error }) {
   return (
     <div className="cr-field">
       <Label text={label} required={required} />
       <div className="cr-file-wrapper">
-        <input type="file" name={name} id={`file-${name}`} onChange={onChange} className="cr-file-input" required={required} />
+        <input type="file" name={name} id={`file-${name}`} onChange={onChange} className="cr-file-input" required={required} accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" />
         <label htmlFor={`file-${name}`} className="cr-file-label">
           {file ? `קובץ נבחר: ${file.name}` : "לחץ להעלאת קובץ"}
         </label>
       </div>
+      {error && <span style={{ color: "#ef4444", fontSize: "0.85rem", marginTop: 4, display: "block" }}>{error}</span>}
     </div>
   );
 }
 
-function DatePickerField({ label, value, onChange, required = false }) {
+function DatePickerField({ label, value, onChange, required = false, minDate, error }) {
   const [isOpen, setIsOpen] = useState(false);
   const today = new Date();
   const [currentMonth, setCurrentMonth] = useState(today);
@@ -505,6 +946,7 @@ function DatePickerField({ label, value, onChange, required = false }) {
 
   const handleDayClick = (day) => {
     const dateStr = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    if (minDate && dateStr < minDate) return;
     onChange(dateStr);
     setIsOpen(false);
   };
@@ -523,7 +965,7 @@ function DatePickerField({ label, value, onChange, required = false }) {
   return (
     <div className="cr-field" ref={containerRef}>
       <Label text={label} required={required} />
-      <div className="cr-date-wrapper" onClick={() => setIsOpen(!isOpen)}>
+      <div className="cr-date-wrapper" onClick={() => setIsOpen(!isOpen)} style={error ? { borderColor: '#b91c1c' } : undefined}>
         <svg className="cr-calendar-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
           <line x1="16" y1="2" x2="16" y2="6"></line>
@@ -535,9 +977,10 @@ function DatePickerField({ label, value, onChange, required = false }) {
           readOnly
           value={value ? value.split("-").reverse().join("/") : ""}
           placeholder="בחרי תאריך"
-          className="cr-input cr-date-input" 
+          className="cr-input cr-date-input"
         />
       </div>
+      {error && <span style={{ color: '#b91c1c', fontSize: '0.75rem' }}>{error}</span>}
 
       {isOpen && (
         <div className="cr-calendar-popup">
@@ -553,7 +996,9 @@ function DatePickerField({ label, value, onChange, required = false }) {
             {Array.from({ length: startDay }).map((_, i) => <div key={`empty-${i}`} />)}
             {Array.from({ length: daysInMonth }).map((_, i) => {
               const day = i + 1;
-              const isSelected = value && parseInt(value.split("-")[2]) === day && 
+              const dateStr = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+              const isPast = minDate && dateStr < minDate;
+              const isSelected = value && parseInt(value.split("-")[2]) === day &&
                                  parseInt(value.split("-")[1]) === (currentMonth.getMonth() + 1) &&
                                  parseInt(value.split("-")[0]) === currentMonth.getFullYear();
               return (
@@ -561,7 +1006,9 @@ function DatePickerField({ label, value, onChange, required = false }) {
                   key={day}
                   type="button"
                   onClick={() => handleDayClick(day)}
+                  disabled={isPast}
                   className={`cr-day-btn ${isSelected ? "cr-day-btn-selected" : ""}`}
+                  style={isPast ? { opacity: 0.3, cursor: "not-allowed" } : undefined}
                 >
                   {day}
                 </button>

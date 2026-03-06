@@ -1,0 +1,236 @@
+.my-researches-page {
+  max-width: 56.25rem;
+  margin: 0 auto;
+  padding: 2.5rem 1rem;
+  font-family: "Rubik", system-ui, sans-serif;
+  color: #2c2c6c;
+}
+
+.my-researches-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.my-researches-title {
+  font-size: 2rem;
+  font-weight: 800;
+  margin-bottom: 0.5rem;
+}
+
+.my-researches-underline {
+  width: 3.125rem;
+  height: 0.25rem;
+  background: #6cd5bf;
+  margin: 0 auto;
+  border-radius: 0.125rem;
+}
+
+.my-researches-section {
+  margin-bottom: 2.5rem;
+}
+
+.my-researches-section-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  border-right: 0.25rem solid #ef67a0;
+  padding-right: 0.5rem;
+}
+
+.my-researches-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.my-researches-tab {
+  padding: 0.5rem 1.25rem;
+  border-radius: 1.5rem;
+  border: 1px solid #ddd;
+  background: white;
+  color: #666;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.875rem;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+
+.my-researches-tab:hover {
+  border-color: #6cd5bf;
+  color: #2c2c6c;
+}
+
+.my-researches-tab--active {
+  background: #2c2c6c;
+  color: white;
+  border-color: #2c2c6c;
+}
+
+.my-researches-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+@media (min-width: 640px) {
+  .my-researches-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.my-research-card {
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 0.75rem;
+  padding: 1.25rem;
+  background: white;
+  box-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, 0.04);
+  cursor: pointer;
+  transition: box-shadow 0.2s, transform 0.2s;
+}
+
+.my-research-card:hover {
+  box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.08);
+  transform: translateY(-2px);
+}
+
+.my-research-card--created {
+  border-right: 3px solid #6cd5bf;
+}
+
+.my-research-card-name {
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 0.375rem;
+  color: #2c2c6c;
+}
+
+.my-research-card-area {
+  font-size: 0.8125rem;
+  color: #666;
+  margin-bottom: 0.625rem;
+}
+
+.my-research-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.my-research-status-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 1rem;
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.my-research-card-date {
+  font-size: 0.75rem;
+  color: #999;
+}
+
+.my-research-card-note {
+  margin-top: 0.75rem;
+  padding: 0.625rem;
+  background: #f9fafb;
+  border-radius: 0.5rem;
+  font-size: 0.8125rem;
+  color: #4a4a8a;
+  border-right: 3px solid #6cd5bf;
+}
+
+.my-researches-loading,
+.my-researches-error,
+.my-researches-empty {
+  text-align: center;
+  padding: 2rem;
+  color: #666;
+  font-size: 0.9375rem;
+}
+
+.my-researches-error {
+  color: #b91c1c;
+}
+
+@media (max-width: 600px) {
+  .my-researches-page {
+    padding: 1.5rem 1rem;
+  }
+
+  .my-researches-title {
+    font-size: 1.75rem;
+  }
+
+  .my-researches-tabs {
+    gap: 0.375rem;
+  }
+
+  .my-researches-tab {
+    padding: 0.375rem 0.875rem;
+    font-size: 0.8125rem;
+  }
+}
+
+.my-research-card--invited {
+  border-right: 3px solid #6366f1;
+}
+
+.my-research-card-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.my-research-action-btn {
+  padding: 0.375rem 1rem;
+  border-radius: 0.5rem;
+  border: none;
+  font-weight: 600;
+  font-size: 0.8125rem;
+  cursor: pointer;
+  transition: opacity 0.2s;
+  font-family: inherit;
+}
+
+.my-research-action-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.my-research-action-btn--accept {
+  background: #10b981;
+  color: white;
+}
+
+.my-research-action-btn--accept:hover:not(:disabled) {
+  background: #059669;
+}
+
+.my-research-action-btn--decline {
+  background: white;
+  color: #ef4444;
+  border: 1px solid #ef4444;
+}
+
+.my-research-action-btn--decline:hover:not(:disabled) {
+  background: #fef2f2;
+}
+
+/* ===== DARK MODE ===== */
+[data-theme="dark"] .my-researches-page { color: var(--text-color); }
+[data-theme="dark"] .my-researches-tab { background: var(--card-bg); color: #aaa; border-color: var(--border-color); }
+[data-theme="dark"] .my-researches-tab:hover { color: var(--text-color); }
+[data-theme="dark"] .my-researches-tab--active { background: var(--primary-color); color: white; border-color: var(--primary-color); }
+[data-theme="dark"] .my-research-card { background: var(--card-bg); border-color: var(--border-color); }
+[data-theme="dark"] .my-research-card-name { color: var(--text-color); }
+[data-theme="dark"] .my-research-card-area { color: #aaa; }
+[data-theme="dark"] .my-research-card-date { color: #888; }
+[data-theme="dark"] .my-research-card-note { background: #2a2a3d; color: #b0b0b0; }
+[data-theme="dark"] .my-researches-loading,
+[data-theme="dark"] .my-researches-empty { color: #999; }
+[data-theme="dark"] .my-research-action-btn--decline { background: var(--card-bg); border-color: #ef4444; }
+[data-theme="dark"] .my-research-action-btn--decline:hover:not(:disabled) { background: #3a1c1c; }

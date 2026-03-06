@@ -72,3 +72,79 @@
   color: rgba(44, 44, 108, 0.85);
   font-size: 12px;
 }
+
+/* ===== DARK MODE for Research Detail Page ===== */
+[data-theme="dark"] .research-detail-page { color: var(--text-color) !important; }
+[data-theme="dark"] .research-detail-card { background: var(--card-bg) !important; border-color: var(--border-color) !important; }
+[data-theme="dark"] .rd-section-title { color: var(--text-color) !important; }
+[data-theme="dark"] .rd-text { color: #b0b0b0 !important; }
+[data-theme="dark"] .rd-info-box { background: #2a2a3d !important; border-color: var(--border-color) !important; }
+[data-theme="dark"] .rd-info-title { color: #e0e0e0 !important; }
+[data-theme="dark"] .rd-sidebar { background: var(--card-bg) !important; border-color: var(--border-color) !important; }
+[data-theme="dark"] .rd-sidebar-label { color: #aaa !important; }
+[data-theme="dark"] .rd-sidebar-value { color: var(--text-color) !important; }
+[data-theme="dark"] .rd-skill-tag { background: #2a2a3d !important; color: #b0b0b0 !important; border-color: var(--border-color) !important; }
+[data-theme="dark"] .rd-edit-btn { background: var(--card-bg) !important; color: #aaa !important; border-color: var(--border-color) !important; }
+[data-theme="dark"] .rd-action-bar { border-bottom-color: var(--border-color) !important; }
+[data-theme="dark"] .rd-secondary-btn { background: var(--card-bg) !important; color: var(--text-color) !important; border-color: var(--border-color) !important; }
+[data-theme="dark"] .rd-download-btn { background: var(--card-bg) !important; color: var(--primary-color) !important; border-color: var(--border-color) !important; }
+[data-theme="dark"] .rd-file-card { background: #1e2a2e !important; }
+[data-theme="dark"] .rd-file-name { color: var(--text-color) !important; }
+[data-theme="dark"] .rd-label { color: #b0b0b0 !important; }
+[data-theme="dark"] .rd-value { color: var(--text-color) !important; }
+[data-theme="dark"] .rd-divider { background: var(--border-color) !important; }
+
+[data-theme="dark"] .research-apprentice-card { background: var(--card-bg) !important; border-color: var(--border-color) !important; }
+[data-theme="dark"] .rac-name { color: var(--text-color) !important; }
+[data-theme="dark"] .rac-value { color: #aaa !important; }
+[data-theme="dark"] .rac-avatar-container { background: #2a2a3d !important; border-color: var(--border-color) !important; }
+[data-theme="dark"] .rac-avatar-placeholder { background: #2a2a3d !important; }
+[data-theme="dark"] .accordion-header { background: var(--card-bg) !important; border-color: var(--border-color) !important; }
+[data-theme="dark"] .accordion-header:hover { background: #2a2a3d !important; }
+[data-theme="dark"] .rac-actions-container { border-top-color: var(--border-color) !important; }
+
+/* ===== DARK MODE for Research Chat ===== */
+[data-theme="dark"] .research-chat-container .chat-messages-area { background: #1a1a2e !important; }
+[data-theme="dark"] .research-chat-container > div > div { background: var(--card-bg) !important; border-color: var(--border-color) !important; }
+[data-theme="dark"] .chat-bubble { background: #2a2a3d !important; border-color: var(--border-color) !important; color: var(--text-color) !important; }
+[data-theme="dark"] .chat-message--mine .chat-bubble { background: #1e3a3a !important; }
+[data-theme="dark"] .chat-message--pinned .chat-bubble { border-color: #fbbf24 !important; }
+[data-theme="dark"] .chat-sender-info span { color: #b0b0b0 !important; }
+[data-theme="dark"] .chat-sender-info span:first-child { color: var(--text-color) !important; }
+[data-theme="dark"] .chat-file-link { color: #6cd5bf !important; }
+[data-theme="dark"] .chat-settings-panel { background: #1a1a2e !important; border-color: var(--border-color) !important; color: var(--text-color) !important; }
+[data-theme="dark"] .chat-settings-panel label { color: #b0b0b0 !important; }
+[data-theme="dark"] .chat-settings-panel select { background: #2a2a3d !important; color: var(--text-color) !important; border-color: var(--border-color) !important; }
+
+/* Chat mention highlights */
+[data-theme="dark"] .chat-mention { color: #a5b4fc !important; background: #312e81 !important; }
+[data-theme="dark"] .chat-unread-dot { box-shadow: 0 0 6px rgba(239,68,68,0.5); }
+[data-theme="dark"] .mention-autocomplete { background: #2a2a3d !important; border-color: var(--border-color) !important; }
+[data-theme="dark"] .mention-autocomplete > div:hover { background: #312e81 !important; }
+
+/* Unread dot pulse animation */
+@keyframes chat-unread-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.7; transform: scale(1.2); }
+}
+
+/* ===== Mobile Responsive for Research Chat ===== */
+@media (max-width: 768px) {
+  .chat-messages-area {
+    height: 280px !important;
+  }
+  .chat-pinned-banner {
+    padding: 6px 10px !important;
+    font-size: 12px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .chat-messages-area {
+    height: 220px !important;
+    padding: 8px 10px !important;
+  }
+  .chat-message {
+    max-width: 92% !important;
+  }
+}

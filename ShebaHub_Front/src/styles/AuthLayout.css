@@ -72,49 +72,6 @@
   box-shadow: 0 0 0 4px rgba(55, 185, 163, 0.15);
 }
 
-/* ✅ Buttons inside auth — nicer, CreateResearch-like primary */
-/* Button like in the screenshot */
-.auth-card button {
-  width: auto;                 /* לא 100% */
-  min-width: 220px;            /* נותן מראה “גלולה” קבוע */
-  padding: 14px 44px;
-  border: 0;
-  border-radius: 999px;        /* pill */
-  font-weight: 800;
-  font-size: 1rem;
-  cursor: pointer;
-
-  background: #2c2c6c;         /* סגול כהה כמו בתמונה */
-  color: #ffffff;
-
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-
-  box-shadow: 0 14px 28px rgba(44, 44, 108, 0.25);
-  transition: transform 120ms ease, box-shadow 120ms ease, filter 120ms ease, opacity 120ms ease;
-}
-
-.auth-card button:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 18px 34px rgba(44, 44, 108, 0.28);
-  filter: brightness(1.02);
-}
-
-.auth-card button:active {
-  transform: translateY(0);
-  filter: brightness(0.98);
-}
-
-.auth-card button:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-  transform: none;
-  box-shadow: none;
-  filter: none;
-}
-
-
 .auth-footer {
   margin-top: 18px;
   font-size: 0.9rem;
@@ -129,7 +86,7 @@
   margin-right: 6px;
 }
 
-/* FORCE auth submit button to look like "אישור ושמירה" */
+/* Auth submit button — consolidated rule */
 .auth-card button,
 .auth-card input[type="submit"],
 .auth-card .form-button {
@@ -143,12 +100,15 @@
   background: #2c2c6c !important;
   color: #fff !important;
 
-  font-weight: 800 !important;
+  font-family: system-ui, -apple-system, "Segoe UI", Arial, sans-serif !important;
+  font-weight: 700 !important;
   font-size: 16px !important;
-  letter-spacing: 0.2px;
+  line-height: 1 !important;
+  letter-spacing: 0 !important;
+  text-align: center !important;
 
   display: block !important;
-  margin: 18px auto 0 !important; /* מרכז */
+  margin: 18px auto 0 !important;
   box-shadow: 0 14px 28px rgba(44, 44, 108, 0.25) !important;
 
   cursor: pointer;
@@ -169,22 +129,43 @@
   transform: translateY(0);
   filter: brightness(0.98);
 }
-/* Button text like "אישור ושמירה" */
-.auth-card button,
-.auth-card input[type="submit"],
-.auth-card .form-button {
-  font-family: system-ui, -apple-system, "Segoe UI", Arial, sans-serif !important;
-  font-weight: 700 !important;      /* פחות כבד מ-800 */
-  font-size: 16px !important;       /* קצת יותר גדול */
-  line-height: 1 !important;        /* שלא יישב נמוך */
-  letter-spacing: 0 !important;     /* בלי ריווח אותיות */
-  text-align: center !important;
+
+.auth-card button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none !important;
+  filter: none;
 }
 
 .auth-card button * {
-  font-weight: inherit !important;  /* אם יש span בפנים */
+  font-weight: inherit !important;
   font-size: inherit !important;
   line-height: inherit !important;
+}
+
+/* Reset eye-toggle button inside auth card — must NOT inherit pill styles */
+.auth-card .eye-toggle-btn,
+.auth-card .eye-toggle-btn:hover,
+.auth-card .eye-toggle-btn:active {
+  all: unset !important;
+  position: absolute !important;
+  left: 0.6rem !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  background: none !important;
+  border: none !important;
+  cursor: pointer !important;
+  padding: 4px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-width: 0 !important;
+  width: auto !important;
+  margin: 0 !important;
+  box-shadow: none !important;
+  color: inherit !important;
+  font-size: inherit !important;
 }
 
 @media (max-width: 360px) {

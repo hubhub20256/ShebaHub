@@ -37,7 +37,7 @@
   border: 1px solid rgba(0, 0, 0, 0.06);
   border-radius: 1rem;
   padding: 2rem;
-  background: white;
+  background: var(--card-bg);
   box-shadow: 0 0.75rem 2.5rem rgba(0, 0, 0, 0.03);
 }
 
@@ -340,3 +340,23 @@
     font-size: 1.75rem;
   }
 }
+
+/* ===== DARK MODE ===== */
+[data-theme="dark"] .create-research-page { color: var(--text-color) !important; }
+[data-theme="dark"] .create-research-card { border-color: var(--border-color) !important; }
+[data-theme="dark"] .cr-section-title { color: var(--text-color) !important; }
+[data-theme="dark"] .cr-label { color: #b0b0b0 !important; }
+[data-theme="dark"] .cr-input,
+[data-theme="dark"] .cr-textarea { background: #2b2b2b !important; border-color: var(--border-color) !important; color: var(--text-color) !important; }
+[data-theme="dark"] .cr-select-trigger { background: #2b2b2b !important; border-color: var(--border-color) !important; color: var(--text-color) !important; }
+[data-theme="dark"] .cr-dropdown-menu { background: #2b2b2b !important; border-color: var(--border-color) !important; }
+[data-theme="dark"] .cr-dropdown-item { border-bottom-color: var(--border-color) !important; color: var(--text-color) !important; }
+[data-theme="dark"] .cr-dropdown-item:hover,
+[data-theme="dark"] .cr-dropdown-item-selected { background: #3a3a4d !important; }
+[data-theme="dark"] .cr-file-label { background: #1e2a2e !important; }
+[data-theme="dark"] .cr-toggle-btn { background: var(--card-bg) !important; color: #aaa !important; border-color: var(--border-color) !important; }
+[data-theme="dark"] .cr-calendar-popup { background: var(--card-bg) !important; border-color: var(--border-color) !important; }
+[data-theme="dark"] .cr-calendar-nav-btn { color: #aaa !important; }
+[data-theme="dark"] .cr-day-label { color: #888 !important; }
+[data-theme="dark"] .cr-day-btn { color: var(--text-color) !important; }
+[data-theme="dark"] .cr-primary-btn { box-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, 0.3) !important; }

@@ -1,8 +1,10 @@
 import { useEffect } from "react";
 import homePagePic from "../assets/homePagePic.png";
+import usePageTitle from "../hooks/usePageTitle";
 import "../styles/Home.css";
 
 const Home = () => {
+  usePageTitle("דף הבית");
   useEffect(() => {
     document.body.classList.add("home-body");
     return () => document.body.classList.remove("home-body");

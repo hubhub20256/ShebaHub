@@ -1,11 +1,12 @@
 import React from "react";
 
-const FormButton = ({ children, type = "submit", onClick, style }) => {
+const FormButton = ({ children, type = "submit", onClick, style, disabled }) => {
   return (
     <button
       type={type}
       onClick={onClick}
-      style={{ ...styles.button, ...style }} // Allows overriding if needed
+      disabled={disabled}
+      style={{ ...styles.button, ...style, ...(disabled ? { opacity: 0.6, cursor: "not-allowed" } : {}) }}
     >
       {children}
     </button>

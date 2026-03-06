@@ -4,7 +4,15 @@ import "./card.css";
 // Ensure your CSS classes are also in Researches.css or card.css
 import "../styles/Researches.css"; 
 
-export default function ResearchCard({ research, isReal = false }) {
+const STATUS_MAP = {
+  open: { label: "פתוח", cls: "status--open" },
+  in_progress: { label: "בתהליך", cls: "status--in-progress" },
+  completed: { label: "הושלם", cls: "status--completed" },
+  closed: { label: "סגור", cls: "status--closed" },
+  draft: { label: "טיוטה", cls: "status--draft" },
+};
+
+export default function ResearchCard({ research, joined }) {
   // Helper to format dates
   const formatDate = (dateStr) => {
     if (!dateStr) return "";
@@ -22,7 +30,6 @@ export default function ResearchCard({ research, isReal = false }) {
   return (
     <Link
       to={to}
-      state={isReal ? { source: "real" } : undefined}
       className="researchCard researchCard--clickable"
       dir="rtl"
       style={{ color: "inherit", textDecoration: "none" }}
@@ -30,9 +37,17 @@ export default function ResearchCard({ research, isReal = false }) {
     >
       {/* 1. The Dynamic Status Badge */}
       <div className="status-badge-container">
-        <span className="research-status-badge">
-          {research.status || "בהקפאה"}
+        <span className={`research-status-badge ${STATUS_MAP[research.status]?.cls || ""}`}>
+          {STATUS_MAP[research.status]?.label || research.status || "לא ידוע"}
         </span>
+        <span className={`research-status-badge ${research.isFull ? "status--closed" : research.acceptingApplications === false ? "status--closed" : "status--open"}`}>
+          {research.isFull ? "לא זמין להצטרפות" : research.acceptingApplications === false ? "הגשות סגורות" : "הגשות פתוחות"}
+        </span>
+        {joined && (
+          <span className="research-status-badge" style={{ background: "#1b2a4a", color: "#fff" }}>
+            הצטרפת למחקר
+          </span>
+        )}
       </div>
 
       <h3 className="researchCard__title">
