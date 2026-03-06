@@ -1,12 +1,15 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import toast from "react-hot-toast";
 import { useAuth } from "../context/AuthContext";
 import { profilesAPI } from "../services/api";
+import usePageTitle from "../hooks/usePageTitle";
 import {
   SPECIALTIES_BASE,
   SPECIALTIES_SUPER,
   SPECIALTIES_FELLOWSHIPS,
 } from "../data/specialties";
+import { scrollToFirstError, validateFile } from "../utils/formValidation";
 
 // --- CONSTANTS ---
 const SPECIALTY_GROUPS = [
@@ -32,6 +35,7 @@ const START_YEARS = Array.from({ length: 11 }, (_, i) => ({
 const INITIAL_FORM_STATE = {
   specialtyGroup: "",
   specialty: "",
+  specialties: [],
   stageInMedicalTraining: "",
   workplace: "",
   isShebaEmployee: "",
@@ -43,7 +47,8 @@ const INITIAL_FORM_STATE = {
   researchInterests: "",
   previousResearchDescription: "",
   personalAcademicDescription: "",
-  recommendationRequest: "",
+  recommenders: [{ name: "", email: "", phone: "", file: null, mentorId: null }],
+  linkedinUrl: "",
   filesUpload: null,
   contractUpload: null,
   apprenticeStage: "",
@@ -55,13 +60,15 @@ const INITIAL_FORM_STATE = {
   startDate: "",
   workType: "",
   softwareSkills: "",
-  compensationPreference: "",
+  compensationPreference: [],
   professionalExperience: "",
   isAvailableForResearch: "",
   participationMode: "",
+  _institutionOther: false,
 };
 
 export default function CreateMentorProfile() {
+  usePageTitle("יצירת פרופיל");
   const navigate = useNavigate();
   const location = useLocation();
   const { user, updateUser } = useAuth();
@@ -70,6 +77,7 @@ export default function CreateMentorProfile() {
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const [serverError, setServerError] = useState("");
+  const [mentorsList, setMentorsList] = useState([]);
 
   const hasMentorProfile = useMemo(() => user?.has_mentor_profile === true, [user]);
   const hasApprenticeProfile = useMemo(() => user?.has_student_profile === true, [user]);
@@ -77,19 +85,16 @@ export default function CreateMentorProfile() {
   const MandatoryStar = () => <span style={{ color: ACCENT_PINK }}>*</span>;
 
   useEffect(() => {
+    // If user already has any profile, redirect to home (role is locked)
+    if (hasMentorProfile || hasApprenticeProfile) {
+      navigate("/");
+      return;
+    }
+
     const params = new URLSearchParams(location.search);
     const roleParam = params.get("role");
 
     const requestedRole = roleParam === "apprentice" || roleParam === "mentor" ? roleParam : null;
-
-    if (requestedRole === "mentor" && hasMentorProfile) {
-      setRole(hasApprenticeProfile ? "apprentice" : "mentor");
-      return;
-    }
-    if (requestedRole === "apprentice" && hasApprenticeProfile) {
-      setRole(hasMentorProfile ? "mentor" : "apprentice");
-      return;
-    }
 
     if (requestedRole) {
       setRole(requestedRole);
@@ -97,30 +102,18 @@ export default function CreateMentorProfile() {
       setErrors({});
       return;
     }
-
-    if (hasApprenticeProfile && !hasMentorProfile) {
-      setRole("mentor");
-      setForm(INITIAL_FORM_STATE);
-      setErrors({});
-      return;
-    }
-    if (hasMentorProfile && !hasApprenticeProfile) {
-      setRole("apprentice");
-      setForm(INITIAL_FORM_STATE);
-      setErrors({});
-      return;
-    }
-  }, [location.search, hasApprenticeProfile, hasMentorProfile]);
+  }, [location.search, hasApprenticeProfile, hasMentorProfile, navigate]);
 
   useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const roleParam = params.get("role");
-    if (roleParam === "mentor" || roleParam === "apprentice") {
-      setRole(roleParam);
-      setForm(INITIAL_FORM_STATE);
-      setErrors({});
-    }
-  }, [location.search]);
+    let cancelled = false;
+    profilesAPI.listMentors().then((data) => {
+      if (!cancelled) {
+        const list = Array.isArray(data) ? data : data?.results || [];
+        setMentorsList(list);
+      }
+    }).catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
 
   // --- LOGIC ---
 
@@ -154,12 +147,40 @@ export default function CreateMentorProfile() {
       ...prev,
       specialtyGroup: nextGroup,
       specialty: "",
+      specialties: [],
     }));
+  }
+
+  function toggleSpecialty(spec) {
+    setForm((prev) => {
+      const current = [...prev.specialties];
+      if (current.includes(spec)) {
+        return { ...prev, specialties: current.filter((s) => s !== spec), specialty: current.filter((s) => s !== spec)[0] || "" };
+      }
+      const next = [...current, spec];
+      return { ...prev, specialties: next, specialty: next[0] || "" };
+    });
+    setErrors((prev) => {
+      if (!prev.specialty) return prev;
+      const copy = { ...prev };
+      delete copy.specialty;
+      return copy;
+    });
   }
 
   function handleFileChange(e) {
     const { name, files } = e.target;
-    updateField(name, files && files[0] ? files[0] : null);
+    const file = files && files[0] ? files[0] : null;
+    if (file) {
+      const error = validateFile(file, { type: 'document' });
+      if (error) {
+        setErrors(prev => ({ ...prev, [name]: error }));
+        e.target.value = '';
+        return;
+      }
+      setErrors(prev => { const next = { ...prev }; delete next[name]; return next; });
+    }
+    updateField(name, file);
   }
 
   function toggleDegree(deg) {
@@ -191,14 +212,15 @@ export default function CreateMentorProfile() {
 
   function validate() {
     const next = {};
-    if (!form.institution) next.institution = "שדה חובה";
-    if (form.degrees.length === 0) next.degrees = "שדה חובה";
+    if (role === "apprentice" && !form.institution) next.institution = "שדה חובה";
+    // Degrees required unless "ללא תואר קודם" selected
+    const hasNoDegree = form.degrees.includes("ללא תואר קודם");
+    if (form.degrees.length === 0 && !hasNoDegree) next.degrees = "שדה חובה";
     if (!form.personalAcademicDescription.trim()) next.personalAcademicDescription = "שדה חובה";
 
     if (role === "mentor") {
       if (!form.specialtyGroup) next.specialtyGroup = "שדה חובה";
-      if (!form.specialty) next.specialty = "שדה חובה";
-      if (!form.workplace.trim()) next.workplace = "שדה חובה";
+      if (form.specialties.length === 0) next.specialty = "יש לבחור לפחות התמחות אחת";
       if (!form.hasMentoringExperience) next.hasMentoringExperience = "שדה חובה";
     } else {
       if (!form.apprenticeStage) next.apprenticeStage = "שדה חובה";
@@ -207,7 +229,8 @@ export default function CreateMentorProfile() {
     }
 
     setErrors(next);
-    return Object.keys(next).length === 0;
+    if (Object.keys(next).length > 0) return next;
+    return null;
   }
 
   const isSpecialtyRelevant =
@@ -216,11 +239,6 @@ export default function CreateMentorProfile() {
     (form.apprenticeStage === "סטודנט" && (form.yearOfStudy === "ו'" || form.yearOfStudy === "ז'"));
 
   const selectedGroup = form.specialtyGroup || "";
-
-  const specialtyOptions = [
-    { v: "", t: selectedGroup ? "בחרי/י התמחות" : "קודם בחרי/י קטגוריה" },
-    ...((specialtiesByGroup[selectedGroup] || []).map((s) => ({ v: s, t: s }))),
-  ];
 
   const translateError = (error) => {
     if (!error) return error;
@@ -257,9 +275,29 @@ export default function CreateMentorProfile() {
     }
   }
 
+  async function uploadRecommendationLetters(profileType) {
+    const filesWithNames = form.recommenders.filter(r => r.file);
+    for (const rec of filesWithNames) {
+      try {
+        await profilesAPI.uploadDocument(
+          rec.file,
+          profileType,
+          "RECOMMENDATION",
+          `מכתב המלצה - ${rec.name || "ממליצ/ה"}`
+        );
+      } catch (err) {
+        console.error("Recommendation letter upload failed:", err);
+      }
+    }
+  }
+
   async function submit(e) {
     e.preventDefault();
-    if (!validate()) return;
+    const validationErrors = validate();
+    if (validationErrors) {
+      setTimeout(() => scrollToFirstError(validationErrors), 100);
+      return;
+    }
 
     setIsLoading(true);
     setServerError("");
@@ -289,12 +327,15 @@ export default function CreateMentorProfile() {
         return;
       }
 
+      // If "ללא תואר קודם" selected, send empty degrees (backend understands sentinel)
+      const degreesToSend = form.degrees.includes("ללא תואר קודם") ? ["ללא תואר קודם"] : form.degrees;
+
       let profileData = {
-        institution: form.institution,
-        degrees: form.degrees,
+        degrees: degreesToSend,
         personalAcademicDescription: form.personalAcademicDescription,
         workplace: form.workplace,
-        recommendationRequest: form.recommendationRequest,
+        recommenders: form.recommenders.filter(r => r.name || r.email || r.phone).map(({ file, ...rest }) => rest),
+        linkedinUrl: form.linkedinUrl,
       };
 
       const toBoolean = (val) => val === "כן" ? true : val === "לא" ? false : undefined;
@@ -304,7 +345,8 @@ export default function CreateMentorProfile() {
         profileData = {
           ...profileData,
           specialtyGroup: form.specialtyGroup,
-          specialty: form.specialty,
+          specialty: form.specialties[0] || form.specialty,
+          specialties: form.specialties,
           academicRank: form.academicRank,
           hasMentoringExperience: toBoolean(form.hasMentoringExperience),
           mentoringExperienceDetails: form.mentoringExperienceDetails,
@@ -314,12 +356,10 @@ export default function CreateMentorProfile() {
 
         profileData = filterEmpty(profileData);
 
-        // --- RESTORED LOGS ---
-        console.log("Creating mentor profile:", profileData);
-        const response = await profilesAPI.createMentorProfile(profileData);
-        console.log("Mentor profile created:", response);
+        await profilesAPI.createMentorProfile(profileData);
 
         await uploadInitialDocument(profileType);
+        await uploadRecommendationLetters(profileType);
 
         if (updateUser) {
           updateUser({ has_mentor_profile: true });
@@ -328,6 +368,7 @@ export default function CreateMentorProfile() {
         const profileType = "student";
         profileData = {
           ...profileData,
+          institution: form.institution,
           apprenticeStage: form.apprenticeStage,
           startYear: form.startYear ? parseInt(form.startYear) : undefined,
           yearOfStudy: form.yearOfStudy,
@@ -344,37 +385,35 @@ export default function CreateMentorProfile() {
           participationMode: form.participationMode,
         };
 
-        if (isSpecialtyRelevant && form.specialty) {
+        if (isSpecialtyRelevant && (form.specialties.length > 0 || form.specialty)) {
           profileData.specialtyGroup = form.specialtyGroup;
-          profileData.specialty = form.specialty;
+          profileData.specialty = form.specialties[0] || form.specialty;
+          profileData.specialties = form.specialties;
         }
 
         profileData = filterEmpty(profileData);
 
-        // --- RESTORED LOGS ---
-        console.log("Creating student profile:", profileData);
-        const response = await profilesAPI.createStudentProfile(profileData);
-        console.log("Student profile created:", response);
+        await profilesAPI.createStudentProfile(profileData);
 
         await uploadInitialDocument(profileType);
+        await uploadRecommendationLetters(profileType);
 
         if (updateUser) {
           updateUser({ has_student_profile: true });
         }
       }
 
-      alert("הפרופיל נוצר בהצלחה! 🎉");
+      toast.success("הפרופיל נוצר בהצלחה!");
       navigate("/");
       setTimeout(() => window.scrollTo({ top: 0, left: 0, behavior: "auto" }), 0);
     } catch (error) {
       console.error("Profile creation failed:", error);
+      console.error("Server error data:", JSON.stringify(error.data, null, 2));
 
       if (error.data) {
-        // --- RESTORED LOGS ---
-        console.log("Error data:", error.data);
-        console.log("Error details:", JSON.stringify(error.data.details, null, 2));
-
-        if (error.data.code === "CONFLICT") {
+        if (error.data.code === "ROLE_LOCKED") {
+          setServerError("כבר קיים פרופיל מסוג אחר. לא ניתן ליצור פרופיל נוסף.");
+        } else if (error.data.code === "CONFLICT") {
           setServerError(translateError(error.data.message));
         } else if (error.data.code === "VALIDATION_ERROR" && error.data.details) {
           const newErrors = {};
@@ -391,6 +430,7 @@ export default function CreateMentorProfile() {
           if (hasFieldErrors) {
             setErrors(prev => ({ ...prev, ...newErrors }));
             setServerError("יש שגיאות בטופס, נא לתקן את השדות המסומנים");
+            setTimeout(() => scrollToFirstError(newErrors), 100);
           } else {
             setServerError(translateError(error.data.message) || "אירעה שגיאה ביצירת הפרופיל");
           }
@@ -413,6 +453,7 @@ export default function CreateMentorProfile() {
           if (Object.keys(newErrors).length > 0) {
             setErrors(prev => ({ ...prev, ...newErrors }));
             setServerError("יש שגיאות בטופס, נא לתקן את השדות המסומנים");
+            setTimeout(() => scrollToFirstError(newErrors), 100);
           } else {
             setServerError("אירעה שגיאה ביצירת הפרופיל");
           }
@@ -437,6 +478,7 @@ export default function CreateMentorProfile() {
         --text-main: #333333;
         --border-color: #dddddd;
         --popup-bg: #ffffff;
+        --theme-color: #2C2C6C;
       }
       [data-theme='dark'], .dark-mode {
         --switch-bg: #1a1a1a;
@@ -447,6 +489,7 @@ export default function CreateMentorProfile() {
         --text-main: #eeeeee;
         --border-color: #444444;
         --popup-bg: #1e1e1e;
+        --theme-color: #c0c0e8;
       }
       
       /* Active state style */
@@ -488,7 +531,6 @@ export default function CreateMentorProfile() {
       }
     `}</style>
 
-      <header style={styles.header}></header>
       <div dir="rtl" style={styles.page}>
         <header style={styles.header}>
           <h1 style={styles.title}>יצירת פרופיל</h1>
@@ -564,26 +606,72 @@ export default function CreateMentorProfile() {
                     error={errors.specialtyGroup}
                     options={SPECIALTY_GROUPS}
                   />
-                  <SelectField
-                    label={<>התמחות / תחום מרכזי <MandatoryStar /></>}
-                    name="specialty"
-                    value={form.specialty}
-                    onChange={handleChange}
-                    error={errors.specialty}
-                    options={specialtyOptions}
-                    disabled={!selectedGroup}
-                  />
+                  <div style={{ ...styles.field, gridColumn: "1 / -1" }}>
+                    <label style={styles.label}>התמחויות <MandatoryStar /> <span style={{ fontWeight: 400, fontSize: 11, color: "#888" }}>(ניתן לבחור מספר התמחויות)</span></label>
+                    {selectedGroup ? (
+                      <div style={styles.inline}>
+                        {(specialtiesByGroup[selectedGroup] || []).map((spec) => (
+                          <button
+                            key={spec}
+                            type="button"
+                            onClick={() => toggleSpecialty(spec)}
+                            className={`pill-btn ${form.specialties.includes(spec) ? "pill-btn-active" : ""}`}
+                            style={{ ...styles.pillBtn, ...(form.specialties.includes(spec) ? styles.pillBtnActive : {}) }}
+                          >
+                            {spec}
+                          </button>
+                        ))}
+                      </div>
+                    ) : (
+                      <div style={{ color: "#999", fontSize: 13 }}>קודם בחרי/י קטגוריה</div>
+                    )}
+                    {errors.specialty && <div style={styles.error}>{errors.specialty}</div>}
+                  </div>
                 </>
               )}
 
-              <SelectField
-                label={<>מוסד לימודים <MandatoryStar /></>}
-                name="institution"
-                value={form.institution}
-                onChange={handleChange}
-                error={errors.institution}
-                options={[{ v: "", t: "בחרי/י מוסד" }, { v: "האוניברסיטה העברית בירושלים", t: "האוניברסיטה העברית בירושלים" }, { v: "אוניברסיטת תל אביב", t: "אוניברסיטת תל אביב" }, { v: "הטכניון", t: "הטכניון" }, { v: "אוניברסיטת בן גוריון", t: "אוניברסיטת בן גוריון" }, { v: "בר אילן", t: "אוניברסיטת בר אילן" }, { v: "אריאל", t: "אוניברסיטת אריאל" }]}
-              />
+              {role === "apprentice" && (
+                <>
+                  <SelectField
+                    label={<>מוסד לימודים <MandatoryStar /></>}
+                    name="institution"
+                    value={form.institution}
+                    onChange={(e) => {
+                      if (e.target.value === "__other__") {
+                        updateField("institution", "");
+                        updateField("_institutionOther", true);
+                      } else {
+                        updateField("institution", e.target.value);
+                        updateField("_institutionOther", false);
+                      }
+                    }}
+                    error={errors.institution}
+                    options={[
+                      { v: "", t: "בחרי/י מוסד" },
+                      { v: "האוניברסיטה העברית בירושלים", t: "האוניברסיטה העברית בירושלים" },
+                      { v: "אוניברסיטת תל אביב", t: "אוניברסיטת תל אביב" },
+                      { v: "הטכניון", t: "הטכניון" },
+                      { v: "אוניברסיטת בן גוריון", t: "אוניברסיטת בן גוריון" },
+                      { v: "אוניברסיטת בר אילן", t: "אוניברסיטת בר אילן" },
+                      { v: "אוניברסיטת אריאל", t: "אוניברסיטת אריאל" },
+                      { v: "אוניברסיטת חיפה", t: "אוניברסיטת חיפה" },
+                      { v: "מכון ויצמן למדע", t: "מכון ויצמן למדע" },
+                      { v: "אוניברסיטת רייכמן", t: "אוניברסיטת רייכמן (הבינתחומי)" },
+                      { v: "__other__", t: "אחר (הקלד/י)" },
+                    ]}
+                  />
+                  {form._institutionOther && (
+                    <InputField
+                      label="שם המוסד"
+                      name="institution"
+                      value={form.institution}
+                      onChange={handleChange}
+                      error={errors.institution}
+                      placeholder="הקלד/י שם מוסד"
+                    />
+                  )}
+                </>
+              )}
 
               {role === "mentor" && (
                 <SelectField label="שלב בהכשרה הרפואית" name="academicRank" value={form.academicRank} onChange={handleChange} options={[{ v: "", t: "בחרי שלב בהכשרה" }, { v: "סטאז׳", t: "סטאז׳" }, { v: "מתמחה", t: "מתמחה" }, { v: "מומחה/ית", t: "מומחה/ית" }, { v: "התמחות־על / עמית/ת", t: "התמחות־על / עמית/ת" }]} />
@@ -592,16 +680,15 @@ export default function CreateMentorProfile() {
           </div>
 
           {/* SECTION 2 */}
-          <div style={{ ...styles.section, borderTop: "1px solid #eee", paddingTop: 24 }}>
+          <div style={{ ...styles.section, borderTop: "1px solid var(--border-color, #eee)", paddingTop: 24 }}>
             <h3 style={styles.sectionTitle}>ניסיון ומקום עבודה</h3>
             <div className="mentor-grid" style={styles.grid}>
               <InputField
-                label={role === "mentor" ? <>מקום עבודה <MandatoryStar /></> : "מקום עבודה"}
+                label="מקום עבודה"
                 name="workplace"
                 value={form.workplace}
                 onChange={handleChange}
-                error={role === "mentor" ? errors.workplace : null}
-                placeholder={role === "mentor" ? "מקום העבודה" : "מקום עבודה (אם רלוונטי)"}
+                placeholder="מקום עבודה (אם רלוונטי)"
               />
 
               {role === "apprentice" && (
@@ -643,9 +730,9 @@ export default function CreateMentorProfile() {
                     ))}
                   </div>
                   {errors.hasMentoringExperience && <div style={styles.error}>{errors.hasMentoringExperience}</div>}
-                  <div style={{ marginTop: 10 }}>
-                    <InputField label="פירוט ניסיון בהנחיה" name="mentoringExperienceDetails" value={form.mentoringExperienceDetails} onChange={handleChange} disabled={form.hasMentoringExperience !== "כן"} />
-                  </div>
+                  {form.hasMentoringExperience === "כן" && (
+                    <TextAreaField label="פירוט ניסיון בהנחיה" name="mentoringExperienceDetails" value={form.mentoringExperienceDetails} onChange={handleChange} rows={3} />
+                  )}
                 </div>
               </div>
             ) : (
@@ -657,14 +744,16 @@ export default function CreateMentorProfile() {
                       <button key={opt} type="button" onClick={() => updateField("hasResearchExperience", opt)} className={`pill-btn ${form.hasResearchExperience === opt ? "pill-btn-active" : ""}`} style={{ ...styles.pillBtn, ...(form.hasResearchExperience === opt ? styles.pillBtnActive : {}) }}>{opt}</button>
                     ))}
                   </div>
-                  {form.hasResearchExperience === "כן" && <TextAreaField label="פירוט ניסיון מחקרי" name="researchExperienceDetails" value={form.researchExperienceDetails} onChange={handleChange} rows={3} />}
+                  {form.hasResearchExperience === "כן" && (
+                    <TextAreaField label="פירוט ניסיון מחקרי" name="researchExperienceDetails" value={form.researchExperienceDetails} onChange={handleChange} rows={3} />
+                  )}
                 </div>
               </div>
             )}
           </div>
 
           {/* SECTION 3 */}
-          <div style={{ ...styles.section, borderTop: "1px solid #eee", paddingTop: 24 }}>
+          <div style={{ ...styles.section, borderTop: "1px solid var(--border-color, #eee)", paddingTop: 24 }}>
             <h3 style={styles.sectionTitle}>
               {role === "mentor" ? "רקע מחקרי ותחומי עניין" : "מחקר וזמינות"}
             </h3>
@@ -673,7 +762,28 @@ export default function CreateMentorProfile() {
               <>
                 <div className="mentor-grid" style={styles.grid}>
                   <SelectField label="סוג העבודה המבוקשת" name="workType" value={form.workType} onChange={handleChange} options={[{ v: "", t: "בחרי עבודה" }, { v: "איסוף נתונים", t: "איסוף נתונים" }, { v: "כתיבה מדעית", t: "כתיבה מדעית" }, { v: "ניתוח סטטיסטי", t: "ניתוח סטטיסטי" }]} />
-                  <SelectField label="העדפת תגמול" name="compensationPreference" value={form.compensationPreference} onChange={handleChange} options={[{ v: "", t: "בחרי סוג תגמול" }, { v: "מלגה", t: "מלגה" }, { v: "שכר", t: "שכר" }, { v: "קרדיט אקדמי", t: "קרדיט אקדמי" }, { v: "ללא תגמול / התנדבות", t: "ללא תגמול / התנדבות" }]} />
+                  <div style={styles.field}>
+                    <label style={styles.label}>העדפת תגמול</label>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 4 }}>
+                      {["מלגה", "שכר", "קרדיט אקדמי", "ללא תגמול / התנדבות", "גמיש"].map((opt) => (
+                        <button
+                          key={opt}
+                          type="button"
+                          onClick={() => {
+                            setForm((prev) => {
+                              const types = [...(prev.compensationPreference || [])];
+                              if (types.includes(opt)) return { ...prev, compensationPreference: types.filter(t => t !== opt) };
+                              return { ...prev, compensationPreference: [...types, opt] };
+                            });
+                          }}
+                          className={`pill-btn ${(form.compensationPreference || []).includes(opt) ? "pill-btn-active" : ""}`}
+                          style={{ ...styles.pillBtn, ...((form.compensationPreference || []).includes(opt) ? styles.pillBtnActive : {}) }}
+                        >
+                          {opt}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                   <SelectField label="אופן ההשתתפות" name="participationMode" value={form.participationMode} onChange={handleChange} options={[{ v: "", t: "בחרי מיקום" }, { v: "פרונטלי", t: "פרונטלי" }, { v: "מרחוק", t: "מרחוק" }, { v: "היברידי", t: "היברידי" }]} />
 
                   <div style={styles.field}>
@@ -694,6 +804,7 @@ export default function CreateMentorProfile() {
                     name="startDate"
                     value={form.startDate}
                     onChange={(date) => updateField("startDate", date)}
+                    minDate={new Date().toISOString().split('T')[0]}
                   />
                 </div>
 
@@ -713,7 +824,7 @@ export default function CreateMentorProfile() {
           </div>
 
           {/* SECTION 4 */}
-          <div style={{ ...styles.section, borderTop: "1px solid #eee", paddingTop: 24 }}>
+          <div style={{ ...styles.section, borderTop: "1px solid var(--border-color, #eee)", paddingTop: 24 }}>
             <h3 style={styles.sectionTitle}>פרטים נוספים וקבצים</h3>
             <TextAreaField
               label={<>תיאור רקע אישי ואקדמי <MandatoryStar /></>}
@@ -723,10 +834,157 @@ export default function CreateMentorProfile() {
               error={errors.personalAcademicDescription}
               rows={4}
             />
-            <TextAreaField label="לקבלת חוות דעת ממנחים/מתלמדים" name="recommendationRequest" value={form.recommendationRequest} onChange={handleChange} placeholder="תואר + שם מלא + דואר אלקטרוני" rows={4} />
+
+            {role === "apprentice" && (
+              <>
+                <h4 style={{ margin: "18px 0 8px", color: "var(--text-color, #374151)", fontSize: 15 }}>פרטי ממליצ/ה (אופציונלי)</h4>
+                {form.recommenders.map((rec, idx) => (
+                  <div key={idx} style={{ position: "relative", border: "1px solid var(--border-color, #e5e7eb)", borderRadius: 10, padding: "14px 14px 8px", marginBottom: 12, background: "var(--card-bg, #fafafa)" }}>
+                    {form.recommenders.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const updated = form.recommenders.filter((_, i) => i !== idx);
+                          updateField("recommenders", updated);
+                        }}
+                        style={{ position: "absolute", top: 8, left: 8, background: "#ef4444", color: "#fff", border: "none", borderRadius: "50%", width: 26, height: 26, cursor: "pointer", fontSize: 16, lineHeight: "1", display: "flex", alignItems: "center", justifyContent: "center" }}
+                        title="הסר ממליצ/ה"
+                      >−</button>
+                    )}
+                    {form.recommenders.length > 1 && (
+                      <span style={{ fontSize: 13, color: "var(--text-color, #6b7280)", fontWeight: 600, marginBottom: 6, display: "block" }}>ממליצ/ה {idx + 1}</span>
+                    )}
+                    {mentorsList.length > 0 && (
+                      <div style={{ marginBottom: 8 }}>
+                        <label style={styles.label}>קישור למנחה מהאתר (אופציונלי)</label>
+                        <select
+                          value={rec.mentorId || ""}
+                          onChange={(e) => {
+                            const mentorId = e.target.value || null;
+                            const mentor = mentorsList.find(m => String(m.id) === String(mentorId));
+                            const updated = [...form.recommenders];
+                            updated[idx] = {
+                              ...updated[idx],
+                              mentorId,
+                              name: mentor ? mentor.name : updated[idx].name,
+                            };
+                            updateField("recommenders", updated);
+                          }}
+                          style={styles.select}
+                        >
+                          <option value="">בחר מנחה מהאתר (אופציונלי)</option>
+                          {mentorsList.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+                        </select>
+                      </div>
+                    )}
+                    <div className="recommender-grid" style={styles.grid}>
+                      <div>
+                        <label style={styles.label}>שם מלא</label>
+                        <input
+                          type="text"
+                          value={rec.name}
+                          onChange={(e) => {
+                            const updated = [...form.recommenders];
+                            updated[idx] = { ...updated[idx], name: e.target.value };
+                            updateField("recommenders", updated);
+                          }}
+                          placeholder="שם פרטי ומשפחה"
+                          style={styles.input}
+                        />
+                      </div>
+                      <div>
+                        <label style={styles.label}>אימייל</label>
+                        <input
+                          type="email"
+                          value={rec.email}
+                          onChange={(e) => {
+                            const updated = [...form.recommenders];
+                            updated[idx] = { ...updated[idx], email: e.target.value };
+                            updateField("recommenders", updated);
+                          }}
+                          placeholder="example@email.com"
+                          style={{ ...styles.input, direction: "ltr", textAlign: "left" }}
+                        />
+                      </div>
+                      <div>
+                        <label style={styles.label}>טלפון</label>
+                        <input
+                          type="tel"
+                          value={rec.phone}
+                          onChange={(e) => {
+                            const updated = [...form.recommenders];
+                            updated[idx] = { ...updated[idx], phone: e.target.value };
+                            updateField("recommenders", updated);
+                          }}
+                          placeholder="050-0000000"
+                          style={{ ...styles.input, direction: "ltr", textAlign: "left" }}
+                        />
+                      </div>
+                      <div>
+                        <label style={styles.label}>מכתב המלצה</label>
+                        <div style={styles.fileWrapper}>
+                          <input
+                            type="file"
+                            accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                            id={`recommender-file-${idx}`}
+                            style={styles.fileInput}
+                            onChange={(e) => {
+                              const file = e.target.files?.[0] || null;
+                              if (file) {
+                                const error = validateFile(file, { type: 'document' });
+                                if (error) {
+                                  setErrors(prev => ({ ...prev, [`recommenderFile_${idx}`]: error }));
+                                  e.target.value = '';
+                                  return;
+                                }
+                                setErrors(prev => { const next = { ...prev }; delete next[`recommenderFile_${idx}`]; return next; });
+                              }
+                              const updated = [...form.recommenders];
+                              updated[idx] = { ...updated[idx], file };
+                              updateField("recommenders", updated);
+                            }}
+                          />
+                          <label htmlFor={`recommender-file-${idx}`} style={styles.fileLabel} className="create-profile-file-label">
+                            {rec.file ? `✅ ${rec.file.name}` : "בחרי קובץ..."}
+                          </label>
+                        </div>
+                        {errors[`recommenderFile_${idx}`] && <div style={styles.error}>{errors[`recommenderFile_${idx}`]}</div>}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => updateField("recommenders", [...form.recommenders, { name: "", email: "", phone: "", file: null, mentorId: null }])}
+                  style={{ background: "none", border: "1px dashed var(--border-color, #9ca3af)", borderRadius: 8, padding: "8px 18px", color: "var(--text-color, #374151)", cursor: "pointer", fontSize: 14, display: "flex", alignItems: "center", gap: 6, marginBottom: 16 }}
+                >
+                  <span style={{ fontSize: 18, fontWeight: 700, lineHeight: "1" }}>+</span> הוספת ממליצ/ה
+                </button>
+              </>
+            )}
+
+            <div style={{ marginBottom: 12 }}>
+              <label style={styles.label}>פרופיל LinkedIn (אופציונלי)</label>
+              <input
+                type="url"
+                name="linkedinUrl"
+                value={form.linkedinUrl || ""}
+                onChange={handleChange}
+                placeholder="https://linkedin.com/in/..."
+                style={{
+                  ...styles.input,
+                  direction: "ltr",
+                  textAlign: "left",
+                  ...(errors.linkedinUrl ? { borderColor: "#ef4444" } : {}),
+                }}
+              />
+              {errors.linkedinUrl && (
+                <span style={{ color: "#ef4444", fontSize: 13 }}>{errors.linkedinUrl}</span>
+              )}
+            </div>
 
             <div className="mentor-grid" style={{ ...styles.grid, marginTop: 15 }}>
-              <FileField label="העלאת קבצים (אופציונלי)" name="filesUpload" file={form.filesUpload} onChange={handleFileChange} />
+              <FileField label="העלאת קבצים (אופציונלי)" name="filesUpload" file={form.filesUpload} onChange={handleFileChange} error={errors.filesUpload} />
             </div>
           </div>
 
@@ -753,8 +1011,13 @@ export default function CreateMentorProfile() {
 
           <style>{`
           .mentor-grid { display: grid; grid-template-columns: 1fr; gap: 16px; }
+          .recommender-grid { display: grid; grid-template-columns: 1fr; gap: 16px; }
           @media (min-width: 768px) { 
-            .mentor-grid { grid-template-columns: 1fr 1fr; } 
+            .mentor-grid { grid-template-columns: 1fr 1fr; }
+            .recommender-grid { grid-template-columns: 1fr 1fr 1fr 1fr; }
+          }
+          @media (max-width: 767px) and (min-width: 480px) {
+            .recommender-grid { grid-template-columns: 1fr 1fr; }
           }
         `}</style>
         </form>
@@ -784,7 +1047,7 @@ const CalendarIcon = ({ color }) => (
   </svg>
 );
 
-function DatePickerField({ label, value, onChange }) {
+function DatePickerField({ label, value, onChange, minDate }) {
   const [show, setShow] = useState(false);
   const [currentDate, setCurrentDate] = useState(new Date());
   const popupRef = useRef(null);
@@ -809,6 +1072,7 @@ function DatePickerField({ label, value, onChange }) {
   const handleDayClick = (day) => {
     const d = new Date(year, month, day);
     const isoDate = d.toISOString().split('T')[0];
+    if (minDate && isoDate < minDate) return;
     onChange(isoDate);
     setShow(false);
   };
@@ -837,7 +1101,7 @@ function DatePickerField({ label, value, onChange }) {
         <div style={styles.calendarPopup}>
           <div style={styles.calendarHeader}>
             <button type="button" onClick={nextMonth} style={styles.navBtn}>&lt;</button>
-            <span style={{ fontWeight: 700, color: THEME_COLOR }}>{getMonthName(currentDate)}</span>
+            <span style={{ fontWeight: 700, color: "var(--text-color, #2C2C6C)" }}>{getMonthName(currentDate)}</span>
             <button type="button" onClick={prevMonth} style={styles.navBtn}>&gt;</button>
           </div>
           <div style={styles.calendarGrid}>
@@ -845,15 +1109,20 @@ function DatePickerField({ label, value, onChange }) {
             {Array.from({ length: firstDay }).map((_, i) => <div key={`empty-${i}`} />)}
             {Array.from({ length: daysInMonth }).map((_, i) => {
               const day = i + 1;
-              const isSelected = value && parseInt(value.split('/')[0]) === day;
+              const d = new Date(year, month, day);
+              const isoDate = d.toISOString().split('T')[0];
+              const isPast = minDate && isoDate < minDate;
+              const isSelected = value && parseInt(value.split('-')[2]) === day && parseInt(value.split('-')[1]) === (month + 1) && parseInt(value.split('-')[0]) === year;
               return (
                 <button
                   key={day}
                   type="button"
                   onClick={() => handleDayClick(day)}
+                  disabled={isPast}
                   style={{
                     ...styles.dayBtn,
-                    ...(isSelected ? styles.dayBtnActive : {})
+                    ...(isSelected ? styles.dayBtnActive : {}),
+                    ...(isPast ? { opacity: 0.3, cursor: "not-allowed" } : {})
                   }}
                 >
                   {day}
@@ -912,16 +1181,17 @@ function DegreesField({ label, value, onToggle, options, error }) {
   );
 }
 
-function FileField({ label, name, file, onChange }) {
+function FileField({ label, name, file, onChange, error }) {
   return (
     <div style={styles.field}>
       <label style={styles.label}>{label}</label>
       <div style={styles.fileWrapper}>
-        <input type="file" name={name} onChange={onChange} style={styles.fileInput} id={name} />
+        <input type="file" name={name} onChange={onChange} style={styles.fileInput} id={name} accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" />
         <label htmlFor={name} style={styles.fileLabel} className="create-profile-file-label">
           {file ? `✅ ${file.name}` : "בחרי קובץ..."}
         </label>
       </div>
+      {error && <div style={styles.error}>{error}</div>}
     </div>
   );
 }
@@ -932,32 +1202,32 @@ const ACCENT_TEAL = "#6cd5bf";
 const ACCENT_PINK = "#ef67a0";
 
 const styles = {
-  page: { maxWidth: 800, margin: "0 auto", padding: "40px 16px", fontFamily: "Rubik, system-ui, sans-serif", color: THEME_COLOR },
+  page: { maxWidth: 800, margin: "0 auto", padding: "24px 12px", fontFamily: "Rubik, system-ui, sans-serif", color: "var(--theme-color)" },
   header: { textAlign: "center", marginBottom: 32 },
   title: { fontSize: 32, fontWeight: 800, marginBottom: 8 },
   titleUnderline: { width: 50, height: 4, background: ACCENT_TEAL, margin: "0 auto", borderRadius: 2 },
   roleSwitch: { display: "flex", justifyContent: "center", background: "var(--switch-bg)", padding: 4, borderRadius: 12, width: "fit-content", margin: "0 auto 32px", border: "1px solid #333" },
-  roleBtn: { minWidth: 120, padding: "10px 16px", borderRadius: 10, border: "none", background: "transparent", cursor: "pointer", fontSize: 15, fontWeight: 600, color: "var(--btn-inactive-text)", transition: "all 0.2s" },
+  roleBtn: { minWidth: 100, padding: "10px 12px", borderRadius: 10, border: "none", background: "transparent", cursor: "pointer", fontSize: 14, fontWeight: 600, color: "var(--btn-inactive-text)", transition: "all 0.2s" },
   roleBtnActive: { background: "var(--btn-active-bg)", color: "var(--btn-active-text)", boxShadow: "0 2px 8px rgba(0,0,0,0.05)" },
-  card: { border: "1px solid rgba(0,0,0,0.06)", borderRadius: 16, padding: "32px", background: "white", boxShadow: "0 12px 40px rgba(0,0,0,0.03)" },
+  card: { border: "1px solid var(--border-color)", borderRadius: 16, padding: "clamp(16px, 4vw, 32px)", background: "var(--popup-bg)", boxShadow: "0 12px 40px rgba(0,0,0,0.03)" },
   section: { marginBottom: 24 },
-  sectionTitle: { fontSize: 17, fontWeight: 700, color: THEME_COLOR, marginBottom: 16, borderRight: `4px solid ${ACCENT_PINK}`, paddingRight: 8, lineHeight: "1" },
+  sectionTitle: { fontSize: 17, fontWeight: 700, color: "var(--theme-color)", marginBottom: 16, borderRight: `4px solid ${ACCENT_PINK}`, paddingRight: 8, lineHeight: "1" },
   grid: { marginBottom: 16 },
   field: { display: "flex", flexDirection: "column", gap: 6, marginBottom: 4 },
 
-  label: { fontSize: 13, fontWeight: 600, color: "#000000", marginBottom: 2 },
+  label: { fontSize: 13, fontWeight: 600, color: "var(--text-main)", marginBottom: 2 },
 
-  input: { padding: "10px 14px", borderRadius: 8, border: "1px solid #ddd", fontSize: 14, background: "var(--field-bg)", outlineColor: ACCENT_TEAL, transition: "border 0.2s", height: 42, boxSizing: "border-box", width: "100%", fontFamily: "inherit", color: "var(--text-main)" },
-  select: { padding: "10px 14px", borderRadius: 8, border: "1px solid #ddd", fontSize: 14, background: "#fff", outlineColor: ACCENT_TEAL, height: 42, width: "100%", color: "#555" },
-  textarea: { padding: "10px 14px", borderRadius: 8, border: "1px solid #ddd", fontSize: 14, resize: "vertical", outlineColor: ACCENT_TEAL, fontFamily: "inherit", color: "#555" },
+  input: { padding: "10px 14px", borderRadius: 8, border: "1px solid var(--border-color, #ddd)", fontSize: 14, background: "var(--field-bg)", outlineColor: ACCENT_TEAL, transition: "border 0.2s", height: 42, boxSizing: "border-box", width: "100%", fontFamily: "inherit", color: "var(--text-main)" },
+  select: { padding: "10px 14px", borderRadius: 8, border: "1px solid var(--border-color)", fontSize: 14, background: "var(--field-bg)", outlineColor: ACCENT_TEAL, height: 42, width: "100%", color: "var(--text-main)" },
+  textarea: { padding: "10px 14px", borderRadius: 8, border: "1px solid var(--border-color)", fontSize: 14, resize: "vertical", outlineColor: ACCENT_TEAL, fontFamily: "inherit", color: "var(--text-main)" },
 
   inline: { display: "flex", gap: 8, flexWrap: "wrap" },
   // Remove outline from inline styles as well to be safe
-  pillBtn: { padding: "8px 16px", borderRadius: 8, border: "1px solid #eee", background: "var(--field-bg)", cursor: "pointer", fontWeight: 600, fontSize: 13, color: "#666", transition: "0.2s", outline: "none" },
+  pillBtn: { padding: "8px 16px", borderRadius: 8, border: "1px solid var(--border-color)", background: "var(--field-bg)", cursor: "pointer", fontWeight: 600, fontSize: 13, color: "var(--btn-inactive-text)", transition: "0.2s", outline: "none", minWidth: 44, textAlign: "center", whiteSpace: "nowrap" },
   pillBtnActive: { background: ACCENT_TEAL, color: "white", borderColor: ACCENT_TEAL },
   fileWrapper: { position: "relative", width: "100%" },
   fileInput: { opacity: 0, position: "absolute", zIndex: -1, width: "0.1px" },
-  fileLabel: { display: "block", textAlign: "center", padding: "12px", borderRadius: 8, border: `1px dashed ${ACCENT_TEAL}`, color: ACCENT_TEAL, fontWeight: 600, cursor: "pointer", fontSize: 13, background: "#var(--field-bg)", transition: "0.2s" },
+  fileLabel: { display: "block", textAlign: "center", padding: "12px", borderRadius: 8, border: `1px dashed ${ACCENT_TEAL}`, color: ACCENT_TEAL, fontWeight: 600, cursor: "pointer", fontSize: 13, background: "var(--field-bg)", transition: "0.2s" },
   actions: { display: "flex", justifyContent: "center", marginTop: 32 },
   primaryBtn: { padding: "14px 48px", borderRadius: 30, background: THEME_COLOR, color: "white", cursor: "pointer", fontSize: 16, fontWeight: 700, border: "none", boxShadow: "0 4px 12px rgba(44, 44, 108, 0.2)", transition: "0.2s" },
   inputError: { border: `1px solid ${ACCENT_PINK}` },
@@ -975,11 +1245,11 @@ const styles = {
   },
   disabled: { background: "rgba(255, 255, 255, 0.14)", cursor: "not-allowed", opacity: 1 },
 
-  calendarPopup: { position: "absolute", top: "105%", right: 0, width: "280px", background: "var(--popup-bg)", borderRadius: 12, boxShadow: "0 10px 30px rgba(0,0,0,0.15)", border: "1px solid var(--border-color) solid #eee", padding: 16, zIndex: 100, color: "var(--text-main)" },
+  calendarPopup: { position: "absolute", top: "105%", right: 0, width: "min(280px, 90vw)", background: "var(--popup-bg)", borderRadius: 12, boxShadow: "0 10px 30px rgba(0,0,0,0.15)", border: "1px solid var(--border-color)", padding: 16, zIndex: 100, color: "var(--text-main)" },
   calendarHeader: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 },
-  navBtn: { background: "none", border: "none", cursor: "pointer", fontSize: 16, color: "#666", padding: 4 },
+  navBtn: { background: "none", border: "none", cursor: "pointer", fontSize: 16, color: "var(--btn-inactive-text)", padding: 4 },
   calendarGrid: { display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 6 },
   dayName: { textAlign: "center", fontSize: 12, fontWeight: 700, color: "#999", marginBottom: 4 },
-  dayBtn: { width: "100%", aspectRatio: "1", borderRadius: "50%", border: "none", background: "white", cursor: "pointer", fontSize: 13, color: "#333", display: "flex", alignItems: "center", justifyContent: "center", transition: "0.2s" },
+  dayBtn: { width: "100%", aspectRatio: "1", borderRadius: "50%", border: "none", background: "var(--field-bg)", cursor: "pointer", fontSize: 13, color: "var(--text-main)", display: "flex", alignItems: "center", justifyContent: "center", transition: "0.2s" },
   dayBtnActive: { background: ACCENT_TEAL, color: "white", fontWeight: 700, boxShadow: "0 2px 8px rgba(108, 213, 191, 0.4)" }
 };

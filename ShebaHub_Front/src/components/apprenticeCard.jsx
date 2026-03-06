@@ -91,13 +91,6 @@ export default function ApprenticesCard({ apprentice }) {
           </div>
 
           <div className="apprentice-detail-row">
-            <span className="apprentice-detail-label">אימייל:</span>
-            <span className="apprentice-detail-value" title={apprentice.email}>
-              {apprentice.email}
-            </span>
-          </div>
-
-          <div className="apprentice-detail-row">
             <span className="apprentice-detail-label">תחילת לימודים:</span>
             <span className="apprentice-detail-value">{apprentice.school_beginner_year}</span>
           </div>

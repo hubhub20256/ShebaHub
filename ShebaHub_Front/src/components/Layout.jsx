@@ -1,5 +1,6 @@
 import { Outlet, useLocation } from "react-router-dom";
 import Navbar from "./Navbar";
+import AnnouncementBanner from "./AnnouncementBanner";
 
 const Layout = () => {
   const location = useLocation();
@@ -8,6 +9,7 @@ const Layout = () => {
   return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
       <Navbar />
+      {!isAuthRoute && <AnnouncementBanner />}
       <main
         style={
           isAuthRoute

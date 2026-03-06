@@ -95,3 +95,13 @@
     font-size: 1.125rem; /* 18px */
   }
 }
+
+/* ===== DARK MODE ===== */
+[data-theme="dark"] .apprentices-title { color: var(--text-color) !important; }
+[data-theme="dark"] .apprentices-search-input {
+  background: var(--card-bg) !important;
+  border-color: var(--border-color) !important;
+  color: var(--text-color) !important;
+}
+[data-theme="dark"] .apprentices-search-icon { color: #888 !important; }
+[data-theme="dark"] .apprentices-no-results { color: #999 !important; }

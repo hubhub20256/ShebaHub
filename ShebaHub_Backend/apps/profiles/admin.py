@@ -202,7 +202,7 @@ class StudentProfileAdmin(admin.ModelAdmin):
         ('Additional Details', {
             'fields': (
                 'personalAcademicDescription',
-                'recommendationRequest',
+                'recommenders',
             ),
         }),
         ('Timestamps', {
@@ -278,7 +278,7 @@ class MentorProfileAdmin(admin.ModelAdmin):
         ('Additional Details', {
             'fields': (
                 'personalAcademicDescription',
-                'recommendationRequest',
+                'recommenders',
             ),
         }),
         ('Timestamps', {

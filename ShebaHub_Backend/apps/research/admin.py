@@ -5,9 +5,11 @@ from .models import Research, ResearchApplication
 
 @admin.register(Research)
 class ResearchAdmin(admin.ModelAdmin):
-    list_display = ("id", "researchName", "owner", "status", "startDate", "created_at")
+    list_display = ("id", "researchName", "owner", "status", "moderation_status", "startDate", "created_at")
     search_fields = ("researchName", "description", "owner__email")
-    list_filter = ("status", "workMode", "compensation")
+    list_filter = ("status", "moderation_status", "workMode", "compensation")
+    list_editable = ("moderation_status",)
+    readonly_fields = ("created_at", "updated_at")
 
 
 @admin.register(ResearchApplication)

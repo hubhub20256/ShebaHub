@@ -143,17 +143,56 @@
   line-height: 1;
 }
 
-/* Optional: Different colors for different statuses */
-.research-status-badge.closed {
+/* Status-specific badge colors */
+.research-status-badge.status--open {
+  background-color: #e6fffa;
+  color: #0d9488;
+}
+.research-status-badge.status--in-progress {
+  background-color: #eff6ff;
+  color: #2563eb;
+}
+.research-status-badge.status--completed {
+  background-color: #f0fdf4;
+  color: #16a34a;
+}
+.research-status-badge.status--closed {
   background-color: #f1f5f9;
   color: #64748b;
 }
-
-/* Dark Mode Fix for Status Badge */
-[data-theme="dark"] .research-status-badge {
-  background-color: #115e59;
-  /* Darker teal background */
-  color: #ccfbf1;
-  /* Very light teal text */
-  border: 1px solid #134e4a;
+.research-status-badge.status--draft {
+  background-color: #fefce8;
+  color: #a16207;
 }
+
+/* Dark Mode */
+[data-theme="dark"] .research-status-badge.status--open {
+  background-color: #115e59;
+  color: #ccfbf1;
+}
+[data-theme="dark"] .research-status-badge.status--in-progress {
+  background-color: #1e3a5f;
+  color: #bfdbfe;
+}
+[data-theme="dark"] .research-status-badge.status--completed {
+  background-color: #14532d;
+  color: #bbf7d0;
+}
+[data-theme="dark"] .research-status-badge.status--closed {
+  background-color: #334155;
+  color: #cbd5e1;
+}
+[data-theme="dark"] .research-status-badge.status--draft {
+  background-color: #422006;
+  color: #fef08a;
+}
+
+/* ===== DARK MODE ===== */
+[data-theme="dark"] .researches-title { color: var(--text-color) !important; }
+[data-theme="dark"] .researches-search-input {
+  background: var(--card-bg) !important;
+  border-color: var(--border-color) !important;
+  color: var(--text-color) !important;
+}
+[data-theme="dark"] .researches-search-icon { color: #888 !important; }
+[data-theme="dark"] .researches-no-results { color: #999 !important; }

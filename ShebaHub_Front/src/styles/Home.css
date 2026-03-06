@@ -10,13 +10,13 @@
 .home-body main,
 .home-body .app,
 .home-body .layout {
-  background: #fff !important;
+  background: var(--bg-color) !important;
   margin: 0;
 }
 
 /* Main Page Container */
 .home-page {
-  background: #ffffff;
+  background: var(--bg-color);
   color: #0f172a;
   /* Font family inherited from index.css mostly, but explicit here if needed */
   font-family: system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
@@ -200,3 +200,10 @@
     height: 15rem; /* 240px */
   }
 }
+
+/* ===== DARK MODE ===== */
+[data-theme="dark"] .home-page { color: var(--text-color); }
+[data-theme="dark"] .home-title { color: var(--text-color) !important; }
+[data-theme="dark"] .home-subtitle,
+[data-theme="dark"] .home-vision-text { color: #b0b0b0 !important; }
+[data-theme="dark"] .home-vision-label { color: var(--text-color) !important; }

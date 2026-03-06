@@ -17,12 +17,19 @@ from .views import (
     student_avatar,
     student_documents,
     student_document_detail,
+    student_recommendations,
+    student_recommendation_detail,
     # Mentor profile endpoints
     mentor_profile_me,
     mentor_avatar,
     # Document upload endpoints
     mentor_documents,
     mentor_document_detail,
+    # Recommendation endpoints
+    mentor_recommendations,
+    mentor_recommendation_detail,
+    # Secure document download
+    secure_document_download,
     # Reference data endpoints
     reference_data_all,
     reference_institutions,
@@ -50,7 +57,9 @@ urlpatterns = [
     path('student/me/avatar/', student_avatar, name='student-avatar'),
     path('student/me/documents/', student_documents, name='student-documents'),
     path('student/me/documents/<uuid:document_id>/', student_document_detail, name='student-document-detail'),
-    
+    path('student/me/recommendations/', student_recommendations, name='student-recommendations'),
+    path('student/me/recommendations/<uuid:recommendation_id>/', student_recommendation_detail, name='student-recommendation-detail'),
+
     # Mentor profile endpoints
     # GET + POST + PATCH at same URL (standard REST pattern for "me" resource)
     path('mentor/me/', mentor_profile_me, name='mentor-profile-me'),
@@ -59,6 +68,12 @@ urlpatterns = [
     # Mentor document upload endpoints
     path('mentor/me/documents/', mentor_documents, name='mentor-documents'),
     path('mentor/me/documents/<uuid:document_id>/', mentor_document_detail, name='mentor-document-detail'),
+    path('mentor/me/recommendations/', mentor_recommendations, name='mentor-recommendations'),
+    path('mentor/me/recommendations/<uuid:recommendation_id>/', mentor_recommendation_detail, name='mentor-recommendation-detail'),
+
+    # Secure document download (any profile type)
+    path('documents/<uuid:document_id>/download/', secure_document_download, name='secure-document-download'),
+
 ]
 
 # Reference data URL patterns (separate for clarity)

@@ -1,8 +1,12 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, Link } from "react-router-dom";
+import toast from "react-hot-toast";
 import { useAuth } from "../context/AuthContext";
-import { profilesAPI } from "../services/api";
+import { profilesAPI, API_BASE_URL } from "../services/api";
+import usePageTitle from "../hooks/usePageTitle";
+import { validateFile } from "../utils/formValidation";
 import PublicProfile from "./PublicProfile";
+import ConfirmDialog from "../components/ConfirmDialog";
 import {
   SPECIALTIES_BASE,
   SPECIALTIES_SUPER,
@@ -39,53 +43,60 @@ function sanitizeDegrees(value) {
 
 const ACADEMIC_RANKS = [
   { v: "", t: "בחר שלב" },
-  { v: "סטז'ר", t: "סטז'ר" },
+  { v: "סטאז׳", t: "סטאז׳" },
   { v: "מתמחה", t: "מתמחה" },
-  { v: "בכיר", t: "בכיר" },
-  { v: "מרצה", t: "מרצה" },
-  { v: "פרופסור", t: "פרופסור" },
+  { v: "מומחה/ית", t: "מומחה/ית" },
+  { v: "התמחות־על / עמית/ת", t: "התמחות־על / עמית/ת" },
 ];
 
 const APPRENTICE_STAGES = [
   { v: "", t: "בחר שלב" },
   { v: "סטודנט", t: "סטודנט" },
-  { v: "סטז'ר", t: "סטז'ר" },
+  { v: "לפני סטאז׳", t: "לפני סטאז׳" },
+  { v: "סטאז׳ר", t: "סטאז׳ר" },
+  { v: "אחרי סטאז׳", t: "אחרי סטאז׳" },
   { v: "מתמחה", t: "מתמחה" },
-  { v: "בוגר", t: "בוגר" },
+  { v: "רופא מתמחה", t: "רופא מתמחה" },
+  { v: "אחר", t: "אחר" },
 ];
 
 const RESEARCH_INTERESTS = [
   { v: "", t: "בחר תחום" },
-  { v: "קליני", t: "קליני" },
-  { v: "מדעי יסוד", t: "מדעי יסוד" },
-  { v: "דאטה", t: "Data/AI" },
+  { v: "AI ברפואה", t: "AI ברפואה" },
   { v: "אפידמיולוגיה", t: "אפידמיולוגיה" },
+  { v: "רפואה דחופה", t: "רפואה דחופה" },
+  { v: "מחקר קליני", t: "מחקר קליני" },
 ];
 
 const INSTITUTIONS = [
   { v: "", t: "בחר מוסד" },
+  { v: "האוניברסיטה העברית בירושלים", t: "האוניברסיטה העברית בירושלים" },
   { v: "אוניברסיטת תל אביב", t: "אוניברסיטת תל אביב" },
-  { v: "אוניברסיטה עברית", t: "אוניברסיטה עברית" },
-  { v: "טכניון", t: "טכניון" },
+  { v: "הטכניון", t: "הטכניון" },
   { v: "אוניברסיטת בן גוריון", t: "אוניברסיטת בן גוריון" },
-  { v: "אחר", t: "מוסד אחר" },
+  { v: "בר אילן", t: "אוניברסיטת בר אילן" },
+  { v: "אריאל", t: "אוניברסיטת אריאל" },
+  { v: "אוניברסיטת חיפה", t: "אוניברסיטת חיפה" },
+  { v: "מכון ויצמן למדע", t: "מכון ויצמן למדע" },
+  { v: "אוניברסיטת רייכמן", t: "אוניברסיטת רייכמן (הבינתחומי)" },
+  { v: "אחר", t: "אחר" },
 ];
 
 const WORK_TYPES = [
   { v: "", t: "בחר סוג" },
-  { v: "מלא", t: "משרה מלאה" },
-  { v: "חלקי", t: "משרה חלקית" },
-  { v: "פרויקט", t: "פרויקט" },
+  { v: "איסוף נתונים", t: "איסוף נתונים" },
+  { v: "כתיבה מדעית", t: "כתיבה מדעית" },
+  { v: "ניתוח סטטיסטי", t: "ניתוח סטטיסטי" },
 ];
 
 const COMPENSATION_PREFERENCES = [
   { v: "", t: "בחר העדפה" },
-  { v: "שכר", t: "שכר" },
   { v: "מלגה", t: "מלגה" },
-  { v: "התנדבות", t: "התנדבות" },
+  { v: "שכר", t: "שכר" },
+  { v: "קרדיט אקדמי", t: "קרדיט אקדמי" },
+  { v: "ללא תגמול / התנדבות", t: "ללא תגמול / התנדבות" },
+  { v: "גמיש", t: "גמיש" },
 ];
-
-const API_BASE_URL = "http://127.0.0.1:8000/api/v1";
 
 function getSpecialtyOptions(selectedGroup) {
   const list = specialtiesByGroup[selectedGroup] || [];
@@ -124,6 +135,31 @@ function toYesNo(value) {
   return value ?? "";
 }
 
+function findBestMatch(extractedValue, options) {
+  if (!extractedValue) return "";
+  // Exact match first
+  const exact = options.find((o) => o.v === extractedValue);
+  if (exact) return exact.v;
+  // Substring match (either direction) - handles minor spelling differences
+  const lower = extractedValue.replace(/[\u05F3\u05F4'׳״"]/g, "").trim().toLowerCase();
+  const partial = options.find((o) => {
+    if (!o.v) return false;
+    const ov = o.v.replace(/[\u05F3\u05F4'׳״"]/g, "").trim().toLowerCase();
+    return ov.includes(lower) || lower.includes(ov);
+  });
+  return partial ? partial.v : extractedValue;
+}
+
+function resolveField(profile, field) {
+  // Prefer the _detail Hebrew name over the raw slug value
+  const detail = profile[field + "_detail"];
+  const raw = profile[field];
+  const hebrewFromDetail = extractDisplay(detail);
+  if (hebrewFromDetail && hebrewFromDetail !== "-") return hebrewFromDetail;
+  if (typeof raw === "object") return extractDisplay(raw);
+  return raw || "";
+}
+
 function normalizeProfileForDraft(profile) {
   if (!profile) return { ...INITIAL_DRAFT };
 
@@ -146,12 +182,25 @@ function normalizeProfileForDraft(profile) {
     hasResearchExperience: toYesNo(profile.hasResearchExperience),
     isAvailableForResearch: toYesNo(profile.isAvailableForResearch),
 
-    // Ensure reference fields aren't objects in the draft
-    institution: typeof profile.institution === "object" ? extractDisplay(profile.institution) : (profile.institution || extractDisplay(profile.institution_detail) || ""),
-    academicRank: typeof profile.academicRank === "object" ? extractDisplay(profile.academicRank) : (profile.academicRank || extractDisplay(profile.academicRank_detail) || ""),
-    specialtyGroup: typeof profile.specialtyGroup === "object" ? extractDisplay(profile.specialtyGroup) : (profile.specialtyGroup || extractDisplay(profile.specialtyGroup_detail) || ""),
-    specialty: typeof profile.specialty === "object" ? extractDisplay(profile.specialty) : (profile.specialty || extractDisplay(profile.specialty_detail) || ""),
-    researchInterests: typeof profile.researchInterests === "object" ? extractDisplay(profile.researchInterests) : (profile.researchInterests || extractDisplay(profile.researchInterests_detail) || ""),
+    // Resolve reference fields: prefer _detail Hebrew name, then best-match to canonical options
+    institution: findBestMatch(resolveField(profile, "institution"), INSTITUTIONS),
+    academicRank: findBestMatch(resolveField(profile, "academicRank"), ACADEMIC_RANKS),
+    apprenticeStage: findBestMatch(resolveField(profile, "apprenticeStage"), APPRENTICE_STAGES),
+    specialtyGroup: resolveField(profile, "specialtyGroup"),
+    specialty: resolveField(profile, "specialty"),
+    specialties: Array.isArray(profile.specialties_detail)
+      ? profile.specialties_detail.map((s) => extractDisplay(s)).filter((x) => x && x !== "-")
+      : Array.isArray(profile.specialties)
+        ? profile.specialties.map((s) => extractDisplay(s)).filter((x) => x && x !== "-")
+        : (profile.specialty ? [resolveField(profile, "specialty")] : []),
+    researchInterests: findBestMatch(resolveField(profile, "researchInterests"), RESEARCH_INTERESTS),
+    workType: findBestMatch(resolveField(profile, "workType"), WORK_TYPES),
+    compensationPreference: Array.isArray(profile.compensationPreference)
+      ? profile.compensationPreference.map((v) => typeof v === "object" ? (v.name_he || v.name || v.value || v) : v)
+      : Array.isArray(profile.compensationPreference_detail)
+        ? profile.compensationPreference_detail.map((v) => typeof v === "object" ? (v.name_he || v.name || v.value || v) : v)
+        : [],
+    participationMode: resolveField(profile, "participationMode"),
   };
 }
 
@@ -183,18 +232,18 @@ const ACCENT_TEAL = "#6CD5BF";
 
 const styles = {
   modalOverlay: { position: "fixed", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.6)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 1000 },
-  modal: { background: "white", padding: "2rem", borderRadius: "1rem", width: "95%", maxWidth: "720px", boxShadow: "0 20px 40px rgba(0,0,0,0.2)", maxHeight: "90vh", overflowY: "auto" },
-  modalTitle: { fontSize: "1.2rem", fontWeight: "700", marginBottom: "1.5rem", color: THEME_COLOR, borderRight: `4px solid ${ACCENT_PINK}`, paddingRight: "10px" },
+  modal: { background: "var(--card-bg, white)", padding: "2rem", borderRadius: "1rem", width: "95%", maxWidth: "720px", boxShadow: "0 20px 40px rgba(0,0,0,0.2)", maxHeight: "90vh", overflowY: "auto" },
+  modalTitle: { fontSize: "1.2rem", fontWeight: "700", marginBottom: "1.5rem", color: "var(--text-color, #2C2C6C)", borderRight: `4px solid ${ACCENT_PINK}`, paddingRight: "10px" },
   formSection: { marginBottom: "16px" },
-  label: { display: "block", marginBottom: "6px", fontSize: "14px", fontWeight: "600", color: THEME_COLOR },
-  input: { width: "100%", padding: "10px 14px", borderRadius: "8px", border: "1px solid #ddd", fontSize: "14px", boxSizing: "border-box", outlineColor: ACCENT_TEAL },
-  textarea: { width: "100%", padding: "10px 14px", borderRadius: "8px", border: "1px solid #ddd", fontSize: "14px", resize: "vertical", boxSizing: "border-box", fontFamily: "inherit", outlineColor: ACCENT_TEAL },
-  select: { width: "100%", padding: "10px 14px", borderRadius: "8px", border: "1px solid #ddd", fontSize: "14px", boxSizing: "border-box", outlineColor: ACCENT_TEAL, backgroundColor: "white", cursor: "pointer" },
+  label: { display: "block", marginBottom: "6px", fontSize: "14px", fontWeight: "600", color: "var(--text-color, #2C2C6C)" },
+  input: { width: "100%", padding: "10px 14px", borderRadius: "8px", border: "1px solid var(--border-color, #ddd)", fontSize: "14px", boxSizing: "border-box", outlineColor: ACCENT_TEAL, backgroundColor: "var(--card-bg, white)", color: "var(--text-color, #333)" },
+  textarea: { width: "100%", padding: "10px 14px", borderRadius: "8px", border: "1px solid var(--border-color, #ddd)", fontSize: "14px", resize: "vertical", boxSizing: "border-box", fontFamily: "inherit", outlineColor: ACCENT_TEAL, backgroundColor: "var(--card-bg, white)", color: "var(--text-color, #333)" },
+  select: { width: "100%", padding: "10px 14px", borderRadius: "8px", border: "1px solid var(--border-color, #ddd)", fontSize: "14px", boxSizing: "border-box", outlineColor: ACCENT_TEAL, backgroundColor: "var(--card-bg, white)", color: "var(--text-color, #333)", cursor: "pointer" },
   modalActions: { display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "20px" },
   primaryBtn: { padding: "10px 20px", borderRadius: "20px", background: THEME_COLOR, color: "white", border: "none", cursor: "pointer", fontWeight: "600", transition: "opacity 0.2s" },
-  secondaryBtn: { padding: "10px 20px", borderRadius: "20px", background: "white", color: "#666", border: "1px solid #ddd", cursor: "pointer", fontWeight: "600" },
+  secondaryBtn: { padding: "10px 20px", borderRadius: "20px", background: "var(--card-bg, white)", color: "var(--text-color, #666)", border: "1px solid var(--border-color, #ddd)", cursor: "pointer", fontWeight: "600" },
   pillRow: { display: "flex", flexWrap: "wrap", gap: "8px" },
-  pillBtn: { padding: "8px 16px", borderRadius: "20px", border: "1px solid #ddd", background: "white", cursor: "pointer", fontSize: "14px", transition: "all 0.2s" },
+  pillBtn: { padding: "8px 16px", borderRadius: "20px", border: "1px solid var(--border-color, #ddd)", background: "var(--card-bg, white)", color: "var(--text-color, #555)", cursor: "pointer", fontSize: "14px", transition: "all 0.2s" },
   pillBtnActive: { background: ACCENT_TEAL, color: "white", borderColor: ACCENT_TEAL },
 };
 
@@ -219,6 +268,7 @@ function InfoRow({ label, value }) {
 const INITIAL_DRAFT = {
   specialtyGroup: "",
   specialty: "",
+  specialties: [],
   institution: "",
   degrees: [],
   academicRank: "",
@@ -234,7 +284,7 @@ const INITIAL_DRAFT = {
   hasResearchExperience: "",
   researchExperienceDetails: "",
   workType: "",
-  compensationPreference: "",
+  compensationPreference: [],
   participationMode: "",
   isAvailableForResearch: "",
   weeklyHours: "",
@@ -242,13 +292,15 @@ const INITIAL_DRAFT = {
   softwareSkills: "",
   professionalExperience: "",
   personalAcademicDescription: "",
-  recommendationRequest: "",
+  recommenders: [],
+  linkedinUrl: "",
 };
 
 function Profile() {
+  usePageTitle("פרופיל");
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user, loading: authLoading } = useAuth();
+  const { user, refreshUser } = useAuth();
   const [mentorProfile, setMentorProfile] = useState(null);
   const [apprenticeProfile, setApprenticeProfile] = useState(null);
   const [activeRole, setActiveRole] = useState(null);
@@ -262,6 +314,9 @@ function Profile() {
   const [removeAvatar, setRemoveAvatar] = useState(false);
   const [documentFile, setDocumentFile] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, doc: null });
+  const [editErrors, setEditErrors] = useState({});
+  const [mentorsList, setMentorsList] = useState([]);
   const avatarFileInputRef = useRef(null);
   const documentFileInputRef = useRef(null);
   const avatarObjectUrlRef = useRef(null);
@@ -323,6 +378,17 @@ function Profile() {
     };
   }, [isOwnProfile]);
 
+  useEffect(() => {
+    let cancelled = false;
+    profilesAPI.listMentors().then((data) => {
+      if (!cancelled) {
+        const list = Array.isArray(data) ? data : data?.results || [];
+        setMentorsList(list);
+      }
+    }).catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
+
   const hasMentorProfile = useMemo(() => Boolean(mentorProfile), [mentorProfile]);
   const hasApprenticeProfile = useMemo(() => Boolean(apprenticeProfile), [apprenticeProfile]);
   const isMentor = activeRole === "mentor";
@@ -339,19 +405,11 @@ function Profile() {
 
   // ALL function definitions - these don't violate hooks rules
   function handleToggleClick() {
+    // Only allow switching between existing profiles (dual-role is no longer allowed for new users)
     if (hasMentorProfile && hasApprenticeProfile) {
       const next = activeRole === "mentor" ? apprenticeProfile : mentorProfile;
       setActiveRole(activeRole === "mentor" ? "apprentice" : "mentor");
       setUserData(next);
-      return;
-    }
-
-    if (!hasMentorProfile) {
-      navigate("/create-profile?role=mentor");
-      return;
-    }
-    if (!hasApprenticeProfile) {
-      navigate("/create-profile?role=apprentice");
     }
   }
 
@@ -391,6 +449,14 @@ function Profile() {
       avatarObjectUrlRef.current = null;
     }
 
+    if (file) {
+      const error = validateFile(file, { type: 'image' });
+      if (error) {
+        toast.error(error);
+        return;
+      }
+    }
+
     setAvatarFile(file || null);
     setRemoveAvatar(false);
 
@@ -428,12 +494,16 @@ function Profile() {
     });
   }
 
-  async function deleteExistingDocument(doc) {
+  function deleteExistingDocument(doc) {
     if (!doc?.id) return;
     if (!activeRole) return;
-    const name = doc.original_filename || doc.description || "מסמך";
-    const ok = window.confirm(`למחוק את המסמך "${name}"?`);
-    if (!ok) return;
+    setConfirmDialog({ isOpen: true, doc });
+  }
+
+  async function confirmDeleteDocument() {
+    const doc = confirmDialog.doc;
+    setConfirmDialog({ isOpen: false, doc: null });
+    if (!doc?.id || !activeRole) return;
 
     try {
       await profilesAPI.deleteDocument(doc.id, activeRole);
@@ -449,7 +519,7 @@ function Profile() {
       }
     } catch (err) {
       console.error("Document delete failed", err);
-      alert("מחיקת המסמך נכשלה. נסו שוב.");
+      toast.error("מחיקת המסמך נכשלה. נסו שוב.");
     }
   }
 
@@ -461,13 +531,45 @@ function Profile() {
     return draft.apprenticeStage !== "";
   }
 
+  function validateEditDraft() {
+    const errs = {};
+    if (isMentor) {
+      if (!draft.specialtyGroup) errs.specialtyGroup = "שדה חובה";
+    }
+    if (isApprentice) {
+      if (!draft.apprenticeStage) errs.apprenticeStage = "שדה חובה";
+    }
+    if (draft.linkedinUrl) {
+      try {
+        const url = new URL(draft.linkedinUrl);
+        if (!url.hostname.endsWith("linkedin.com")) {
+          errs.linkedinUrl = "קישור LinkedIn לא תקין";
+        }
+      } catch {
+        errs.linkedinUrl = "קישור LinkedIn לא תקין";
+      }
+    }
+    return Object.keys(errs).length ? errs : null;
+  }
+
   async function saveFullEdit() {
     if (!activeRole) return;
+    const validationErrors = validateEditDraft();
+    if (validationErrors) {
+      setEditErrors(validationErrors);
+      return;
+    }
+    setEditErrors({});
     setIsSaving(true);
     try {
       const profileType = activeRole;
       const updateFn = profileType === "mentor" ? profilesAPI.updateMentorProfile : profilesAPI.updateStudentProfile;
-      let updatedProfile = await updateFn(draft);
+      // Strip file objects from recommenders before sending as JSON
+      const draftToSend = {
+        ...draft,
+        recommenders: (draft.recommenders || []).map(({ file, ...rest }) => rest),
+      };
+      let updatedProfile = await updateFn(draftToSend);
 
       if (removeAvatar) {
         try {
@@ -475,7 +577,7 @@ function Profile() {
           updatedProfile = { ...updatedProfile, avatarUrl: null, avatar: null };
         } catch (err) {
           console.error("Avatar delete failed", err);
-          alert("הפרופיל נשמר, אבל הסרת התמונה נכשלה. ניתן לנסות שוב מאוחר יותר.");
+          toast.error("הפרופיל נשמר, אבל הסרת התמונה נכשלה. ניתן לנסות שוב מאוחר יותר.");
         }
       }
 
@@ -493,7 +595,27 @@ function Profile() {
           updatedProfile = { ...updatedProfile, documents: nextDocs };
         } catch (err) {
           console.error("Document upload failed", err);
-          alert("הפרופיל נשמר, אבל המסמך לא הועלה. ניתן לנסות שוב מאוחר יותר.");
+          toast.error("הפרופיל נשמר, אבל המסמך לא הועלה. ניתן לנסות שוב מאוחר יותר.");
+        }
+      }
+
+      // Upload recommendation letter files
+      const recFiles = (draft.recommenders || []).filter(r => r.file);
+      for (const rec of recFiles) {
+        try {
+          const uploadedRec = await profilesAPI.uploadDocument(
+            rec.file,
+            profileType,
+            "RECOMMENDATION",
+            `מכתב המלצה - ${rec.name || "ממליצ/ה"}`
+          );
+          const nextDocs = Array.isArray(updatedProfile?.documents)
+            ? [...updatedProfile.documents, uploadedRec]
+            : [uploadedRec];
+          updatedProfile = { ...updatedProfile, documents: nextDocs };
+        } catch (err) {
+          console.error("Recommendation letter upload failed", err);
+          toast.error(`מכתב המלצה של ${rec.name || "ממליצ/ה"} לא הועלה.`);
         }
       }
 
@@ -503,12 +625,14 @@ function Profile() {
         setApprenticeProfile(updatedProfile);
       }
       setUserData(updatedProfile);
-      alert("הפרופיל עודכן בהצלחה!");
+      // Refresh auth context so navbar syncs (name, avatar, flags)
+      refreshUser();
+      toast.success("הפרופיל עודכן בהצלחה!");
       closeFullEdit();
     } catch (err) {
       console.error("Error updating profile", err);
       const msg = err?.data?.detail || err?.data || "שגיאה בעדכון הפרופיל";
-      alert(typeof msg === "string" ? msg : JSON.stringify(msg));
+      toast.error(typeof msg === "string" ? msg : JSON.stringify(msg));
     } finally {
       setIsSaving(false);
     }
@@ -531,18 +655,17 @@ function Profile() {
       window.URL.revokeObjectURL(url);
     } catch (err) {
       console.error("download failed", err);
-      alert("הורדת המסמך נכשלה. אנא נסו שוב.");
+      toast.error("הורדת המסמך נכשלה. אנא נסו שוב.");
     }
   }
 
   // Computed values that depend on hooks (but don't use hooks themselves)
   const shouldShowSpecialty = isMentor || showApprenticeSpecialty;
-  const toggleLabel = (() => {
-    if (hasMentorProfile && hasApprenticeProfile) return `🔄 החלף תצוגה (${isMentor ? "מנחה" : "מתלמד/ת"})`;
-    if (hasApprenticeProfile && !hasMentorProfile) return "🔄 צור פרופיל מנחה";
-    if (hasMentorProfile && !hasApprenticeProfile) return "🔄 צור פרופיל מתלמד/ת";
-    return "🔄 צור פרופיל";
-  })();
+  // Only show toggle when user has both profiles (legacy dual-role users)
+  const showToggleButton = hasMentorProfile && hasApprenticeProfile;
+  const toggleLabel = showToggleButton
+    ? `החלף תצוגה (${isMentor ? "מנחה" : "מתלמד/ת"})`
+    : "";
 
   // NOW we can do conditional rendering - all hooks have been called
   // Public profile view (read-only). This prevents non-owners from even seeing edit UI.
@@ -600,25 +723,27 @@ function Profile() {
 
   return (
     <div dir="rtl" className="profile-page">
-      <div style={{ display: "flex", justifyContent: "center", width: "100%", marginBottom: "12px" }}>
-        <button
-          onClick={handleToggleClick}
-          className="profile-toggle-btn"
-          style={{
-            border: "1px solid #d8d8e5",
-            padding: "6px 12px",
-            borderRadius: "12px",
-            background: "#f9f9ff",
-            cursor: "pointer",
-            fontWeight: 600,
-            color: "#1f1f4d",
-            boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
-            fontSize: "12px",
-          }}
-        >
-          {toggleLabel}
-        </button>
-      </div>
+      {showToggleButton && (
+        <div style={{ display: "flex", justifyContent: "center", width: "100%", marginBottom: "12px" }}>
+          <button
+            onClick={handleToggleClick}
+            className="profile-toggle-btn"
+            style={{
+              border: "1px solid #d8d8e5",
+              padding: "6px 12px",
+              borderRadius: "12px",
+              background: "#f9f9ff",
+              cursor: "pointer",
+              fontWeight: 600,
+              color: "#1f1f4d",
+              boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
+              fontSize: "12px",
+            }}
+          >
+            {toggleLabel}
+          </button>
+        </div>
+      )}
 
       <div className="profile-header-card">
         <div className="profile-avatar">
@@ -637,6 +762,17 @@ function Profile() {
               </span>
             )}
             <span className="profile-info-badge">{user?.email || ""}</span>
+            {userData?.linkedinUrl && (
+              <a
+                href={userData.linkedinUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="profile-info-badge"
+                style={{ color: "#0077b5", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 4 }}
+              >
+                🔗 LinkedIn
+              </a>
+            )}
           </div>
         </div>
         <button className="profile-edit-btn" onClick={openFullEdit}>עריכת פרופיל</button>
@@ -657,7 +793,7 @@ function Profile() {
         <div className="profile-wide-card">
           <h3 className="profile-section-title">פרטים מקצועיים</h3>
           <div className="profile-grid-content">
-            <InfoRow label="מוסד לימודים" value={getHebrewName(userData, "institution_detail")} />
+            {isApprentice && <InfoRow label="מוסד לימודים" value={getHebrewName(userData, "institution_detail")} />}
             <InfoRow label="תארים" value={formatDegrees(userData)} />
             <InfoRow label="מקום עבודה" value={userData.workplace || "-"} />
 
@@ -679,7 +815,11 @@ function Profile() {
             {shouldShowSpecialty && (
               <>
                 <InfoRow label="קטגוריית התמחות" value={getHebrewName(userData, "specialtyGroup_detail")} />
-                <InfoRow label="התמחות" value={getHebrewName(userData, "specialty_detail")} />
+                <InfoRow label="התמחות" value={
+                  Array.isArray(userData.specialties_detail) && userData.specialties_detail.length
+                    ? extractDisplay(userData.specialties_detail)
+                    : getHebrewName(userData, "specialty_detail")
+                } />
               </>
             )}
           </div>
@@ -706,9 +846,34 @@ function Profile() {
               <p className="profile-bio-text">{userData.personalAcademicDescription || userData.bio || "לא הוזן תיאור"}</p>
             </SectionCard>
 
-            {userData.recommendationRequest && (
-              <SectionCard title="ממליצים / חוות דעת">
-                <p className="profile-bio-text">{userData.recommendationRequest}</p>
+            {Array.isArray(userData.recommenders) && userData.recommenders.length > 0 && (
+              <SectionCard title="ממליצים">
+                {userData.recommenders.map((rec, idx) => (
+                  <div key={idx} style={{ marginBottom: idx < userData.recommenders.length - 1 ? 12 : 0, paddingBottom: idx < userData.recommenders.length - 1 ? 12 : 0, borderBottom: idx < userData.recommenders.length - 1 ? "1px solid #eee" : "none" }}>
+                    {userData.recommenders.length > 1 && <span style={{ fontSize: 13, color: "#6b7280", fontWeight: 600 }}>ממליצ/ה {idx + 1}</span>}
+                    {rec.name && (
+                      <InfoRow label="שם" value={
+                        rec.mentorId
+                          ? <Link to={`/user/${rec.mentorId}`} style={{ color: THEME_COLOR, textDecoration: "underline", fontWeight: 600 }}>{rec.name}</Link>
+                          : rec.name
+                      } />
+                    )}
+                    {rec.email && <InfoRow label="אימייל" value={rec.email} />}
+                    {rec.phone && <InfoRow label="טלפון" value={rec.phone} />}
+                  </div>
+                ))}
+                {/* הצגת מכתבי המלצה */}
+                {userData.documents && userData.documents.filter(d => d.document_type === "RECOMMENDATION").length > 0 && (
+                  <div style={{ marginTop: 10, borderTop: "1px solid #eee", paddingTop: 10 }}>
+                    <span style={{ fontSize: 13, color: "#6b7280", fontWeight: 600, display: "block", marginBottom: 6 }}>מכתבי המלצה</span>
+                    {userData.documents.filter(d => d.document_type === "RECOMMENDATION").map((doc, i) => (
+                      <div key={doc.id || i} className="profile-file-placeholder" style={{ marginBottom: 4 }}>
+                        📄 {doc.original_filename || doc.description || `מכתב המלצה ${i + 1}`}
+                        <span className="profile-download-link" onClick={() => downloadDocument(doc)} style={{ cursor: "pointer" }}>הורדה</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </SectionCard>
             )}
 
@@ -738,6 +903,29 @@ function Profile() {
                 <SectionCard title="תחומי עניין ומחקר">
                   <InfoRow label="תחומי עניין" value={getHebrewName(userData, "researchInterests_detail")} />
                 </SectionCard>
+                {Array.isArray(userData.activeResearches) && userData.activeResearches.length > 0 && (
+                  <SectionCard title="מחקרים פעילים">
+                    <div className="profile-research-list">
+                      {userData.activeResearches.map((r) => (
+                        <Link
+                          key={r.id}
+                          to={`/research/${r.id}`}
+                          className="profile-research-item"
+                        >
+                          <div className="profile-research-item-info">
+                            <span className="profile-research-item-name">{r.researchName}</span>
+                            {r.researchArea && (
+                              <span className="profile-research-item-area">{r.researchArea}</span>
+                            )}
+                          </div>
+                          <span className="profile-research-status-badge">
+                            {r.status === "open" ? "פתוח" : r.status === "in_progress" ? "בתהליך" : r.status}
+                          </span>
+                        </Link>
+                      ))}
+                    </div>
+                  </SectionCard>
+                )}
                 {userData.previousResearchDescription && (
                   <SectionCard title="מחקרים קודמים">
                     <p className="profile-bio-text">{userData.previousResearchDescription}</p>
@@ -762,8 +950,8 @@ function Profile() {
 
       {isFullEditing && (
         <div style={styles.modalOverlay}>
-          <div style={styles.modal}>
-            <h2 style={styles.modalTitle}>עריכת פרופיל</h2>
+          <div className="profile-edit-modal" style={styles.modal}>
+            <h2 className="profile-edit-modal-title" style={styles.modalTitle}>עריכת פרופיל</h2>
 
             <div style={styles.formSection}>
               <label style={styles.label}>תמונת פרופיל</label>
@@ -843,41 +1031,59 @@ function Profile() {
               <label style={styles.label}>קטגוריית התמחות</label>
               <select
                 value={draft.specialtyGroup}
-                onChange={(e) => handleFieldChange("specialtyGroup", e.target.value)}
-                style={styles.select}
+                onChange={(e) => { handleFieldChange("specialtyGroup", e.target.value); setEditErrors((prev) => { const n = { ...prev }; delete n.specialtyGroup; return n; }); }}
+                style={{ ...styles.select, ...(editErrors.specialtyGroup ? { borderColor: "#ef67a0" } : {}) }}
               >
                 {SPECIALTY_GROUPS.map((opt) => (
                   <option key={opt.v} value={opt.v}>{opt.t}</option>
                 ))}
               </select>
+              {editErrors.specialtyGroup && <div style={{ color: "#ef67a0", fontSize: 12, marginTop: 4 }}>{editErrors.specialtyGroup}</div>}
             </div>
 
             <div style={styles.formSection}>
               <label style={styles.label}>התמחות / תחום מרכזי</label>
-              <select
-                value={draft.specialty}
-                onChange={(e) => handleFieldChange("specialty", e.target.value)}
-                style={styles.select}
-                disabled={!draft.specialtyGroup}
-              >
-                {getSpecialtyOptions(draft.specialtyGroup).map((opt) => (
-                  <option key={opt.v} value={opt.v}>{opt.t}</option>
-                ))}
-              </select>
+              {!draft.specialtyGroup ? (
+                <div style={{ fontSize: 13, color: "#999", padding: "8px 0" }}>קודם בחרי/י קטגוריה</div>
+              ) : (
+                <div style={styles.pillRow}>
+                  {getSpecialtyOptions(draft.specialtyGroup).filter((o) => o.v).map((opt) => {
+                    const selected = Array.isArray(draft.specialties) && draft.specialties.includes(opt.v);
+                    return (
+                      <button
+                        key={opt.v}
+                        type="button"
+                        onClick={() => {
+                          setDraft((prev) => {
+                            const list = [...(prev.specialties || [])];
+                            if (list.includes(opt.v)) return { ...prev, specialties: list.filter((s) => s !== opt.v), specialty: list.filter((s) => s !== opt.v)[0] || "" };
+                            return { ...prev, specialties: [...list, opt.v], specialty: prev.specialty || opt.v };
+                          });
+                        }}
+                        style={{ ...styles.pillBtn, ...(selected ? styles.pillBtnActive : {}) }}
+                      >
+                        {opt.t}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
-            <div style={styles.formSection}>
-              <label style={styles.label}>מוסד לימודים</label>
-              <select
-                value={draft.institution}
-                onChange={(e) => handleFieldChange("institution", e.target.value)}
-                style={styles.select}
-              >
-                {INSTITUTIONS.map((opt) => (
-                  <option key={opt.v} value={opt.v}>{opt.t}</option>
-                ))}
-              </select>
-            </div>
+            {isApprentice && (
+              <div style={styles.formSection}>
+                <label style={styles.label}>מוסד לימודים</label>
+                <select
+                  value={draft.institution}
+                  onChange={(e) => handleFieldChange("institution", e.target.value)}
+                  style={styles.select}
+                >
+                  {INSTITUTIONS.map((opt) => (
+                    <option key={opt.v} value={opt.v}>{opt.t}</option>
+                  ))}
+                </select>
+              </div>
+            )}
 
             <div style={styles.formSection}>
               <label style={styles.label}>תארים</label>
@@ -984,13 +1190,14 @@ function Profile() {
                   <label style={styles.label}>שלב בהכשרה רפואית</label>
                   <select
                     value={draft.apprenticeStage}
-                    onChange={(e) => handleFieldChange("apprenticeStage", e.target.value)}
-                    style={styles.select}
+                    onChange={(e) => { handleFieldChange("apprenticeStage", e.target.value); setEditErrors((prev) => { const n = { ...prev }; delete n.apprenticeStage; return n; }); }}
+                    style={{ ...styles.select, ...(editErrors.apprenticeStage ? { borderColor: "#ef67a0" } : {}) }}
                   >
                     {APPRENTICE_STAGES.map((opt) => (
                       <option key={opt.v} value={opt.v}>{opt.t}</option>
                     ))}
                   </select>
+                  {editErrors.apprenticeStage && <div style={{ color: "#ef67a0", fontSize: 12, marginTop: 4 }}>{editErrors.apprenticeStage}</div>}
                 </div>
 
                 {draft.apprenticeStage === "סטודנט" && (
@@ -1044,16 +1251,31 @@ function Profile() {
 
                     <div style={styles.formSection}>
                       <label style={styles.label}>התמחות / תחום מרכזי</label>
-                      <select
-                        value={draft.specialty}
-                        onChange={(e) => handleFieldChange("specialty", e.target.value)}
-                        style={styles.select}
-                        disabled={!draft.specialtyGroup}
-                      >
-                        {getSpecialtyOptions(draft.specialtyGroup).map((opt) => (
-                          <option key={opt.v} value={opt.v}>{opt.t}</option>
-                        ))}
-                      </select>
+                      {!draft.specialtyGroup ? (
+                        <div style={{ fontSize: 13, color: "#999", padding: "8px 0" }}>קודם בחרי/י קטגוריה</div>
+                      ) : (
+                        <div style={styles.pillRow}>
+                          {getSpecialtyOptions(draft.specialtyGroup).filter((o) => o.v).map((opt) => {
+                            const selected = Array.isArray(draft.specialties) && draft.specialties.includes(opt.v);
+                            return (
+                              <button
+                                key={opt.v}
+                                type="button"
+                                onClick={() => {
+                                  setDraft((prev) => {
+                                    const list = [...(prev.specialties || [])];
+                                    if (list.includes(opt.v)) return { ...prev, specialties: list.filter((s) => s !== opt.v), specialty: list.filter((s) => s !== opt.v)[0] || "" };
+                                    return { ...prev, specialties: [...list, opt.v], specialty: prev.specialty || opt.v };
+                                  });
+                                }}
+                                style={{ ...styles.pillBtn, ...(selected ? styles.pillBtnActive : {}) }}
+                              >
+                                {opt.t}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
                   </>
                 )}
@@ -1134,15 +1356,27 @@ function Profile() {
 
                 <div style={styles.formSection}>
                   <label style={styles.label}>העדפת תגמול</label>
-                  <select
-                    value={draft.compensationPreference}
-                    onChange={(e) => handleFieldChange("compensationPreference", e.target.value)}
-                    style={styles.select}
-                  >
-                    {COMPENSATION_PREFERENCES.map((opt) => (
-                      <option key={opt.v} value={opt.v}>{opt.t}</option>
-                    ))}
-                  </select>
+                  <div style={styles.pillRow}>
+                    {COMPENSATION_PREFERENCES.filter((o) => o.v).map((opt) => {
+                      const selected = Array.isArray(draft.compensationPreference) && draft.compensationPreference.includes(opt.v);
+                      return (
+                        <button
+                          key={opt.v}
+                          type="button"
+                          onClick={() => {
+                            setDraft((prev) => {
+                              const list = [...(prev.compensationPreference || [])];
+                              if (list.includes(opt.v)) return { ...prev, compensationPreference: list.filter((s) => s !== opt.v) };
+                              return { ...prev, compensationPreference: [...list, opt.v] };
+                            });
+                          }}
+                          style={{ ...styles.pillBtn, ...(selected ? styles.pillBtnActive : {}) }}
+                        >
+                          {opt.t}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
 
                 <div style={styles.formSection}>
@@ -1234,13 +1468,111 @@ function Profile() {
             </div>
 
             <div style={styles.formSection}>
-              <label style={styles.label}>ממליצים / חוות דעת</label>
-              <textarea
-                value={draft.recommendationRequest || ""}
-                onChange={(e) => handleFieldChange("recommendationRequest", e.target.value)}
-                style={styles.textarea}
-                rows={3}
+              <label style={styles.label}>ממליצים (אופציונלי)</label>
+              {(draft.recommenders && draft.recommenders.length > 0 ? draft.recommenders : [{ name: "", email: "", phone: "" }]).map((rec, idx) => (
+                <div key={idx} style={{ position: "relative", border: "1px solid var(--border-color, #e5e7eb)", borderRadius: 10, padding: "12px 12px 6px", marginBottom: 10, background: "var(--card-bg, #fafafa)" }}>
+                  {(draft.recommenders || []).length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const updated = (draft.recommenders || []).filter((_, i) => i !== idx);
+                        handleFieldChange("recommenders", updated);
+                      }}
+                      style={{ position: "absolute", top: 6, left: 6, background: "#ef4444", color: "#fff", border: "none", borderRadius: "50%", width: 24, height: 24, cursor: "pointer", fontSize: 15, lineHeight: "1", display: "flex", alignItems: "center", justifyContent: "center" }}
+                      title="הסר ממליצ/ה"
+                    >−</button>
+                  )}
+                  {(draft.recommenders || []).length > 1 && (
+                    <span style={{ fontSize: 12, color: "var(--text-color, #6b7280)", fontWeight: 600, display: "block", marginBottom: 4 }}>ממליצ/ה {idx + 1}</span>
+                  )}
+                  {mentorsList.length > 0 && (
+                    <div style={{ marginBottom: 6 }}>
+                      <label style={{ fontSize: 12, color: "var(--text-color, #6b7280)", marginBottom: 2, display: "block" }}>קישור למנחה מהאתר (אופציונלי)</label>
+                      <select
+                        value={rec.mentorId || ""}
+                        onChange={(e) => {
+                          const mentorId = e.target.value || null;
+                          const mentor = mentorsList.find(m => String(m.id) === String(mentorId));
+                          const u = [...(draft.recommenders || [])];
+                          u[idx] = {
+                            ...u[idx],
+                            mentorId,
+                            name: mentor ? mentor.name : u[idx].name,
+                          };
+                          handleFieldChange("recommenders", u);
+                        }}
+                        style={styles.select}
+                      >
+                        <option value="">בחר מנחה מהאתר (אופציונלי)</option>
+                        {mentorsList.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+                      </select>
+                    </div>
+                  )}
+                  <input
+                    type="text"
+                    value={rec.name || ""}
+                    onChange={(e) => { const u = [...(draft.recommenders || [])]; u[idx] = { ...u[idx], name: e.target.value }; handleFieldChange("recommenders", u); }}
+                    style={{ ...styles.input, marginBottom: 6 }}
+                    placeholder="שם מלא"
+                  />
+                  <input
+                    type="email"
+                    value={rec.email || ""}
+                    onChange={(e) => { const u = [...(draft.recommenders || [])]; u[idx] = { ...u[idx], email: e.target.value }; handleFieldChange("recommenders", u); }}
+                    style={{ ...styles.input, direction: "ltr", textAlign: "left", marginBottom: 6 }}
+                    placeholder="אימייל"
+                  />
+                  <input
+                    type="tel"
+                    value={rec.phone || ""}
+                    onChange={(e) => { const u = [...(draft.recommenders || [])]; u[idx] = { ...u[idx], phone: e.target.value }; handleFieldChange("recommenders", u); }}
+                    style={{ ...styles.input, direction: "ltr", textAlign: "left", marginBottom: 6 }}
+                    placeholder="טלפון"
+                  />
+                  <div>
+                    <label style={{ fontSize: 12, color: "var(--text-color, #6b7280)", marginBottom: 2, display: "block" }}>מכתב המלצה (אופציונלי)</label>
+                    <input
+                      type="file"
+                      accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0] || null;
+                        if (file) {
+                          const error = validateFile(file, { type: 'document' });
+                          if (error) {
+                            toast.error(error);
+                            e.target.value = '';
+                            return;
+                          }
+                        }
+                        const u = [...(draft.recommenders || [])];
+                        u[idx] = { ...u[idx], file };
+                        handleFieldChange("recommenders", u);
+                      }}
+                      style={{ ...styles.input, padding: "6px 10px", fontSize: 13 }}
+                    />
+                    {rec.file && <div style={{ marginTop: 4, fontSize: 12, color: "var(--text-color, #2C2C6C)" }}>📄 {rec.file.name}</div>}
+                  </div>
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={() => handleFieldChange("recommenders", [...(draft.recommenders || []), { name: "", email: "", phone: "", file: null, mentorId: null }])}
+                style={{ background: "none", border: "1px dashed var(--border-color, #9ca3af)", borderRadius: 8, padding: "6px 14px", color: "var(--text-color, #374151)", cursor: "pointer", fontSize: 13, display: "flex", alignItems: "center", gap: 5, marginBottom: 10 }}
+              >
+                <span style={{ fontSize: 16, fontWeight: 700, lineHeight: "1" }}>+</span> הוספת ממליצ/ה
+              </button>
+            </div>
+
+            <div style={styles.formSection}>
+              <label style={styles.label}>פרופיל LinkedIn (אופציונלי)</label>
+              <input
+                type="url"
+                value={draft.linkedinUrl || ""}
+                onChange={(e) => { handleFieldChange("linkedinUrl", e.target.value); setEditErrors((prev) => { const n = { ...prev }; delete n.linkedinUrl; return n; }); }}
+                style={{ ...styles.input, direction: "ltr", textAlign: "left", ...(editErrors.linkedinUrl ? { borderColor: "#ef67a0" } : {}) }}
+                placeholder="https://linkedin.com/in/..."
               />
+              {editErrors.linkedinUrl && <div style={{ color: "#ef67a0", fontSize: 12, marginTop: 4 }}>{editErrors.linkedinUrl}</div>}
             </div>
 
             {hasProfile && (
@@ -1258,11 +1590,11 @@ function Profile() {
                             justifyContent: "space-between",
                             gap: 10,
                             padding: "10px 12px",
-                            border: "1px solid #eee",
+                            border: "1px solid var(--border-color, #eee)",
                             borderRadius: 10,
                           }}
                         >
-                          <div style={{ fontSize: 13, color: THEME_COLOR, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          <div style={{ fontSize: 13, color: "var(--text-color, #2C2C6C)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                             📄 {doc.original_filename || doc.description || `מסמך ${index + 1}`}
                           </div>
                           <button
@@ -1276,7 +1608,7 @@ function Profile() {
                       ))}
                     </div>
                   ) : (
-                    <div style={{ fontSize: 13, color: "#777" }}>לא הועלו מסמכים</div>
+                    <div style={{ fontSize: 13, color: "var(--text-color, #777)" }}>לא הועלו מסמכים</div>
                   )}
                 </div>
 
@@ -1285,11 +1617,23 @@ function Profile() {
                   <input
                     ref={documentFileInputRef}
                     type="file"
-                    onChange={(e) => setDocumentFile(e.target.files?.[0] || null)}
+                    accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0] || null;
+                      if (file) {
+                        const error = validateFile(file, { type: 'document' });
+                        if (error) {
+                          toast.error(error);
+                          e.target.value = '';
+                          return;
+                        }
+                      }
+                      setDocumentFile(file);
+                    }}
                     style={styles.input}
                   />
                   {documentFile && (
-                    <div style={{ marginTop: 6, fontSize: 13, color: THEME_COLOR }}>
+                    <div style={{ marginTop: 6, fontSize: 13, color: "var(--text-color, #2C2C6C)" }}>
                       📄 {documentFile.name}
                     </div>
                   )}
@@ -1298,7 +1642,7 @@ function Profile() {
             )}
 
             <div style={styles.modalActions}>
-              <button style={styles.secondaryBtn} onClick={closeFullEdit} disabled={isSaving}>ביטול</button>
+              <button className="profile-edit-cancel-btn" style={styles.secondaryBtn} onClick={closeFullEdit} disabled={isSaving}>ביטול</button>
               <button
                 style={{ ...styles.primaryBtn, opacity: isSaving ? 0.7 : 1 }}
                 onClick={saveFullEdit}
@@ -1310,6 +1654,16 @@ function Profile() {
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        isOpen={confirmDialog.isOpen}
+        title="מחיקת מסמך"
+        message={`למחוק את המסמך "${confirmDialog.doc?.original_filename || confirmDialog.doc?.description || "מסמך"}"?`}
+        onConfirm={confirmDeleteDocument}
+        onCancel={() => setConfirmDialog({ isOpen: false, doc: null })}
+        confirmText="מחק"
+        cancelText="ביטול"
+      />
     </div>
   );
 }

@@ -34,7 +34,7 @@
 
 .about-section {
     margin-bottom: 3rem;
-    background: #ffffff;
+    background: var(--card-bg);
     padding: 25px;
     border-radius: 15px;
     box-shadow: 0 4px 15px rgba(0,0,0,0.05); 
@@ -62,3 +62,9 @@
     direction: ltr;
     display: inline-block;
 }
+
+/* ===== DARK MODE ===== */
+[data-theme="dark"] .about-container { color: var(--text-color); }
+[data-theme="dark"] .about-header { color: var(--text-color) !important; }
+[data-theme="dark"] .about-subtitle { color: #6cd5bf !important; }
+[data-theme="dark"] .highlight-brand { color: var(--text-color) !important; }

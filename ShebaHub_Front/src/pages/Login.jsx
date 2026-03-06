@@ -1,9 +1,11 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import AuthLayout from "../components/AuthLayout";
 import { FormInput, FormButton } from "../components/forms";
 import { useAuth } from "../context/AuthContext";
 import { authAPI } from "../services/api";
+import usePageTitle from "../hooks/usePageTitle";
+import { scrollToFirstError } from "../utils/formValidation";
 import "../styles/Login.css";
 
 // תרגום שגיאות מאנגלית לעברית
@@ -25,6 +27,7 @@ const translateError = (error) => {
 };
 
 const Login = () => {
+  usePageTitle("התחברות");
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [errors, setErrors] = useState({});
   const [serverError, setServerError] = useState("");
@@ -45,6 +48,9 @@ const Login = () => {
     if (!formData.email) newErrors.email = "נא להזין כתובת אימייל";
     if (!formData.password) newErrors.password = "נא להזין סיסמה";
     setErrors(newErrors);
+    if (Object.keys(newErrors).length > 0) {
+      setTimeout(() => scrollToFirstError(newErrors), 100);
+    }
     return Object.keys(newErrors).length === 0;
   };
 
@@ -57,12 +63,10 @@ const Login = () => {
     setServerError("");
 
     try {
-
       const response = await authAPI.login({
         email: formData.email,
         password: formData.password,
       });
-
 
       // Update auth context with user data
       login(response.user);
@@ -74,8 +78,6 @@ const Login = () => {
         navigate("/");
       }
     } catch (error) {
-      console.error("Login failed:", error);
-      
       if (error.data) {
         // Handle specific error messages from backend - translate to Hebrew
         if (error.data.detail) {
@@ -127,6 +129,18 @@ const Login = () => {
           error={errors.password}
           disabled={isLoading}
         />
+
+        <Link
+          to="/forgot-password"
+          style={{
+            textAlign: "left",
+            fontSize: "0.85rem",
+            color: "var(--profile-accent-teal, #00bfa5)",
+            textDecoration: "none",
+          }}
+        >
+          שכחתי סיסמה
+        </Link>
 
         <FormButton disabled={isLoading}>
           {isLoading ? "מתחבר..." : "כניסה"}

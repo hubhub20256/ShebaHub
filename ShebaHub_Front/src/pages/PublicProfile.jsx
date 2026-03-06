@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import { profilesAPI } from "../services/api";
+import { useParams, useNavigate, Link } from "react-router-dom";
+import { profilesAPI, researchAPI, messagesAPI, API_BASE_URL } from "../services/api";
+import { useAuth } from "../context/AuthContext";
 import "../styles/Profile.css";
 
 const THEME_COLOR = "#2C2C6C";
@@ -66,15 +67,32 @@ function InfoRow({ label, value }) {
   );
 }
 
-const API_BASE_URL = "http://127.0.0.1:8000/api";
-
 function PublicProfile() {
   const { id } = useParams();
   const profileId = id;
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [profileData, setProfileData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // Invite modal state
+  const [showInviteModal, setShowInviteModal] = useState(false);
+  const [myResearches, setMyResearches] = useState([]);
+  const [selectedResearchId, setSelectedResearchId] = useState("");
+  const [inviteLoading, setInviteLoading] = useState(false);
+
+  // Contact modal state
+  const [showContactModal, setShowContactModal] = useState(false);
+  const [contactSubject, setContactSubject] = useState("");
+  const [contactMessage, setContactMessage] = useState("");
+  const [contactLoading, setContactLoading] = useState(false);
+
+  // Toast message state
+  const [toast, setToast] = useState(null); // { type: "success" | "error", text: string }
+
+  const currentUserIsMentor = user?.has_mentor_profile === true;
+  const isOwnProfile = user && profileData && String(user.id) === String(profileData.userId);
 
   useEffect(() => {
     let isMounted = true;
@@ -97,14 +115,14 @@ function PublicProfile() {
           if (isMounted && profile) {
             setProfileData({ ...profile, role: "apprentice" });
           }
-        } catch (err) {
+        } catch {
           // אם לא נמצא פרופיל מתלמד, ננסה מנטור
           try {
             profile = await profilesAPI.getMentor(profileId);
             if (isMounted && profile) {
               setProfileData({ ...profile, role: "mentor" });
             }
-          } catch (mentorErr) {
+          } catch {
             if (isMounted) {
               setError("לא נמצא פרופיל עבור משתמש זה");
             }
@@ -129,6 +147,62 @@ function PublicProfile() {
     };
   }, [profileId]);
 
+  // Load mentor's researches when invite modal opens
+  useEffect(() => {
+    if (!showInviteModal || !currentUserIsMentor) return;
+    let cancelled = false;
+    researchAPI.listMyResearches().then((data) => {
+      if (!cancelled) setMyResearches(Array.isArray(data) ? data : []);
+    }).catch(() => {});
+    return () => { cancelled = true; };
+  }, [showInviteModal, currentUserIsMentor]);
+
+  const showToast = (type, text) => {
+    setToast({ type, text });
+    setTimeout(() => setToast(null), 4000);
+  };
+
+  const handleInvite = async () => {
+    if (!selectedResearchId || !profileData?.userId) return;
+    setInviteLoading(true);
+    try {
+      await researchAPI.inviteStudent(selectedResearchId, profileData.userId);
+      showToast("success", "ההזמנה נשלחה בהצלחה!");
+      setShowInviteModal(false);
+      setSelectedResearchId("");
+    } catch (err) {
+      showToast("error", err?.data?.detail || "שגיאה בשליחת ההזמנה");
+    } finally {
+      setInviteLoading(false);
+    }
+  };
+
+  const handleContactSend = async () => {
+    if (!contactSubject.trim() || !contactMessage.trim() || !profileData?.userId) return;
+    setContactLoading(true);
+    try {
+      await messagesAPI.contactUser(profileData.userId, contactSubject, contactMessage);
+      showToast("success", "ההודעה נשלחה בהצלחה!");
+      setShowContactModal(false);
+      setContactSubject("");
+      setContactMessage("");
+    } catch (err) {
+      const errMsg = err?.data?.message || err?.data?.detail || "";
+      const isEmailNotVerified =
+        err?.status === 403 &&
+        typeof errMsg === "string" &&
+        errMsg.toLowerCase().includes("verify your email");
+      showToast(
+        "error",
+        isEmailNotVerified
+          ? "יש לאמת את כתובת האימייל לפני שליחת הודעה. בדוק/י את תיבת הדואר הנכנס."
+          : errMsg || "שגיאה בשליחת ההודעה"
+      );
+    } finally {
+      setContactLoading(false);
+    }
+  };
+
   async function downloadDocument(doc) {
     if (!doc?.id) return;
     try {
@@ -146,7 +220,7 @@ function PublicProfile() {
       window.URL.revokeObjectURL(url);
     } catch (err) {
       console.error("download failed", err);
-      alert("הורדת המסמך נכשלה. אנא נסו שוב.");
+      showToast("error", "הורדת המסמך נכשלה. אנא נסו שוב.");
     }
   }
 
@@ -188,6 +262,12 @@ function PublicProfile() {
 
   return (
     <div dir="rtl" className="profile-page">
+      {toast && (
+        <div className={`profile-toast profile-toast--${toast.type}`}>
+          {toast.text}
+          <button className="profile-toast-close" onClick={() => setToast(null)}>✕</button>
+        </div>
+      )}
       <div style={{ marginBottom: "20px" }}>
         <button
           onClick={() => navigate(-1)}
@@ -223,8 +303,40 @@ function PublicProfile() {
             <span className={`profile-role-badge ${isMentor ? "mentor-badge" : "apprentice-badge"}`}>
               {isMentor ? "מנחה" : "מתלמד/ת"}
             </span>
-            {profileData?.email && (
-              <span className="profile-info-badge">{profileData.email}</span>
+            {profileData?.linkedinUrl && (
+              <a
+                href={profileData.linkedinUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="profile-info-badge"
+                style={{ color: "#0077b5", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 4 }}
+              >
+                🔗 LinkedIn
+              </a>
+            )}
+            {currentUserIsMentor && !isOwnProfile && (
+              (isApprentice && profileData.isAvailableForResearch === false) ? (
+                <span className="profile-info-badge" style={{ color: "#999", marginRight: 8 }}>
+                  לא זמין/ה למחקר
+                </span>
+              ) : (
+                <button
+                  className="profile-edit-btn"
+                  onClick={() => setShowInviteModal(true)}
+                  style={{ marginRight: 8 }}
+                >
+                  הזמן למחקר
+                </button>
+              )
+            )}
+            {user && !isOwnProfile && (
+              <button
+                className="profile-edit-btn"
+                onClick={() => setShowContactModal(true)}
+                style={{ marginRight: 8 }}
+              >
+                צור קשר
+              </button>
             )}
           </div>
         </div>
@@ -233,7 +345,7 @@ function PublicProfile() {
       <div className="profile-wide-card">
         <h3 className="profile-section-title">פרטים מקצועיים</h3>
         <div className="profile-grid-content">
-          <InfoRow label="מוסד לימודים" value={getHebrewName(profileData, "institution_detail")} />
+          {isApprentice && <InfoRow label="מוסד לימודים" value={getHebrewName(profileData, "institution_detail")} />}
           <InfoRow label="תארים" value={formatDegrees(profileData)} />
           <InfoRow label="מקום עבודה" value={profileData.workplace || "-"} />
 
@@ -282,9 +394,33 @@ function PublicProfile() {
             </p>
           </SectionCard>
 
-          {profileData.recommendationRequest && (
-            <SectionCard title="ממליצים / חוות דעת">
-              <p className="profile-bio-text">{profileData.recommendationRequest}</p>
+          {Array.isArray(profileData.recommenders) && profileData.recommenders.length > 0 && (
+            <SectionCard title="ממליצים">
+              {profileData.recommenders.map((rec, idx) => (
+                <div key={idx} style={{ marginBottom: idx < profileData.recommenders.length - 1 ? 12 : 0, paddingBottom: idx < profileData.recommenders.length - 1 ? 12 : 0, borderBottom: idx < profileData.recommenders.length - 1 ? "1px solid #eee" : "none" }}>
+                  {profileData.recommenders.length > 1 && <span style={{ fontSize: 13, color: "#6b7280", fontWeight: 600 }}>ממליצ/ה {idx + 1}</span>}
+                  {rec.name && (
+                    <InfoRow label="שם" value={
+                      rec.mentorId
+                        ? <Link to={`/user/${rec.mentorId}`} style={{ color: THEME_COLOR, textDecoration: "underline", fontWeight: 600 }}>{rec.name}</Link>
+                        : rec.name
+                    } />
+                  )}
+                  {rec.email && <InfoRow label="אימייל" value={rec.email} />}
+                  {rec.phone && <InfoRow label="טלפון" value={rec.phone} />}
+                </div>
+              ))}
+              {profileData.documents && profileData.documents.filter(d => d.document_type === "RECOMMENDATION").length > 0 && (
+                <div style={{ marginTop: 10, borderTop: "1px solid #eee", paddingTop: 10 }}>
+                  <span style={{ fontSize: 13, color: "#6b7280", fontWeight: 600, display: "block", marginBottom: 6 }}>מכתבי המלצה</span>
+                  {profileData.documents.filter(d => d.document_type === "RECOMMENDATION").map((doc, i) => (
+                    <div key={doc.id || i} className="profile-file-placeholder" style={{ marginBottom: 4 }}>
+                      📄 {doc.original_filename || doc.description || `מכתב המלצה ${i + 1}`}
+                      <span className="profile-download-link" onClick={() => downloadDocument(doc)} style={{ cursor: "pointer" }}>הורדה</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </SectionCard>
           )}
 
@@ -314,6 +450,29 @@ function PublicProfile() {
               <SectionCard title="תחומי עניין ומחקר">
                 <InfoRow label="תחומי עניין" value={getHebrewName(profileData, "researchInterests_detail")} />
               </SectionCard>
+              {Array.isArray(profileData.activeResearches) && profileData.activeResearches.length > 0 && (
+                <SectionCard title="מחקרים פעילים">
+                  <div className="profile-research-list">
+                    {profileData.activeResearches.map((r) => (
+                      <Link
+                        key={r.id}
+                        to={`/research/${r.id}`}
+                        className="profile-research-item"
+                      >
+                        <div className="profile-research-item-info">
+                          <span className="profile-research-item-name">{r.researchName}</span>
+                          {r.researchArea && (
+                            <span className="profile-research-item-area">{r.researchArea}</span>
+                          )}
+                        </div>
+                        <span className="profile-research-status-badge">
+                          {r.status === "open" ? "פתוח" : r.status === "in_progress" ? "בתהליך" : r.status}
+                        </span>
+                      </Link>
+                    ))}
+                  </div>
+                </SectionCard>
+              )}
               {profileData.previousResearchDescription && (
                 <SectionCard title="מחקרים קודמים">
                   <p className="profile-bio-text">{profileData.previousResearchDescription}</p>
@@ -334,6 +493,101 @@ function PublicProfile() {
           )}
         </div>
       </div>
+
+      {/* Invite to Research Modal */}
+      {showInviteModal && (
+        <div className="invite-modal-overlay" onClick={() => setShowInviteModal(false)}>
+          <div className="invite-modal" dir="rtl" onClick={(e) => e.stopPropagation()}>
+            <h3>הזמנה למחקר</h3>
+            <p style={{ fontSize: "0.875rem", color: "#666", marginBottom: "1rem" }}>
+              בחר מחקר להזמין את {profileData?.name || "המתלמד/ת"} אליו:
+            </p>
+            {myResearches.length === 0 ? (
+              <p style={{ color: "#999", fontSize: "0.875rem" }}>אין לך מחקרים פעילים</p>
+            ) : (
+              <select
+                value={selectedResearchId}
+                onChange={(e) => setSelectedResearchId(e.target.value)}
+              >
+                <option value="" disabled>בחר מחקר...</option>
+                {myResearches.map((r) => (
+                  <option key={r.id} value={r.id}>{r.researchName}</option>
+                ))}
+              </select>
+            )}
+            <div className="invite-modal-actions">
+              <button
+                className="invite-cancel-btn"
+                onClick={() => setShowInviteModal(false)}
+              >
+                ביטול
+              </button>
+              <button
+                className="invite-confirm-btn"
+                onClick={handleInvite}
+                disabled={!selectedResearchId || inviteLoading}
+              >
+                {inviteLoading ? "שולח..." : "שלח הזמנה"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Contact User Modal */}
+      {showContactModal && (
+        <div className="invite-modal-overlay" onClick={() => setShowContactModal(false)}>
+          <div className="invite-modal" dir="rtl" onClick={(e) => e.stopPropagation()}>
+            <h3>שליחת הודעה ל{profileData?.name || "משתמש"}</h3>
+            <input
+              type="text"
+              placeholder="נושא"
+              value={contactSubject}
+              onChange={(e) => setContactSubject(e.target.value)}
+              style={{
+                width: "100%",
+                padding: "0.625rem 0.75rem",
+                border: "1px solid #d8d8e5",
+                borderRadius: "0.5rem",
+                fontSize: "0.875rem",
+                marginBottom: "0.75rem",
+                boxSizing: "border-box",
+              }}
+            />
+            <textarea
+              placeholder="תוכן ההודעה"
+              value={contactMessage}
+              onChange={(e) => setContactMessage(e.target.value)}
+              rows={5}
+              style={{
+                width: "100%",
+                padding: "0.625rem 0.75rem",
+                border: "1px solid #d8d8e5",
+                borderRadius: "0.5rem",
+                fontSize: "0.875rem",
+                marginBottom: "1rem",
+                resize: "vertical",
+                boxSizing: "border-box",
+              }}
+            />
+            <div className="invite-modal-actions">
+              <button
+                className="invite-cancel-btn"
+                onClick={() => setShowContactModal(false)}
+              >
+                ביטול
+              </button>
+              <button
+                className="invite-confirm-btn"
+                onClick={handleContactSend}
+                disabled={!contactSubject.trim() || !contactMessage.trim() || contactLoading}
+              >
+                {contactLoading ? "שולח..." : "שלח הודעה"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

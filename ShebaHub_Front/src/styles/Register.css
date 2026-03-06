@@ -27,8 +27,7 @@
   align-items: center;
   gap: 10px;
 
-  /* ✅ זה מה שמביא את הצ'קבוקס לצד ימין */
-  flex-direction: row-reverse;
+  flex-direction: row;
 
   font-weight: 700;
   color: #0f172a;

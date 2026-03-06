@@ -16,11 +16,10 @@ class SignupTestCase(APITestCase):
         self.valid_payload = {
             'email': 'test@example.com',
             'password': 'StrongPassword123!',
-            'password2': 'StrongPassword123!',
-            'first_name': 'John',
-            'last_name': 'Doe',
-            'gender': 'MALE',
-            'terms_accepted': True,
+            'confirmPassword': 'StrongPassword123!',
+            'firstName': 'John',
+            'lastName': 'Doe',
+            'gender': 'male',
         }
     
     def test_signup_success(self):
@@ -35,8 +34,8 @@ class SignupTestCase(APITestCase):
         self.assertIn('access', response.data['tokens'])
         self.assertIn('refresh', response.data['tokens'])
         self.assertEqual(response.data['user']['email'], self.valid_payload['email'])
-        self.assertEqual(response.data['user']['first_name'], self.valid_payload['first_name'])
-        self.assertEqual(response.data['user']['last_name'], self.valid_payload['last_name'])
+        self.assertEqual(response.data['user']['firstName'], self.valid_payload['firstName'])
+        self.assertEqual(response.data['user']['lastName'], self.valid_payload['lastName'])
         self.assertFalse(response.data['user']['has_student_profile'])
         self.assertFalse(response.data['user']['has_mentor_profile'])
         
@@ -51,15 +50,15 @@ class SignupTestCase(APITestCase):
         User.objects.create_user(
             email=self.valid_payload['email'],
             password='password123',
-            first_name='Jane',
-            last_name='Doe'
+            firstName='Jane',
+            lastName='Doe'
         )
         
         # Attempt to create user with same email
         response = self.client.post(self.signup_url, self.valid_payload, format='json')
-        
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn('email', response.data)
+
+        self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
+        self.assertEqual(response.data['code'], 'CONFLICT')
     
     def test_signup_weak_password(self):
         """
@@ -67,7 +66,7 @@ class SignupTestCase(APITestCase):
         """
         payload = self.valid_payload.copy()
         payload['password'] = '123'
-        payload['password2'] = '123'
+        payload['confirmPassword'] = '123'
         
         response = self.client.post(self.signup_url, payload, format='json')
         
@@ -86,8 +85,8 @@ class SignupTestCase(APITestCase):
         
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('password', response.data)
-        self.assertIn('first_name', response.data)
-        self.assertIn('last_name', response.data)
+        self.assertIn('firstName', response.data)
+        self.assertIn('lastName', response.data)
     
     def test_signup_invalid_email(self):
         """
@@ -116,8 +115,8 @@ class LoginTestCase(APITestCase):
         self.user = User.objects.create_user(
             email=self.email,
             password=self.password,
-            first_name='Test',
-            last_name='User'
+            firstName='Test',
+            lastName='User'
         )
     
     def test_login_success(self):
@@ -211,8 +210,8 @@ class TokenRefreshTestCase(APITestCase):
         self.user = User.objects.create_user(
             email='testuser@example.com',
             password='TestPassword123!',
-            first_name='Test',
-            last_name='User'
+            firstName='Test',
+            lastName='User'
         )
         
         # Login to get tokens
