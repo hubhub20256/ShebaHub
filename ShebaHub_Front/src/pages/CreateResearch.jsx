@@ -190,6 +190,7 @@ export default function CreateResearch() {
     }
 
     if (Object.keys(newErrors).length > 0) {
+      setSubmitError("יש שגיאות בטופס, נא לתקן את השדות המסומנים באדום");
       setErrors(newErrors);
       setTimeout(() => scrollToFirstError(newErrors), 100);
       setIsSaving(false);
@@ -277,6 +278,7 @@ export default function CreateResearch() {
             />
             <MentorSearchField
               label="מנחים"
+              name="mentors"
               value={form.mentors}
               onChange={(val) => updateField("mentors", val)}
               required={true}
@@ -335,7 +337,7 @@ export default function CreateResearch() {
               error={errors.durationMonths}
             />
 
-            <div className="cr-field">
+            <div className="cr-field" id="field-compensation">
               <label className="cr-label">סוגי תגמול <span className="cr-required-star">*</span></label>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 4 }}>
                 {["מלגה", "שכר", "קרדיט אקדמי", "ללא תגמול / התנדבות", "גמיש"].map((opt) => (
@@ -361,6 +363,7 @@ export default function CreateResearch() {
              
              <HospitalSelectField
               label="מיקום"
+              name="location"
               value={form.location}
               onChange={(val) => updateField("location", val)}
               required={true}
@@ -373,6 +376,7 @@ export default function CreateResearch() {
             
             <CustomSelectField
               label="אופן העבודה"
+              name="workMode"
               value={form.workMode}
               onChange={(val) => updateField("workMode", val)}
               options={["פרונטלי", "היברידי", "מרחוק"]}
@@ -383,6 +387,7 @@ export default function CreateResearch() {
 
             <CustomSelectField
               label="סטטוס המחקר"
+              name="status"
               value={form.status}
               onChange={(val) => updateField("status", val)}
               options={[
@@ -518,7 +523,7 @@ function TextAreaField({ label, name, value, onChange, required = false, error }
   );
 }
 
-function CustomSelectField({ label, value, onChange, options, placeholder, required = false, error }) {
+function CustomSelectField({ label, name, value, onChange, options, placeholder, required = false, error }) {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef(null);
 
@@ -543,7 +548,7 @@ function CustomSelectField({ label, value, onChange, options, placeholder, requi
   };
 
   return (
-    <div className="cr-field" ref={containerRef}>
+    <div className="cr-field" ref={containerRef} id={name ? `field-${name}` : undefined}>
       <Label text={label} required={required} />
       <div
         onClick={() => setIsOpen(!isOpen)}
@@ -576,7 +581,7 @@ function CustomSelectField({ label, value, onChange, options, placeholder, requi
   );
 }
 
-function HospitalSelectField({ label, value, onChange, required = false, error }) {
+function HospitalSelectField({ label, name, value, onChange, required = false, error }) {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [isOther, setIsOther] = useState(false);
@@ -631,7 +636,7 @@ function HospitalSelectField({ label, value, onChange, required = false, error }
 
   if (isOther) {
     return (
-      <div className="cr-field" style={{ position: "relative" }}>
+      <div className="cr-field" style={{ position: "relative" }} id={name ? `field-${name}` : undefined}>
         <Label text={label} required={required} />
         <input
           type="text"
@@ -670,7 +675,7 @@ function HospitalSelectField({ label, value, onChange, required = false, error }
   }
 
   return (
-    <div className="cr-field" ref={containerRef} style={{ position: "relative" }}>
+    <div className="cr-field" ref={containerRef} style={{ position: "relative" }} id={name ? `field-${name}` : undefined}>
       <Label text={label} required={required} />
       <div
         onClick={() => setIsOpen(!isOpen)}
@@ -746,7 +751,7 @@ function HospitalSelectField({ label, value, onChange, required = false, error }
   );
 }
 
-function MentorSearchField({ label, value, onChange, required = false, error }) {
+function MentorSearchField({ label, name, value, onChange, required = false, error }) {
   const [mentors, setMentors] = useState([]);
   const [search, setSearch] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);

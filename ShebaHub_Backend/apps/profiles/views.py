@@ -394,16 +394,6 @@ def student_profile_me(request):
         return Response(serializer.data)
     
     elif request.method == 'POST':
-        # Prevent dual-role: cannot create student profile if mentor profile exists
-        if MentorProfile.objects.filter(user=user).exists():
-            return Response(
-                {
-                    'code': 'ROLE_LOCKED',
-                    'message': 'You already have a mentor profile. Cannot create a student profile.',
-                },
-                status=status.HTTP_409_CONFLICT,
-            )
-
         # Check if profile already exists
         if StudentProfile.objects.filter(user=user).exists():
             audit_logger.warning(
@@ -779,16 +769,6 @@ def mentor_profile_me(request):
         return Response(serializer.data)
     
     elif request.method == 'POST':
-        # Prevent dual-role: cannot create mentor profile if student profile exists
-        if StudentProfile.objects.filter(user=user).exists():
-            return Response(
-                {
-                    'code': 'ROLE_LOCKED',
-                    'message': 'You already have a student profile. Cannot create a mentor profile.',
-                },
-                status=status.HTTP_409_CONFLICT,
-            )
-
         # Check if profile already exists
         if MentorProfile.objects.filter(user=user).exists():
             audit_logger.warning(

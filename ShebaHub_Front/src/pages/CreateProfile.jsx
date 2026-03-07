@@ -85,8 +85,8 @@ export default function CreateMentorProfile() {
   const MandatoryStar = () => <span style={{ color: ACCENT_PINK }}>*</span>;
 
   useEffect(() => {
-    // If user already has any profile, redirect to home (role is locked)
-    if (hasMentorProfile || hasApprenticeProfile) {
+    // If user already has both profiles, redirect to home
+    if (hasMentorProfile && hasApprenticeProfile) {
       navigate("/");
       return;
     }
@@ -101,6 +101,13 @@ export default function CreateMentorProfile() {
       setForm(INITIAL_FORM_STATE);
       setErrors({});
       return;
+    }
+    
+    // Auto-select missing profile if they only have one
+    if (hasMentorProfile && !hasApprenticeProfile) {
+      setRole("apprentice");
+    } else if (hasApprenticeProfile && !hasMentorProfile) {
+      setRole("mentor");
     }
   }, [location.search, hasApprenticeProfile, hasMentorProfile, navigate]);
 
@@ -452,7 +459,7 @@ export default function CreateMentorProfile() {
           });
           if (Object.keys(newErrors).length > 0) {
             setErrors(prev => ({ ...prev, ...newErrors }));
-            setServerError("יש שגיאות בטופס, נא לתקן את השדות המסומנים");
+            setServerError("יש שגיאות בטופס, נא לתקן את השדות המסומנים באדום");
             setTimeout(() => scrollToFirstError(newErrors), 100);
           } else {
             setServerError("אירעה שגיאה ביצירת הפרופיל");
@@ -585,7 +592,7 @@ export default function CreateMentorProfile() {
               )}
 
               {role === "apprentice" && form.apprenticeStage === "סטודנט" && (
-                <div style={{ ...styles.field, gridColumn: "1 / -1" }}>
+                <div style={{ ...styles.field, gridColumn: "1 / -1" }} id="field-yearOfStudy">
                   <label style={styles.label}>שנת לימודים <MandatoryStar /></label>
                   <div style={styles.inline}>
                     {["א'", "ב'", "ג'", "ד'", "ה'", "ו'", "ז'"].map((y) => (
@@ -606,7 +613,7 @@ export default function CreateMentorProfile() {
                     error={errors.specialtyGroup}
                     options={SPECIALTY_GROUPS}
                   />
-                  <div style={{ ...styles.field, gridColumn: "1 / -1" }}>
+                  <div style={{ ...styles.field, gridColumn: "1 / -1" }} id="field-specialty">
                     <label style={styles.label}>התמחויות <MandatoryStar /> <span style={{ fontWeight: 400, fontSize: 11, color: "#888" }}>(ניתן לבחור מספר התמחויות)</span></label>
                     {selectedGroup ? (
                       <div style={styles.inline}>
@@ -692,7 +699,7 @@ export default function CreateMentorProfile() {
               />
 
               {role === "apprentice" && (
-                <div style={styles.field}>
+                <div style={styles.field} id="field-isShebaEmployee">
                   <label style={styles.label}>האם את/ה מועסק בשיבא?</label>
                   <div style={styles.inline}>
                     {["כן", "לא"].map((opt) => (
@@ -722,7 +729,7 @@ export default function CreateMentorProfile() {
 
             {role === "mentor" ? (
               <div style={{ marginTop: 15 }}>
-                <div style={styles.field}>
+                <div style={styles.field} id="field-hasMentoringExperience">
                   <label style={styles.label}>ניסיון בהנחיה <MandatoryStar /></label>
                   <div style={styles.inline}>
                     {["כן", "לא"].map((opt) => (
@@ -737,7 +744,7 @@ export default function CreateMentorProfile() {
               </div>
             ) : (
               <div style={{ marginTop: 15 }}>
-                <div style={styles.field}>
+                <div style={styles.field} id="field-hasResearchExperience">
                   <label style={styles.label}>ניסיון במחקר</label>
                   <div style={styles.inline}>
                     {["כן", "לא"].map((opt) => (
@@ -762,7 +769,7 @@ export default function CreateMentorProfile() {
               <>
                 <div className="mentor-grid" style={styles.grid}>
                   <SelectField label="סוג העבודה המבוקשת" name="workType" value={form.workType} onChange={handleChange} options={[{ v: "", t: "בחרי עבודה" }, { v: "איסוף נתונים", t: "איסוף נתונים" }, { v: "כתיבה מדעית", t: "כתיבה מדעית" }, { v: "ניתוח סטטיסטי", t: "ניתוח סטטיסטי" }]} />
-                  <div style={styles.field}>
+                  <div style={styles.field} id="field-compensationPreference">
                     <label style={styles.label}>העדפת תגמול</label>
                     <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 4 }}>
                       {["מלגה", "שכר", "קרדיט אקדמי", "ללא תגמול / התנדבות", "גמיש"].map((opt) => (
@@ -786,7 +793,7 @@ export default function CreateMentorProfile() {
                   </div>
                   <SelectField label="אופן ההשתתפות" name="participationMode" value={form.participationMode} onChange={handleChange} options={[{ v: "", t: "בחרי מיקום" }, { v: "פרונטלי", t: "פרונטלי" }, { v: "מרחוק", t: "מרחוק" }, { v: "היברידי", t: "היברידי" }]} />
 
-                  <div style={styles.field}>
+                  <div style={styles.field} id="field-isAvailableForResearch">
                     <label style={styles.label}>זמינות למחקר <MandatoryStar /></label>
                     <div style={styles.inline}>
                       {["כן", "לא"].map((opt) => (
@@ -1069,9 +1076,9 @@ function DatePickerField({ label, value, onChange, minDate }) {
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const firstDay = new Date(year, month, 1).getDay();
 
-  const handleDayClick = (day) => {
-    const d = new Date(year, month, day);
-    const isoDate = d.toISOString().split('T')[0];
+  const handleDayClick = (day) => { //handles the choosing of the day in apprenctice profile making.
+    // const d = new Date(year, month, day);
+    const isoDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
     if (minDate && isoDate < minDate) return;
     onChange(isoDate);
     setShow(false);
@@ -1137,9 +1144,9 @@ function DatePickerField({ label, value, onChange, minDate }) {
 }
 
 
-function SelectField({ label, name, value, onChange, options, disabled, error }) {
+function SelectField({ label, name, value, onChange, options, disabled, error, required = false }) {
   return (
-    <div style={styles.field}>
+    <div style={styles.field} id={`field-${name}`}>
       <label style={styles.label}>{label}</label>
       <select name={name} value={value} onChange={onChange} disabled={disabled} style={{ ...styles.select, ...(disabled ? styles.disabled : {}), ...(error ? styles.inputError : {}) }}>
         {options.map((o) => (<option key={o.v} value={o.v}>{o.t}</option>))}
