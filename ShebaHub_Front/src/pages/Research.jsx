@@ -715,9 +715,12 @@ export default function Research() {
     const fileName = data?.contractFileName || "contract";
 
     try {
-      const token = localStorage.getItem("accessToken");
-      const headers = token ? { Authorization: `Bearer ${token}` } : {};
-      const res = await fetch(url, { headers });
+      // Fetching the file directly from the URL. 
+      // Note: We intentionally DO NOT send the Authorization Bearer token here.
+      // This is because we want the contract file to be publicly accessible to ANY user
+      // viewing this research page, regardless of whether they are a member, mentor, or even logged in.
+      // *Backend Requirement*: The backend endpoint serving this URL MUST be configured to allow unauthenticated GET requests.
+      const res = await fetch(url);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const blob = await res.blob();
       const objectUrl = window.URL.createObjectURL(blob);
@@ -729,7 +732,7 @@ export default function Research() {
       a.remove();
       window.URL.revokeObjectURL(objectUrl);
     } catch {
-      toast.error("לא ניתן להוריד את הקובץ. ייתכן שאין לך הרשאה.");
+      toast.error("שגיאה בהורדת הקובץ. ייתכן שהקובץ אינו זמין יותר או שאין לך הרשאה מתאימה.");
     }
   };
 
@@ -897,7 +900,13 @@ export default function Research() {
                 </span>
                 <select
                   className="researchSelect"
-                  value={String(id || "")}
+                  value={
+                    createdResearchOptions.some((r) => String(r.id) === String(id)) ||
+                    joinedResearchOptions.some((r) => String(r.id) === String(id))
+                      ? String(id || "")
+                      : ""
+                      
+                  }
                   onChange={handleSelectMyResearch}
                 >
                   <option value="" disabled>
@@ -911,7 +920,7 @@ export default function Research() {
                             — מחקרים שיצרתי —
                           </option>
                           {createdResearchOptions.map((r) => (
-                            <option key={`created-${r.id}`} value={r.id}>
+                            <option key={`created-${r.id}`} value={String(r.id)}>
                               {r.researchName}
                             </option>
                           ))}
@@ -1004,19 +1013,18 @@ export default function Research() {
                   <div className="rd-file-name" style={styles.fileName}>{data.contractFileName}</div>
                   <div style={styles.fileAction}>לחץ להורדת חוזה</div>
                 </div>
-                {data.contractUrl ? (
-                  <button
-                    className="rd-download-btn"
-                    onClick={handleDownloadContract}
-                    style={styles.downloadBtn}
-                  >
-                    הורדה
-                  </button>
-                ) : (
-                  <button className="rd-download-btn" style={styles.downloadBtn} disabled>
-                    הורדה
-                  </button>
-                )}
+                {/* 
+                  We removed the {data.contractUrl ? ... : disabled} check here. 
+                  Now, as long as there is a contractFileName, the user can click download.
+                  (Assuming the backend returns a public presigned URL or public route for it regardless of auth status).
+                */}
+                <button
+                  className="rd-download-btn"
+                  onClick={handleDownloadContract}
+                  style={styles.downloadBtn}
+                >
+                  הורדה
+                </button>
               </div>
             )}
           </div>
