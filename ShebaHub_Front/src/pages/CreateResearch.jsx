@@ -483,7 +483,7 @@ export default function CreateResearch() {
               name="contract"
               file={form.contract}
               onChange={handleFileChange}
-              required={!isEditMode && !existingContractName}
+              required={false}
               error={errors.contract}
             />
           </div>
