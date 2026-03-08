@@ -59,6 +59,7 @@ export default function CreateResearch() {
       const error = validateFile(file, { type: 'document' });
       if (error) {
         setErrors(prev => ({ ...prev, contract: error }));
+        toast.error(`שגיאת קובץ: ${error}`);
         e.target.value = '';
         return;
       }
@@ -259,7 +260,15 @@ export default function CreateResearch() {
           <InputField label="שם המחקר" name="researchName" value={form.researchName} onChange={handleChange} required={true} error={errors.researchName} />
         </div>
         <div className="cr-full-width">
-          <TextAreaField label="תיאור המחקר" name="description" value={form.description} onChange={handleChange} required={true} error={errors.description} />
+          <TextAreaField 
+            label="תיאור המחקר" 
+            name="description" 
+            placeholder="ספרי על המחקר, המטרות והחשיבות שלו..."
+            value={form.description} 
+            onChange={handleChange} 
+            required={true} 
+            error={errors.description} 
+          />
         </div>
 
         {/* 2-Column Grid */}
@@ -413,9 +422,25 @@ export default function CreateResearch() {
             />
             
             {/* Optional Fields (TextAreas) */}
-            <TextAreaField label="דרישות" name="requirements" value={form.requirements} onChange={handleChange} required={false} />
-            <TextAreaField label="מיומנויות וכלים" name="skillsAndTools" value={form.skillsAndTools} onChange={handleChange} required={false} />
-            <TextAreaField label="תוצרי המחקר" name="output" value={form.output} onChange={handleChange} required={false} />
+            <TextAreaField label="דרישות" 
+              name="requirements" 
+              placeholder="לדוגמה: סטודנט שנה ג', ניסיון בפייתון..."
+              value={form.requirements} 
+              onChange={handleChange} 
+              required={false} 
+              />
+            <TextAreaField label="מיומנויות וכלים" 
+              name="skillsAndTools" 
+              placeholder="לדוגמה: Python, SQL, ניתוח נתונים..."
+              value={form.skillsAndTools} 
+              onChange={handleChange} 
+              required={false} />
+            <TextAreaField label="תוצרי המחקר מצופים" 
+              name="output" 
+              placeholder="לדוגמה: מאמר ב-JAMA"
+              value={form.output} 
+              onChange={handleChange} 
+              required={false} />
             
             {isEditMode && (existingContractName || existingContractUrl) && (
               <div style={{ marginTop: 10, marginBottom: 8 }}>
@@ -506,7 +531,7 @@ function InputField({ label, name, value, onChange, type = "text", placeholder, 
   );
 }
 
-function TextAreaField({ label, name, value, onChange, required = false, error }) {
+function TextAreaField({ label, name, value, onChange, placeholder, required = false, error }) {
   return (
     <div className="cr-field">
       <Label text={label} required={required} />
@@ -514,6 +539,7 @@ function TextAreaField({ label, name, value, onChange, required = false, error }
         name={name}
         value={value}
         onChange={onChange}
+        placeholder={placeholder}
         className="cr-textarea"
         style={error ? { borderColor: '#b91c1c' } : undefined}
         required={required}
@@ -923,7 +949,7 @@ function FileField({ label, name, file, onChange, required = false, error }) {
     <div className="cr-field">
       <Label text={label} required={required} />
       <div className="cr-file-wrapper">
-        <input type="file" name={name} id={`file-${name}`} onChange={onChange} className="cr-file-input" required={required} accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" />
+        <input type="file" name={name} id={`file-${name}`} onChange={onChange} className="cr-file-input" required={required} accept=".pdf" />
         <label htmlFor={`file-${name}`} className="cr-file-label">
           {file ? `קובץ נבחר: ${file.name}` : "לחץ להעלאת קובץ"}
         </label>
