@@ -57,11 +57,13 @@ const ResearchApprenticeCard = ({ apprentice, onClick, children }) => {
       navigate(`/user/${apprentice.id}`);
     }
   };
+
+  const isElevatedMentor = apprentice.isOwner || apprentice.can_edit || apprentice.can_approve || apprentice.can_invite || apprentice.can_remove || apprentice.can_manage_chat;
   
   return (
     <div className="research-apprentice-card" onClick={onClick} dir="rtl">
       {/* Mentor/Owner tag */}
-      {!apprentice.hasStudentProfile && (
+      {isElevatedMentor && !apprentice.hasStudentProfile && (
         <span className="rac-mentor-tag">{apprentice.isOwner ? "חוקר ראשי" : "מנחה"}</span>
       )}
       {/* Top section with avatar */}
@@ -313,7 +315,10 @@ export default function Research() {
       .filter(Boolean);
   }, [approvedApplications, hasAnyPermission, publicApprovedApplications]);
 
-  const activeApprentices = useMemo(() => allApproved.filter((a) => a.hasStudentProfile), [allApproved]);
+  const _isMentorInResearch = (a) => a.can_edit || a.can_approve || a.can_invite || a.can_remove || a.can_manage_chat;
+
+  const activeApprentices = useMemo(() => allApproved.filter((a) => !_isMentorInResearch(a)), [allApproved]);
+  
   const activeMentors = useMemo(() => {
     const mentors = [];
     const seenUserIds = new Set();
@@ -333,7 +338,7 @@ export default function Research() {
 
     // Add other approved mentors (excluding the owner to avoid duplicates)
     for (const a of allApproved) {
-      if (a.hasStudentProfile) continue;
+      if (!_isMentorInResearch(a)) continue;
       const uid = String(a.applicantUserId);
       if (seenUserIds.has(uid)) continue;
       seenUserIds.add(uid);
@@ -1333,6 +1338,28 @@ export default function Research() {
                       key={student.id}
                       apprentice={student}
                     >
+                      {isOwner && (
+                        <div className="mentor-permissions-toggles" onClick={(e) => e.stopPropagation()}>
+                          <div className="permissions-title">הרשאות (מתן הרשאות תקדם את המשתמש למנחה):</div>
+                          {[
+                            { field: "can_edit", label: "עריכת מחקר" },
+                            { field: "can_approve", label: "אישור/דחיית מועמדים" },
+                            { field: "can_invite", label: "הזמנת משתמשים" },
+                            { field: "can_remove", label: "הסרת חברי צוות" },
+                            { field: "can_manage_chat", label: "ניהול צ'אט" },
+                          ].map(({ field, label }) => (
+                            <label key={field} className="permission-toggle-label">
+                              <input
+                                type="checkbox"
+                                checked={!!student[field]}
+                                onChange={() => handlePermissionToggle(student.applicationId, field, student[field])}
+                                className="permission-checkbox"
+                              />
+                              <span>{label}</span>
+                            </label>
+                          ))}
+                        </div>
+                      )}
                       {canRemoveThis && (
                         <div className="applicant-actions">
                           <button
