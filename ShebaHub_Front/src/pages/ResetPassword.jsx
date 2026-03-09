@@ -27,8 +27,10 @@ const ResetPassword = () => {
 
   const validate = () => {
     const newErrors = {};
-    if (!formData.password || formData.password.length < 8)
-      newErrors.password = "הסיסמה חייבת להכיל לפחות 8 תווים";
+    if (!formData.password || formData.password.length < 14)
+      newErrors.password = "הסיסמה חייבת להכיל לפחות 14 תווים";
+    if (formData.password && formData.password.length > 64)
+      newErrors.password = "הסיסמה יכולה להכיל לכל היותר 64 תווים";
     if (formData.password !== formData.confirmPassword)
       newErrors.confirmPassword = "הסיסמאות אינן תואמות";
     setErrors(newErrors);
@@ -113,7 +115,7 @@ const ResetPassword = () => {
           <FormInput
             type="password"
             name="password"
-            placeholder="סיסמה חדשה (לפחות 8 תווים)"
+            placeholder="סיסמה חדשה (14-64 תווים)"
             value={formData.password}
             onChange={handleChange}
             error={errors.password}
