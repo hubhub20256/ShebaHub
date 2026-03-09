@@ -1,7 +1,12 @@
 export function scrollToFirstError(errors) {
   const firstKey = Object.keys(errors)[0];
   if (!firstKey) return;
-  const el = document.getElementsByName(firstKey)[0];
+  // First try by name for standard inputs
+  let el = document.getElementsByName(firstKey)[0];
+  // Fallback to id for custom fields
+  if (!el) {
+    el = document.getElementById(`field-${firstKey}`);
+  }
   if (el) {
     el.scrollIntoView({ behavior: 'smooth', block: 'center' });
     el.focus();

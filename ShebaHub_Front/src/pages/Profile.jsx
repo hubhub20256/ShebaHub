@@ -405,11 +405,14 @@ function Profile() {
 
   // ALL function definitions - these don't violate hooks rules
   function handleToggleClick() {
-    // Only allow switching between existing profiles (dual-role is no longer allowed for new users)
     if (hasMentorProfile && hasApprenticeProfile) {
       const next = activeRole === "mentor" ? apprenticeProfile : mentorProfile;
       setActiveRole(activeRole === "mentor" ? "apprentice" : "mentor");
       setUserData(next);
+    } else if (hasMentorProfile && !hasApprenticeProfile) {
+      navigate("/create-profile?role=apprentice");
+    } else if (!hasMentorProfile && hasApprenticeProfile) {
+      navigate("/create-profile?role=mentor");
     }
   }
 
@@ -661,11 +664,18 @@ function Profile() {
 
   // Computed values that depend on hooks (but don't use hooks themselves)
   const shouldShowSpecialty = isMentor || showApprenticeSpecialty;
-  // Only show toggle when user has both profiles (legacy dual-role users)
-  const showToggleButton = hasMentorProfile && hasApprenticeProfile;
-  const toggleLabel = showToggleButton
-    ? `החלף תצוגה (${isMentor ? "מנחה" : "מתלמד/ת"})`
-    : "";
+  
+  // Show toggle button if they have at least one profile
+  const showToggleButton = hasProfile;
+  
+  let toggleLabel = "";
+  if (hasMentorProfile && hasApprenticeProfile) {
+    toggleLabel = `החלף תצוגה (${isMentor ? "למתלמד/ת" : "למנחה"})`;
+  } else if (hasMentorProfile && !hasApprenticeProfile) {
+    toggleLabel = "צור/י פרופיל מתלמד/ת";
+  } else if (!hasMentorProfile && hasApprenticeProfile) {
+    toggleLabel = "צור/י פרופיל מנחה";
+  }
 
   // NOW we can do conditional rendering - all hooks have been called
   // Public profile view (read-only). This prevents non-owners from even seeing edit UI.

@@ -59,6 +59,7 @@ export default function CreateResearch() {
       const error = validateFile(file, { type: 'document' });
       if (error) {
         setErrors(prev => ({ ...prev, contract: error }));
+        toast.error(`שגיאת קובץ: ${error}`);
         e.target.value = '';
         return;
       }
@@ -190,6 +191,7 @@ export default function CreateResearch() {
     }
 
     if (Object.keys(newErrors).length > 0) {
+      setSubmitError("יש שגיאות בטופס, נא לתקן את השדות המסומנים באדום");
       setErrors(newErrors);
       setTimeout(() => scrollToFirstError(newErrors), 100);
       setIsSaving(false);
@@ -258,7 +260,15 @@ export default function CreateResearch() {
           <InputField label="שם המחקר" name="researchName" value={form.researchName} onChange={handleChange} required={true} error={errors.researchName} />
         </div>
         <div className="cr-full-width">
-          <TextAreaField label="תיאור המחקר" name="description" value={form.description} onChange={handleChange} required={true} error={errors.description} />
+          <TextAreaField 
+            label="תיאור המחקר" 
+            name="description" 
+            placeholder="ספרי על המחקר, המטרות והחשיבות שלו..."
+            value={form.description} 
+            onChange={handleChange} 
+            required={true} 
+            error={errors.description} 
+          />
         </div>
 
         {/* 2-Column Grid */}
@@ -277,6 +287,7 @@ export default function CreateResearch() {
             />
             <MentorSearchField
               label="מנחים"
+              name="mentors"
               value={form.mentors}
               onChange={(val) => updateField("mentors", val)}
               required={true}
@@ -335,7 +346,7 @@ export default function CreateResearch() {
               error={errors.durationMonths}
             />
 
-            <div className="cr-field">
+            <div className="cr-field" id="field-compensation">
               <label className="cr-label">סוגי תגמול <span className="cr-required-star">*</span></label>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 4 }}>
                 {["מלגה", "שכר", "קרדיט אקדמי", "ללא תגמול / התנדבות", "גמיש"].map((opt) => (
@@ -361,6 +372,7 @@ export default function CreateResearch() {
              
              <HospitalSelectField
               label="מיקום"
+              name="location"
               value={form.location}
               onChange={(val) => updateField("location", val)}
               required={true}
@@ -373,6 +385,7 @@ export default function CreateResearch() {
             
             <CustomSelectField
               label="אופן העבודה"
+              name="workMode"
               value={form.workMode}
               onChange={(val) => updateField("workMode", val)}
               options={["פרונטלי", "היברידי", "מרחוק"]}
@@ -383,6 +396,7 @@ export default function CreateResearch() {
 
             <CustomSelectField
               label="סטטוס המחקר"
+              name="status"
               value={form.status}
               onChange={(val) => updateField("status", val)}
               options={[
@@ -408,9 +422,25 @@ export default function CreateResearch() {
             />
             
             {/* Optional Fields (TextAreas) */}
-            <TextAreaField label="דרישות" name="requirements" value={form.requirements} onChange={handleChange} required={false} />
-            <TextAreaField label="מיומנויות וכלים" name="skillsAndTools" value={form.skillsAndTools} onChange={handleChange} required={false} />
-            <TextAreaField label="תוצרי המחקר" name="output" value={form.output} onChange={handleChange} required={false} />
+            <TextAreaField label="דרישות" 
+              name="requirements" 
+              placeholder="לדוגמה: סטודנט שנה ג', ניסיון בפייתון..."
+              value={form.requirements} 
+              onChange={handleChange} 
+              required={false} 
+              />
+            <TextAreaField label="מיומנויות וכלים" 
+              name="skillsAndTools" 
+              placeholder="לדוגמה: Python, SQL, ניתוח נתונים..."
+              value={form.skillsAndTools} 
+              onChange={handleChange} 
+              required={false} />
+            <TextAreaField label="תוצרי המחקר מצופים" 
+              name="output" 
+              placeholder="לדוגמה: מאמר ב-JAMA"
+              value={form.output} 
+              onChange={handleChange} 
+              required={false} />
             
             {isEditMode && (existingContractName || existingContractUrl) && (
               <div style={{ marginTop: 10, marginBottom: 8 }}>
@@ -453,7 +483,7 @@ export default function CreateResearch() {
               name="contract"
               file={form.contract}
               onChange={handleFileChange}
-              required={!isEditMode && !existingContractName}
+              required={false}
               error={errors.contract}
             />
           </div>
@@ -501,7 +531,7 @@ function InputField({ label, name, value, onChange, type = "text", placeholder, 
   );
 }
 
-function TextAreaField({ label, name, value, onChange, required = false, error }) {
+function TextAreaField({ label, name, value, onChange, placeholder, required = false, error }) {
   return (
     <div className="cr-field">
       <Label text={label} required={required} />
@@ -509,6 +539,7 @@ function TextAreaField({ label, name, value, onChange, required = false, error }
         name={name}
         value={value}
         onChange={onChange}
+        placeholder={placeholder}
         className="cr-textarea"
         style={error ? { borderColor: '#b91c1c' } : undefined}
         required={required}
@@ -518,7 +549,7 @@ function TextAreaField({ label, name, value, onChange, required = false, error }
   );
 }
 
-function CustomSelectField({ label, value, onChange, options, placeholder, required = false, error }) {
+function CustomSelectField({ label, name, value, onChange, options, placeholder, required = false, error }) {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef(null);
 
@@ -543,7 +574,7 @@ function CustomSelectField({ label, value, onChange, options, placeholder, requi
   };
 
   return (
-    <div className="cr-field" ref={containerRef}>
+    <div className="cr-field" ref={containerRef} id={name ? `field-${name}` : undefined}>
       <Label text={label} required={required} />
       <div
         onClick={() => setIsOpen(!isOpen)}
@@ -576,7 +607,7 @@ function CustomSelectField({ label, value, onChange, options, placeholder, requi
   );
 }
 
-function HospitalSelectField({ label, value, onChange, required = false, error }) {
+function HospitalSelectField({ label, name, value, onChange, required = false, error }) {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [isOther, setIsOther] = useState(false);
@@ -631,7 +662,7 @@ function HospitalSelectField({ label, value, onChange, required = false, error }
 
   if (isOther) {
     return (
-      <div className="cr-field" style={{ position: "relative" }}>
+      <div className="cr-field" style={{ position: "relative" }} id={name ? `field-${name}` : undefined}>
         <Label text={label} required={required} />
         <input
           type="text"
@@ -670,7 +701,7 @@ function HospitalSelectField({ label, value, onChange, required = false, error }
   }
 
   return (
-    <div className="cr-field" ref={containerRef} style={{ position: "relative" }}>
+    <div className="cr-field" ref={containerRef} style={{ position: "relative" }} id={name ? `field-${name}` : undefined}>
       <Label text={label} required={required} />
       <div
         onClick={() => setIsOpen(!isOpen)}
@@ -746,7 +777,7 @@ function HospitalSelectField({ label, value, onChange, required = false, error }
   );
 }
 
-function MentorSearchField({ label, value, onChange, required = false, error }) {
+function MentorSearchField({ label, name, value, onChange, required = false, error }) {
   const [mentors, setMentors] = useState([]);
   const [search, setSearch] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -918,7 +949,7 @@ function FileField({ label, name, file, onChange, required = false, error }) {
     <div className="cr-field">
       <Label text={label} required={required} />
       <div className="cr-file-wrapper">
-        <input type="file" name={name} id={`file-${name}`} onChange={onChange} className="cr-file-input" required={required} accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" />
+        <input type="file" name={name} id={`file-${name}`} onChange={onChange} className="cr-file-input" required={required} accept=".pdf" />
         <label htmlFor={`file-${name}`} className="cr-file-label">
           {file ? `קובץ נבחר: ${file.name}` : "לחץ להעלאת קובץ"}
         </label>
