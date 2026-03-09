@@ -1223,7 +1223,7 @@ export default function Research() {
                           עזוב מחקר
                         </button>
                       </>
-                    ) : (data.isFull && !isMentor) ? (
+                    ) : (data.isFull) ? (
                       <div style={{
                         textAlign: "center",
                         color: "#dc2626",
@@ -1233,7 +1233,7 @@ export default function Research() {
                       }}>
                         הצוות מלא - לא זמין להצטרפות
                       </div>
-                    ) : (!data.accepting_applications && !isMentor) ? (
+                    ) : (!data.accepting_applications) ? (
                       <div style={{
                         textAlign: "center",
                         color: "#dc2626",
