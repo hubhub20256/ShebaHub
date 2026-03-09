@@ -1,6 +1,5 @@
 // API Service for Backend Communication
-//export const API_BASE_URL = 'https://shebahub.hitheal.org.il:8085/api';
-export const API_BASE_URL = 'http://localhost:8000/api';
+export const API_BASE_URL = 'https://shebahub.hitheal.org.il:8085/api';
 
 // ---------------- Token helpers ----------------
 const decodeJwtPayload = (token) => {
