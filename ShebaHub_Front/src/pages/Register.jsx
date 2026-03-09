@@ -18,7 +18,7 @@ const translateError = (error) => {
     "This field may not be blank.": "שדה זה לא יכול להיות ריק",
     // שגיאות סיסמה
     "This password is too short. It must contain at least 8 characters.": "הסיסמה קצרה מדי. היא חייבת להכיל לפחות 8 תווים",
-    "This password is too common.": "הסיסמה נפוצה מדי",
+    "This password is too common.": "הסיסמה נפוצה מדי, בבקשה בחר בסיסמה אחרת",
     "This password is entirely numeric.": "הסיסמה לא יכולה להכיל רק מספרים",
     "The password is too similar to the email address.": "הסיסמה דומה מדי לכתובת האימייל",
     "Passwords do not match.": "הסיסמאות אינן תואמות",
@@ -70,8 +70,10 @@ const Register = () => {
     if (formData.email && formData.confirmEmail !== formData.email)
       newErrors.confirmEmail = "כתובות האימייל אינן תואמות";
 
-    if (!formData.password || formData.password.length < 8)
-      newErrors.password = "הסיסמה חייבת להכיל לפחות 8 תווים";
+    if (!formData.password || formData.password.length < 14)
+      newErrors.password = "הסיסמה חייבת להכיל לפחות 14 תווים";
+    if (formData.password && formData.password.length > 64)
+      newErrors.password = "הסיסמה יכולה להכיל לכל היותר 64 תווים";
     if (formData.password !== formData.confirmPassword)
       newErrors.confirmPassword = "הסיסמאות אינן תואמות";
     if (!formData.agreed) newErrors.agreed = "חובה לאשר את תנאי השימוש";
@@ -246,7 +248,7 @@ const Register = () => {
         <FormInput
           type="password"
           name="password"
-          placeholder="סיסמה (לפחות 8 תווים)"
+          placeholder="סיסמה (14-64 תווים)"
           value={formData.password}
           onChange={handleChange}
           error={errors.password}
