@@ -180,12 +180,6 @@ export default function CreateResearch() {
       newErrors.teamSize = "גודל צוות חייב להיות בין 1 ל-500";
     }
     const today = new Date().toISOString().split('T')[0];
-    if (form.startDate && form.startDate < today) {
-      newErrors.startDate = "לא ניתן לבחור תאריך שעבר";
-    }
-    if (form.estimatedCompletionDate && form.estimatedCompletionDate < today) {
-      newErrors.estimatedCompletionDate = "לא ניתן לבחור תאריך שעבר";
-    }
     if (form.startDate && form.estimatedCompletionDate && form.estimatedCompletionDate <= form.startDate) {
       newErrors.estimatedCompletionDate = "תאריך סיום חייב להיות אחרי תאריך התחלה";
     }
@@ -311,7 +305,6 @@ export default function CreateResearch() {
               value={form.startDate}
               onChange={(val) => updateField("startDate", val)}
               required={true}
-              minDate={new Date().toISOString().split('T')[0]}
               error={errors.startDate}
             />
             <DatePickerField
@@ -320,7 +313,7 @@ export default function CreateResearch() {
               value={form.estimatedCompletionDate}
               onChange={(val) => updateField("estimatedCompletionDate", val)}
               required={false}
-              minDate={form.startDate || new Date().toISOString().split('T')[0]}
+              minDate={form.startDate}
               error={errors.estimatedCompletionDate}
             />
 
