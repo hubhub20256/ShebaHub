@@ -179,6 +179,11 @@ export default function CreateMentorProfile() {
     const { name, files } = e.target;
     const file = files && files[0] ? files[0] : null;
     if (file) {
+      if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) {
+        setErrors(prev => ({ ...prev, [name]: "ניתן להעלות קבצי PDF בלבד" }));
+        e.target.value = '';
+        return;
+      }
       const error = validateFile(file, { type: 'document' });
       if (error) {
         setErrors(prev => ({ ...prev, [name]: error }));
@@ -932,12 +937,17 @@ export default function CreateMentorProfile() {
                         <div style={styles.fileWrapper}>
                           <input
                             type="file"
-                            accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                            accept=".pdf"
                             id={`recommender-file-${idx}`}
                             style={styles.fileInput}
                             onChange={(e) => {
                               const file = e.target.files?.[0] || null;
                               if (file) {
+                                if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) {
+                                  setErrors(prev => ({ ...prev, [`recommenderFile_${idx}`]: "ניתן להעלות קבצי PDF בלבד" }));
+                                  e.target.value = '';
+                                  return;
+                                }
                                 const error = validateFile(file, { type: 'document' });
                                 if (error) {
                                   setErrors(prev => ({ ...prev, [`recommenderFile_${idx}`]: error }));
@@ -1193,7 +1203,7 @@ function FileField({ label, name, file, onChange, error }) {
     <div style={styles.field}>
       <label style={styles.label}>{label}</label>
       <div style={styles.fileWrapper}>
-        <input type="file" name={name} onChange={onChange} style={styles.fileInput} id={name} accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" />
+        <input type="file" name={name} onChange={onChange} style={styles.fileInput} id={name} accept=".pdf" />
         <label htmlFor={name} style={styles.fileLabel} className="create-profile-file-label">
           {file ? `✅ ${file.name}` : "בחרי קובץ..."}
         </label>
