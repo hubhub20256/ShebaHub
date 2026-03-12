@@ -220,6 +220,8 @@ function normalizeProfileForDraft(profile) {
         ? profile.compensationPreference_detail.map((v) => typeof v === "object" ? (v.name_he || v.name || v.value || v) : v)
         : [],
     participationMode: resolveField(profile, "participationMode"),
+    universityRank: profile.universityRank || "",
+    universityAffiliation: profile.universityAffiliation || "",
   };
 }
 
@@ -395,6 +397,8 @@ const INITIAL_DRAFT = {
   institution: "",
   degrees: [],
   academicRank: "",
+  universityRank: "",
+  universityAffiliation: "",
   workplace: "",
   hasMentoringExperience: "",
   mentoringExperienceDetails: "",
@@ -700,6 +704,8 @@ function Profile() {
           ? draft.specialtyGroups[0]
           : (draft.specialtyGroup || ""),
         specialtyGroups: Array.isArray(draft.specialtyGroups) ? draft.specialtyGroups : (draft.specialtyGroup ? [draft.specialtyGroup] : []),
+        // Clear university affiliation if rank is ללא
+        universityAffiliation: (!draft.universityRank || draft.universityRank === "ללא") ? "" : (draft.universityAffiliation || ""),
         recommenders: (draft.recommenders || []).map(({ file, ...rest }) => rest),
       };
       let updatedProfile = await updateFn(draftToSend);
@@ -941,6 +947,8 @@ function Profile() {
               <>
                 <InfoRow label="שלב בהכשרה" value={getHebrewName(userData, "academicRank_detail")} />
                 <InfoRow label="ניסיון בהנחיה" value={formatBoolean(userData.hasMentoringExperience)} />
+                <InfoRow label="דרגה אקדמית" value={userData.universityRank && userData.universityRank !== "ללא" ? userData.universityRank : "-"} />
+                <InfoRow label="שיוך אקדמי" value={userData.universityAffiliation || "-"} />
               </>
             ) : (
               <>
@@ -1268,6 +1276,49 @@ function Profile() {
 
             {isMentor && (
               <>
+                <div style={styles.formSection}>
+                  <label style={styles.label}>דרגה אקדמית</label>
+                  <div style={styles.pillRow}>
+                    {["ללא", "מדריך", "מרצה", "מרצה בכיר", "פרופסור חבר", "פרופסור מן המניין"].map((opt) => (
+                      <button
+                        key={opt}
+                        type="button"
+                        onClick={() => {
+                          handleFieldChange("universityRank", opt);
+                          if (opt === "ללא") handleFieldChange("universityAffiliation", "");
+                        }}
+                        style={{ ...styles.pillBtn, ...(draft.universityRank === opt ? styles.pillBtnActive : {}) }}
+                      >
+                        {opt}
+                      </button>
+                    ))}
+                  </div>
+                  {draft.universityRank && draft.universityRank !== "ללא" && (
+                    <div style={{ marginTop: 8 }}>
+                      <label style={{ ...styles.label, marginBottom: 4 }}>שיוך אקדמי</label>
+                      <select
+                        value={draft.universityAffiliation || ""}
+                        onChange={(e) => handleFieldChange("universityAffiliation", e.target.value)}
+                        style={styles.select}
+                      >
+                        {[
+                          { v: "", t: "בחרי/י אוניברסיטה" },
+                          { v: "האוניברסיטה העברית בירושלים", t: "האוניברסיטה העברית בירושלים" },
+                          { v: "אוניברסיטת תל אביב", t: "אוניברסיטת תל אביב" },
+                          { v: "הטכניון", t: "הטכניון" },
+                          { v: "אוניברסיטת בן גוריון", t: "אוניברסיטת בן גוריון" },
+                          { v: "אוניברסיטת בר אילן", t: "אוניברסיטת בר אילן" },
+                          { v: "אוניברסיטת אריאל", t: "אוניברסיטת אריאל" },
+                          { v: "אוניברסיטת חיפה", t: "אוניברסיטת חיפה" },
+                          { v: "מכון ויצמן למדע", t: "מכון ויצמן למדע" },
+                          { v: "אוניברסיטת רייכמן", t: "אוניברסיטת רייכמן (הבינתחומי)" },
+                          { v: "אחר", t: "אחר" },
+                        ].map((o) => <option key={o.v} value={o.v}>{o.t}</option>)}
+                      </select>
+                    </div>
+                  )}
+                </div>
+
                 <div style={styles.formSection}>
                   <label style={styles.label}>שלב בהכשרה הרפואית</label>
                   <select

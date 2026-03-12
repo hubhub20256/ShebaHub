@@ -364,6 +364,8 @@ function PublicProfile() {
             <>
               <InfoRow label="שלב בהכשרה" value={getHebrewName(profileData, "academicRank_detail")} />
               <InfoRow label="ניסיון בהנחיה" value={formatBoolean(profileData.hasMentoringExperience)} />
+              <InfoRow label="דרגה אקדמית" value={profileData.universityRank && profileData.universityRank !== "ללא" ? profileData.universityRank : "-"} />
+              <InfoRow label="שיוך אקדמי" value={profileData.universityAffiliation || "-"} />
             </>
           ) : (
             <>

@@ -42,6 +42,8 @@ const INITIAL_FORM_STATE = {
   degrees: [],
   institution: "",
   academicRank: "",
+  universityRank: "",
+  universityAffiliation: "",
   hasMentoringExperience: "",
   mentoringExperienceDetails: "",
   researchInterests: "",
@@ -379,6 +381,8 @@ export default function CreateMentorProfile() {
           specialty: form.specialties[0] || form.specialty,
           specialties: form.specialties,
           academicRank: form.academicRank,
+          universityRank: form.universityRank,
+          universityAffiliation: form.universityRank && form.universityRank !== "ללא" ? form.universityAffiliation : "",
           hasMentoringExperience: toBoolean(form.hasMentoringExperience),
           mentoringExperienceDetails: form.mentoringExperienceDetails,
           researchInterests: form.researchInterests,
@@ -760,6 +764,48 @@ export default function CreateMentorProfile() {
               error={errors.degrees}
               options={["MD", "PhD", "MSc", "MPH", "MBA", "ללא תואר קודם"]}
             />
+
+            {role === "mentor" && (
+              <div style={{ marginTop: 15 }}>
+                <div style={styles.field} id="field-universityRank">
+                  <label style={styles.label}>דרגה אקדמית</label>
+                  <div style={styles.inline}>
+                    {["ללא", "מדריך", "מרצה", "מרצה בכיר", "פרופסור חבר", "פרופסור מן המניין"].map((opt) => (
+                      <button
+                        key={opt}
+                        type="button"
+                        onClick={() => { updateField("universityRank", opt); if (opt === "ללא") updateField("universityAffiliation", ""); }}
+                        className={`pill-btn ${form.universityRank === opt ? "pill-btn-active" : ""}`}
+                        style={{ ...styles.pillBtn, ...(form.universityRank === opt ? styles.pillBtnActive : {}) }}
+                      >
+                        {opt}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                {form.universityRank && form.universityRank !== "ללא" && (
+                  <SelectField
+                    label="שיוך אקדמי"
+                    name="universityAffiliation"
+                    value={form.universityAffiliation}
+                    onChange={handleChange}
+                    options={[
+                      { v: "", t: "בחרי/י אוניברסיטה" },
+                      { v: "האוניברסיטה העברית בירושלים", t: "האוניברסיטה העברית בירושלים" },
+                      { v: "אוניברסיטת תל אביב", t: "אוניברסיטת תל אביב" },
+                      { v: "הטכניון", t: "הטכניון" },
+                      { v: "אוניברסיטת בן גוריון", t: "אוניברסיטת בן גוריון" },
+                      { v: "אוניברסיטת בר אילן", t: "אוניברסיטת בר אילן" },
+                      { v: "אוניברסיטת אריאל", t: "אוניברסיטת אריאל" },
+                      { v: "אוניברסיטת חיפה", t: "אוניברסיטת חיפה" },
+                      { v: "מכון ויצמן למדע", t: "מכון ויצמן למדע" },
+                      { v: "אוניברסיטת רייכמן", t: "אוניברסיטת רייכמן (הבינתחומי)" },
+                      { v: "אחר", t: "אחר" },
+                    ]}
+                  />
+                )}
+              </div>
+            )}
 
             {role === "mentor" ? (
               <div style={{ marginTop: 15 }}>
