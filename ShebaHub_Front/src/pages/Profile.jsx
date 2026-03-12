@@ -124,6 +124,18 @@ function extractDisplay(value) {
   return String(value);
 }
 
+function formatDate(isoDate) {
+  if (!isoDate || isoDate === "-") return "-";
+  // If it already contains /, assume it's already formatted
+  if (isoDate.includes("/")) return isoDate;
+  const parts = isoDate.split("-");
+  if (parts.length === 3) {
+    const [y, m, d] = parts;
+    return `${d}/${m}/${y}`;
+  }
+  return isoDate;
+}
+
 function isYes(value) {
   return value === true || value === "כן" || value === "yes" || value === "true";
 }
@@ -245,6 +257,13 @@ const styles = {
   pillRow: { display: "flex", flexWrap: "wrap", gap: "8px" },
   pillBtn: { padding: "8px 16px", borderRadius: "20px", border: "1px solid var(--border-color, #ddd)", background: "var(--card-bg, white)", color: "var(--text-color, #555)", cursor: "pointer", fontSize: "14px", transition: "all 0.2s" },
   pillBtnActive: { background: ACCENT_TEAL, color: "white", borderColor: ACCENT_TEAL },
+  calendarPopup: { position: "absolute", top: "105%", right: 0, width: "min(280px, 90vw)", background: "white", borderRadius: 12, boxShadow: "0 10px 30px rgba(0,0,0,0.15)", border: "1px solid #ddd", padding: 16, zIndex: 100 },
+  calendarHeader: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 },
+  navBtn: { background: "none", border: "none", cursor: "pointer", fontSize: 16, color: "#666", padding: 4 },
+  calendarGrid: { display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 6 },
+  dayName: { textAlign: "center", fontSize: 12, fontWeight: 700, color: "#999", marginBottom: 4 },
+  dayBtn: { width: "100%", aspectRatio: "1", borderRadius: "50%", border: "none", background: "#f9f9ff", cursor: "pointer", fontSize: 13, color: THEME_COLOR, display: "flex", alignItems: "center", justifyContent: "center", transition: "0.2s" },
+  dayBtnActive: { background: ACCENT_TEAL, color: "white", fontWeight: 700, boxShadow: "0 2px 8px rgba(108, 213, 191, 0.4)" }
 };
 
 function SectionCard({ title, children }) {
@@ -261,6 +280,103 @@ function InfoRow({ label, value }) {
     <div className="profile-info-row">
       <span className="profile-info-label">{label}:</span>
       <span className="profile-info-value">{value || "-"}</span>
+    </div>
+  );
+}
+
+const CalendarIcon = ({ color }) => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M19 4H5C3.89543 4 3 4.89543 3 6V20C3 21.1046 3.89543 22 5 22H19C20.1046 22 21 21.1046 21 20V6C21 4.89543 20.1046 4 19 4Z" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M16 2V6" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M8 2V6" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M3 10H21" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
+function DatePickerField({ label, value, onChange, minDate }) {
+  const [show, setShow] = useState(false);
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const popupRef = useRef(null);
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (popupRef.current && !popupRef.current.contains(event.target)) {
+        setShow(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const getMonthName = (date) => new Intl.DateTimeFormat("he-IL", { month: "long", year: "numeric" }).format(date);
+
+  const year = currentDate.getFullYear();
+  const month = currentDate.getMonth();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const firstDay = new Date(year, month, 1).getDay();
+
+  const handleDayClick = (day) => {
+    const isoDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    if (minDate && isoDate < minDate) return;
+    onChange(isoDate);
+    setShow(false);
+  };
+
+  const nextMonth = () => setCurrentDate(new Date(year, month + 1, 1));
+  const prevMonth = () => setCurrentDate(new Date(year, month - 1, 1));
+
+  const formatForDisplay = (isoDate) => {
+    if (!isoDate) return "";
+    const [y, m, d] = isoDate.split('-');
+    return `${d}/${m}/${y}`;
+  };
+
+  return (
+    <div style={{ ...styles.formSection, position: 'relative' }} ref={popupRef}>
+      <label style={styles.label}>{label}</label>
+      <div
+        onClick={() => setShow(!show)}
+        style={{ ...styles.input, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingLeft: 10 }}
+      >
+        <span style={{ color: value ? "inherit" : "#999" }}>{formatForDisplay(value) || "בחרי תאריך"}</span>
+        <CalendarIcon color={ACCENT_TEAL} />
+      </div>
+
+      {show && (
+        <div style={styles.calendarPopup}>
+          <div style={styles.calendarHeader}>
+            <button type="button" onClick={nextMonth} style={styles.navBtn}>&lt;</button>
+            <span style={{ fontWeight: 700, color: THEME_COLOR }}>{getMonthName(currentDate)}</span>
+            <button type="button" onClick={prevMonth} style={styles.navBtn}>&gt;</button>
+          </div>
+          <div style={styles.calendarGrid}>
+            {['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ש'].map(d => <div key={d} style={styles.dayName}>{d}</div>)}
+            {Array.from({ length: firstDay }).map((_, i) => <div key={`empty-${i}`} />)}
+            {Array.from({ length: daysInMonth }).map((_, i) => {
+              const day = i + 1;
+              const d = new Date(year, month, day);
+              const isoDateForCompare = `${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+              const isPast = minDate && isoDateForCompare < minDate;
+              const isSelected = value && value === isoDateForCompare;
+              return (
+                <button
+                  key={day}
+                  type="button"
+                  onClick={() => handleDayClick(day)}
+                  disabled={isPast}
+                  style={{
+                    ...styles.dayBtn,
+                    ...(isSelected ? styles.dayBtnActive : {}),
+                    ...(isPast ? { opacity: 0.3, cursor: "not-allowed" } : {})
+                  }}
+                >
+                  {day}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -843,7 +959,7 @@ function Profile() {
             <InfoRow label="סוג עבודה" value={getHebrewName(userData, "workType_detail")} />
             <InfoRow label="תגמול מועדף" value={getHebrewName(userData, "compensationPreference_detail")} />
             <InfoRow label="שעות שבועיות" value={userData.weeklyHours || "-"} />
-            <InfoRow label="זמינות להתחלה" value={userData.startDate || userData.availableFrom || "-"} />
+            <InfoRow label="זמינות להתחלה" value={formatDate(userData.startDate || userData.availableFrom)} />
             <InfoRow label="כלים ומיומנויות" value={userData.softwareSkills || "-"} />
           </div>
         </div>
@@ -1434,15 +1550,11 @@ function Profile() {
                   />
                 </div>
 
-                <div style={styles.formSection}>
-                  <label style={styles.label}>זמינות להתחלה</label>
-                  <input
-                    type="date"
-                    value={draft.startDate || ""}
-                    onChange={(e) => handleFieldChange("startDate", e.target.value)}
-                    style={styles.input}
-                  />
-                </div>
+                <DatePickerField
+                  label="זמינות להתחלה"
+                  value={draft.startDate}
+                  onChange={(date) => handleFieldChange("startDate", date)}
+                />
 
                 <div style={styles.formSection}>
                   <label style={styles.label}>כלים ומיומנויות</label>

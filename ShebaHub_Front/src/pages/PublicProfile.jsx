@@ -21,6 +21,17 @@ function extractDisplay(value) {
   return String(value);
 }
 
+function formatDate(isoDate) {
+  if (!isoDate || isoDate === "-") return "-";
+  if (isoDate.includes("/")) return isoDate;
+  const parts = isoDate.split("-");
+  if (parts.length === 3) {
+    const [y, m, d] = parts;
+    return `${d}/${m}/${y}`;
+  }
+  return isoDate;
+}
+
 function formatBoolean(val) {
   if (val === "כן" || val === true) return "כן";
   if (val === "לא" || val === false) return "לא";
@@ -380,7 +391,7 @@ function PublicProfile() {
             <InfoRow label="סוג עבודה" value={getHebrewName(profileData, "workType_detail")} />
             <InfoRow label="תגמול מועדף" value={getHebrewName(profileData, "compensationPreference_detail")} />
             <InfoRow label="שעות שבועיות" value={profileData.weeklyHours || "-"} />
-            <InfoRow label="זמינות להתחלה" value={profileData.startDate || profileData.availableFrom || "-"} />
+            <InfoRow label="זמינות להתחלה" value={formatDate(profileData.startDate || profileData.availableFrom)} />
             <InfoRow label="כלים ומיומנויות" value={profileData.softwareSkills || "-"} />
           </div>
         </div>
