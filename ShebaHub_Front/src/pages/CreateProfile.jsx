@@ -33,7 +33,7 @@ const START_YEARS = Array.from({ length: 11 }, (_, i) => ({
 }));
 
 const INITIAL_FORM_STATE = {
-  specialtyGroup: "",
+  specialtyGroups: [],
   specialty: "",
   specialties: [],
   stageInMedicalTraining: "",
@@ -148,14 +148,29 @@ export default function CreateMentorProfile() {
     updateField(name, value);
   }
 
-  function handleSpecialtyGroupChange(e) {
-    const nextGroup = e.target.value;
-    setForm((prev) => ({
-      ...prev,
-      specialtyGroup: nextGroup,
-      specialty: "",
-      specialties: [],
-    }));
+  function toggleSpecialtyGroup(group) {
+    if (!group) return;
+    setForm((prev) => {
+      const current = [...prev.specialtyGroups];
+      if (current.includes(group)) {
+        // Remove group and also remove any specialties that belong to it
+        const groupSpecialties = specialtiesByGroup[group] || [];
+        const nextSpecialties = prev.specialties.filter(s => !groupSpecialties.includes(s));
+        return {
+          ...prev,
+          specialtyGroups: current.filter(g => g !== group),
+          specialties: nextSpecialties,
+          specialty: nextSpecialties[0] || "",
+        };
+      }
+      return { ...prev, specialtyGroups: [...current, group] };
+    });
+    setErrors((prev) => {
+      if (!prev.specialtyGroup) return prev;
+      const copy = { ...prev };
+      delete copy.specialtyGroup;
+      return copy;
+    });
   }
 
   function toggleSpecialty(spec) {
@@ -231,7 +246,7 @@ export default function CreateMentorProfile() {
     if (!form.personalAcademicDescription.trim()) next.personalAcademicDescription = "שדה חובה";
 
     if (role === "mentor") {
-      if (!form.specialtyGroup) next.specialtyGroup = "שדה חובה";
+      if (form.specialtyGroups.length === 0) next.specialtyGroup = "יש לבחור לפחות קטגוריה אחת";
       if (form.specialties.length === 0) next.specialty = "יש לבחור לפחות התמחות אחת";
       if (!form.hasMentoringExperience) next.hasMentoringExperience = "שדה חובה";
     } else {
@@ -250,7 +265,10 @@ export default function CreateMentorProfile() {
     (form.apprenticeStage !== "סטודנט" && form.apprenticeStage !== "") ||
     (form.apprenticeStage === "סטודנט" && (form.yearOfStudy === "ו'" || form.yearOfStudy === "ז'"));
 
-  const selectedGroup = form.specialtyGroup || "";
+  // Combined specialties from all selected groups
+  const availableSpecialties = [...new Set(
+    form.specialtyGroups.flatMap(g => specialtiesByGroup[g] || [])
+  )];
 
   const translateError = (error) => {
     if (!error) return error;
@@ -356,7 +374,8 @@ export default function CreateMentorProfile() {
         const profileType = "mentor";
         profileData = {
           ...profileData,
-          specialtyGroup: form.specialtyGroup,
+          specialtyGroup: form.specialtyGroups[0] || "",
+          specialtyGroups: form.specialtyGroups,
           specialty: form.specialties[0] || form.specialty,
           specialties: form.specialties,
           academicRank: form.academicRank,
@@ -398,7 +417,8 @@ export default function CreateMentorProfile() {
         };
 
         if (isSpecialtyRelevant && (form.specialties.length > 0 || form.specialty)) {
-          profileData.specialtyGroup = form.specialtyGroup;
+          profileData.specialtyGroup = form.specialtyGroups[0] || "";
+          profileData.specialtyGroups = form.specialtyGroups;
           profileData.specialty = form.specialties[0] || form.specialty;
           profileData.specialties = form.specialties;
         }
@@ -610,19 +630,28 @@ export default function CreateMentorProfile() {
 
               {isSpecialtyRelevant && (
                 <>
-                  <SelectField
-                    label={<>קטגוריית התמחות <MandatoryStar /></>}
-                    name="specialtyGroup"
-                    value={form.specialtyGroup}
-                    onChange={handleSpecialtyGroupChange}
-                    error={errors.specialtyGroup}
-                    options={SPECIALTY_GROUPS}
-                  />
+                  <div style={{ ...styles.field, gridColumn: "1 / -1" }} id="field-specialtyGroup">
+                    <label style={styles.label}>קטגוריית התמחות <MandatoryStar /> <span style={{ fontWeight: 400, fontSize: 11, color: "#888" }}>(ניתן לבחור מספר קטגוריות)</span></label>
+                    <div style={styles.inline}>
+                      {SPECIALTY_GROUPS.filter(g => g.v).map((g) => (
+                        <button
+                          key={g.v}
+                          type="button"
+                          onClick={() => toggleSpecialtyGroup(g.v)}
+                          className={`pill-btn ${form.specialtyGroups.includes(g.v) ? "pill-btn-active" : ""}`}
+                          style={{ ...styles.pillBtn, ...(form.specialtyGroups.includes(g.v) ? styles.pillBtnActive : {}) }}
+                        >
+                          {g.t}
+                        </button>
+                      ))}
+                    </div>
+                    {errors.specialtyGroup && <div style={styles.error}>{errors.specialtyGroup}</div>}
+                  </div>
                   <div style={{ ...styles.field, gridColumn: "1 / -1" }} id="field-specialty">
-                    <label style={styles.label}>התמחויות <MandatoryStar /> <span style={{ fontWeight: 400, fontSize: 11, color: "#888" }}>(ניתן לבחור מספר התמחויות)</span></label>
-                    {selectedGroup ? (
+                    <label style={styles.label}>התמחות / תחום מרכזי <MandatoryStar /> <span style={{ fontWeight: 400, fontSize: 11, color: "#888" }}>(ניתן לבחור מספר התמחויות)</span></label>
+                    {form.specialtyGroups.length > 0 ? (
                       <div style={styles.inline}>
-                        {(specialtiesByGroup[selectedGroup] || []).map((spec) => (
+                        {availableSpecialties.map((spec) => (
                           <button
                             key={spec}
                             type="button"

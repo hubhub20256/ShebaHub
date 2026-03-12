@@ -199,6 +199,13 @@ function normalizeProfileForDraft(profile) {
     academicRank: findBestMatch(resolveField(profile, "academicRank"), ACADEMIC_RANKS),
     apprenticeStage: findBestMatch(resolveField(profile, "apprenticeStage"), APPRENTICE_STAGES),
     specialtyGroup: resolveField(profile, "specialtyGroup"),
+    specialtyGroups: (() => {
+      // Build the specialtyGroups array from the existing data
+      const sg = resolveField(profile, "specialtyGroup");
+      if (Array.isArray(profile.specialtyGroups)) return profile.specialtyGroups.filter(Boolean);
+      if (sg && sg !== "-" && sg !== "") return [sg];
+      return [];
+    })(),
     specialty: resolveField(profile, "specialty"),
     specialties: Array.isArray(profile.specialties_detail)
       ? profile.specialties_detail.map((s) => extractDisplay(s)).filter((x) => x && x !== "-")
@@ -653,7 +660,9 @@ function Profile() {
   function validateEditDraft() {
     const errs = {};
     if (isMentor) {
-      if (!draft.specialtyGroup) errs.specialtyGroup = "שדה חובה";
+      // Accept either old specialtyGroup or new specialtyGroups
+      const hasGroup = (Array.isArray(draft.specialtyGroups) && draft.specialtyGroups.length > 0) || !!draft.specialtyGroup;
+      if (!hasGroup) errs.specialtyGroup = "יש לבחור לפחות קטגוריה אחת";
     }
     if (isApprentice) {
       if (!draft.apprenticeStage) errs.apprenticeStage = "שדה חובה";
@@ -686,6 +695,11 @@ function Profile() {
       // Strip file objects from recommenders before sending as JSON
       const draftToSend = {
         ...draft,
+        // Send both for compatibility: specialtyGroup (first of array) and specialtyGroups (full array)
+        specialtyGroup: Array.isArray(draft.specialtyGroups) && draft.specialtyGroups.length > 0
+          ? draft.specialtyGroups[0]
+          : (draft.specialtyGroup || ""),
+        specialtyGroups: Array.isArray(draft.specialtyGroups) ? draft.specialtyGroups : (draft.specialtyGroup ? [draft.specialtyGroup] : []),
         recommenders: (draft.recommenders || []).map(({ file, ...rest }) => rest),
       };
       let updatedProfile = await updateFn(draftToSend);
@@ -940,7 +954,12 @@ function Profile() {
 
             {shouldShowSpecialty && (
               <>
-                <InfoRow label="קטגוריית התמחות" value={getHebrewName(userData, "specialtyGroup_detail")} />
+                <InfoRow label="קטגוריית התמחות" value={
+                  Array.isArray(userData.specialtyGroups) && userData.specialtyGroups.length > 0
+                    ? userData.specialtyGroups.join(" | ")
+                    : getHebrewName(userData, "specialtyGroup_detail")
+                } />
+
                 <InfoRow label="התמחות" value={
                   Array.isArray(userData.specialties_detail) && userData.specialties_detail.length
                     ? extractDisplay(userData.specialties_detail)
@@ -1154,41 +1173,58 @@ function Profile() {
             </div>
 
             <div style={styles.formSection}>
-              <label style={styles.label}>קטגוריית התמחות</label>
-              <select
-                value={draft.specialtyGroup}
-                onChange={(e) => { handleFieldChange("specialtyGroup", e.target.value); setEditErrors((prev) => { const n = { ...prev }; delete n.specialtyGroup; return n; }); }}
-                style={{ ...styles.select, ...(editErrors.specialtyGroup ? { borderColor: "#ef67a0" } : {}) }}
-              >
-                {SPECIALTY_GROUPS.map((opt) => (
-                  <option key={opt.v} value={opt.v}>{opt.t}</option>
-                ))}
-              </select>
+              <label style={styles.label}>קטגוריית התמחות <span style={{ fontWeight: 400, fontSize: 11, color: "#888" }}>(ניתן לבחור מספר קטגוריות)</span></label>
+              <div style={styles.pillRow}>
+                {SPECIALTY_GROUPS.filter(o => o.v).map((opt) => {
+                  const selected = Array.isArray(draft.specialtyGroups) && draft.specialtyGroups.includes(opt.v);
+                  return (
+                    <button
+                      key={opt.v}
+                      type="button"
+                      onClick={() => {
+                        setDraft((prev) => {
+                          const current = Array.isArray(prev.specialtyGroups) ? [...prev.specialtyGroups] : [];
+                          if (current.includes(opt.v)) {
+                            const groupSpecialties = specialtiesByGroup[opt.v] || [];
+                            const nextSpecialties = (prev.specialties || []).filter(s => !groupSpecialties.includes(s));
+                            return { ...prev, specialtyGroups: current.filter(g => g !== opt.v), specialties: nextSpecialties, specialty: nextSpecialties[0] || "" };
+                          }
+                          return { ...prev, specialtyGroups: [...current, opt.v] };
+                        });
+                        setEditErrors((prev) => { const n = { ...prev }; delete n.specialtyGroup; return n; });
+                      }}
+                      style={{ ...styles.pillBtn, ...(selected ? styles.pillBtnActive : {}), ...(editErrors.specialtyGroup ? { borderColor: "#ef67a0" } : {}) }}
+                    >
+                      {opt.t}
+                    </button>
+                  );
+                })}
+              </div>
               {editErrors.specialtyGroup && <div style={{ color: "#ef67a0", fontSize: 12, marginTop: 4 }}>{editErrors.specialtyGroup}</div>}
             </div>
 
             <div style={styles.formSection}>
               <label style={styles.label}>התמחות / תחום מרכזי</label>
-              {!draft.specialtyGroup ? (
+              {(!Array.isArray(draft.specialtyGroups) || draft.specialtyGroups.length === 0) ? (
                 <div style={{ fontSize: 13, color: "#999", padding: "8px 0" }}>קודם בחרי/י קטגוריה</div>
               ) : (
                 <div style={styles.pillRow}>
-                  {getSpecialtyOptions(draft.specialtyGroup).filter((o) => o.v).map((opt) => {
-                    const selected = Array.isArray(draft.specialties) && draft.specialties.includes(opt.v);
+                  {[...new Set(draft.specialtyGroups.flatMap(g => specialtiesByGroup[g] || []))].map((spec) => {
+                    const selected = Array.isArray(draft.specialties) && draft.specialties.includes(spec);
                     return (
                       <button
-                        key={opt.v}
+                        key={spec}
                         type="button"
                         onClick={() => {
                           setDraft((prev) => {
                             const list = [...(prev.specialties || [])];
-                            if (list.includes(opt.v)) return { ...prev, specialties: list.filter((s) => s !== opt.v), specialty: list.filter((s) => s !== opt.v)[0] || "" };
-                            return { ...prev, specialties: [...list, opt.v], specialty: prev.specialty || opt.v };
+                            if (list.includes(spec)) return { ...prev, specialties: list.filter((s) => s !== spec), specialty: list.filter((s) => s !== spec)[0] || "" };
+                            return { ...prev, specialties: [...list, spec], specialty: prev.specialty || spec };
                           });
                         }}
                         style={{ ...styles.pillBtn, ...(selected ? styles.pillBtnActive : {}) }}
                       >
-                        {opt.t}
+                        {spec}
                       </button>
                     );
                   })}

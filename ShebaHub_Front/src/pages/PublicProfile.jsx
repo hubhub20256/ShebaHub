@@ -377,8 +377,17 @@ function PublicProfile() {
 
           {shouldShowSpecialty && (
             <>
-              <InfoRow label="קטגוריית התמחות" value={getHebrewName(profileData, "specialtyGroup_detail")} />
-              <InfoRow label="התמחות" value={getHebrewName(profileData, "specialty_detail")} />
+              <InfoRow label="קטגוריית התמחות" value={
+                Array.isArray(profileData.specialtyGroups) && profileData.specialtyGroups.length > 0
+                  ? profileData.specialtyGroups.join(" | ")
+                  : getHebrewName(profileData, "specialtyGroup_detail")
+              } />
+              <InfoRow label="התמחות" value={
+                Array.isArray(profileData.specialties_detail) && profileData.specialties_detail.length
+                  ? extractDisplay(profileData.specialties_detail)
+                  : getHebrewName(profileData, "specialty_detail")
+              } />
+
             </>
           )}
         </div>
