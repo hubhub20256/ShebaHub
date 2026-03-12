@@ -1543,10 +1543,15 @@ function Profile() {
                     <label style={{ fontSize: 12, color: "var(--text-color, #6b7280)", marginBottom: 2, display: "block" }}>מכתב המלצה (אופציונלי)</label>
                     <input
                       type="file"
-                      accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                      accept=".pdf"
                       onChange={(e) => {
                         const file = e.target.files?.[0] || null;
                         if (file) {
+                          if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) {
+                            toast.error("ניתן להעלות קבצי PDF בלבד");
+                            e.target.value = '';
+                            return;
+                          }
                           const error = validateFile(file, { type: 'document' });
                           if (error) {
                             toast.error(error);
@@ -1627,10 +1632,15 @@ function Profile() {
                   <input
                     ref={documentFileInputRef}
                     type="file"
-                    accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                    accept=".pdf"
                     onChange={(e) => {
                       const file = e.target.files?.[0] || null;
                       if (file) {
+                        if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) {
+                          toast.error("ניתן להעלות קבצי PDF בלבד");
+                          e.target.value = '';
+                          return;
+                        }
                         const error = validateFile(file, { type: 'document' });
                         if (error) {
                           toast.error(error);
