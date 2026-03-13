@@ -124,6 +124,18 @@ function extractDisplay(value) {
   return String(value);
 }
 
+function formatDate(isoDate) {
+  if (!isoDate || isoDate === "-") return "-";
+  // If it already contains /, assume it's already formatted
+  if (isoDate.includes("/")) return isoDate;
+  const parts = isoDate.split("-");
+  if (parts.length === 3) {
+    const [y, m, d] = parts;
+    return `${d}/${m}/${y}`;
+  }
+  return isoDate;
+}
+
 function isYes(value) {
   return value === true || value === "כן" || value === "yes" || value === "true";
 }
@@ -187,6 +199,13 @@ function normalizeProfileForDraft(profile) {
     academicRank: findBestMatch(resolveField(profile, "academicRank"), ACADEMIC_RANKS),
     apprenticeStage: findBestMatch(resolveField(profile, "apprenticeStage"), APPRENTICE_STAGES),
     specialtyGroup: resolveField(profile, "specialtyGroup"),
+    specialtyGroups: (() => {
+      // Build the specialtyGroups array from the existing data
+      const sg = resolveField(profile, "specialtyGroup");
+      if (Array.isArray(profile.specialtyGroups)) return profile.specialtyGroups.filter(Boolean);
+      if (sg && sg !== "-" && sg !== "") return [sg];
+      return [];
+    })(),
     specialty: resolveField(profile, "specialty"),
     specialties: Array.isArray(profile.specialties_detail)
       ? profile.specialties_detail.map((s) => extractDisplay(s)).filter((x) => x && x !== "-")
@@ -201,6 +220,8 @@ function normalizeProfileForDraft(profile) {
         ? profile.compensationPreference_detail.map((v) => typeof v === "object" ? (v.name_he || v.name || v.value || v) : v)
         : [],
     participationMode: resolveField(profile, "participationMode"),
+    universityRank: profile.universityRank || "",
+    universityAffiliation: profile.universityAffiliation || "",
   };
 }
 
@@ -245,6 +266,13 @@ const styles = {
   pillRow: { display: "flex", flexWrap: "wrap", gap: "8px" },
   pillBtn: { padding: "8px 16px", borderRadius: "20px", border: "1px solid var(--border-color, #ddd)", background: "var(--card-bg, white)", color: "var(--text-color, #555)", cursor: "pointer", fontSize: "14px", transition: "all 0.2s" },
   pillBtnActive: { background: ACCENT_TEAL, color: "white", borderColor: ACCENT_TEAL },
+  calendarPopup: { position: "absolute", top: "105%", right: 0, width: "min(280px, 90vw)", background: "white", borderRadius: 12, boxShadow: "0 10px 30px rgba(0,0,0,0.15)", border: "1px solid #ddd", padding: 16, zIndex: 100 },
+  calendarHeader: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 },
+  navBtn: { background: "none", border: "none", cursor: "pointer", fontSize: 16, color: "#666", padding: 4 },
+  calendarGrid: { display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 6 },
+  dayName: { textAlign: "center", fontSize: 12, fontWeight: 700, color: "#999", marginBottom: 4 },
+  dayBtn: { width: "100%", aspectRatio: "1", borderRadius: "50%", border: "none", background: "#f9f9ff", cursor: "pointer", fontSize: 13, color: THEME_COLOR, display: "flex", alignItems: "center", justifyContent: "center", transition: "0.2s" },
+  dayBtnActive: { background: ACCENT_TEAL, color: "white", fontWeight: 700, boxShadow: "0 2px 8px rgba(108, 213, 191, 0.4)" }
 };
 
 function SectionCard({ title, children }) {
@@ -265,6 +293,103 @@ function InfoRow({ label, value }) {
   );
 }
 
+const CalendarIcon = ({ color }) => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M19 4H5C3.89543 4 3 4.89543 3 6V20C3 21.1046 3.89543 22 5 22H19C20.1046 22 21 21.1046 21 20V6C21 4.89543 20.1046 4 19 4Z" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M16 2V6" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M8 2V6" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M3 10H21" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
+function DatePickerField({ label, value, onChange, minDate }) {
+  const [show, setShow] = useState(false);
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const popupRef = useRef(null);
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (popupRef.current && !popupRef.current.contains(event.target)) {
+        setShow(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const getMonthName = (date) => new Intl.DateTimeFormat("he-IL", { month: "long", year: "numeric" }).format(date);
+
+  const year = currentDate.getFullYear();
+  const month = currentDate.getMonth();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const firstDay = new Date(year, month, 1).getDay();
+
+  const handleDayClick = (day) => {
+    const isoDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    if (minDate && isoDate < minDate) return;
+    onChange(isoDate);
+    setShow(false);
+  };
+
+  const nextMonth = () => setCurrentDate(new Date(year, month + 1, 1));
+  const prevMonth = () => setCurrentDate(new Date(year, month - 1, 1));
+
+  const formatForDisplay = (isoDate) => {
+    if (!isoDate) return "";
+    const [y, m, d] = isoDate.split('-');
+    return `${d}/${m}/${y}`;
+  };
+
+  return (
+    <div style={{ ...styles.formSection, position: 'relative' }} ref={popupRef}>
+      <label style={styles.label}>{label}</label>
+      <div
+        onClick={() => setShow(!show)}
+        style={{ ...styles.input, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingLeft: 10 }}
+      >
+        <span style={{ color: value ? "inherit" : "#999" }}>{formatForDisplay(value) || "בחרי תאריך"}</span>
+        <CalendarIcon color={ACCENT_TEAL} />
+      </div>
+
+      {show && (
+        <div style={styles.calendarPopup}>
+          <div style={styles.calendarHeader}>
+            <button type="button" onClick={nextMonth} style={styles.navBtn}>&lt;</button>
+            <span style={{ fontWeight: 700, color: THEME_COLOR }}>{getMonthName(currentDate)}</span>
+            <button type="button" onClick={prevMonth} style={styles.navBtn}>&gt;</button>
+          </div>
+          <div style={styles.calendarGrid}>
+            {['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ש'].map(d => <div key={d} style={styles.dayName}>{d}</div>)}
+            {Array.from({ length: firstDay }).map((_, i) => <div key={`empty-${i}`} />)}
+            {Array.from({ length: daysInMonth }).map((_, i) => {
+              const day = i + 1;
+              const d = new Date(year, month, day);
+              const isoDateForCompare = `${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+              const isPast = minDate && isoDateForCompare < minDate;
+              const isSelected = value && value === isoDateForCompare;
+              return (
+                <button
+                  key={day}
+                  type="button"
+                  onClick={() => handleDayClick(day)}
+                  disabled={isPast}
+                  style={{
+                    ...styles.dayBtn,
+                    ...(isSelected ? styles.dayBtnActive : {}),
+                    ...(isPast ? { opacity: 0.3, cursor: "not-allowed" } : {})
+                  }}
+                >
+                  {day}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 const INITIAL_DRAFT = {
   specialtyGroup: "",
   specialty: "",
@@ -272,6 +397,8 @@ const INITIAL_DRAFT = {
   institution: "",
   degrees: [],
   academicRank: "",
+  universityRank: "",
+  universityAffiliation: "",
   workplace: "",
   hasMentoringExperience: "",
   mentoringExperienceDetails: "",
@@ -537,7 +664,9 @@ function Profile() {
   function validateEditDraft() {
     const errs = {};
     if (isMentor) {
-      if (!draft.specialtyGroup) errs.specialtyGroup = "שדה חובה";
+      // Accept either old specialtyGroup or new specialtyGroups
+      const hasGroup = (Array.isArray(draft.specialtyGroups) && draft.specialtyGroups.length > 0) || !!draft.specialtyGroup;
+      if (!hasGroup) errs.specialtyGroup = "יש לבחור לפחות קטגוריה אחת";
     }
     if (isApprentice) {
       if (!draft.apprenticeStage) errs.apprenticeStage = "שדה חובה";
@@ -570,6 +699,13 @@ function Profile() {
       // Strip file objects from recommenders before sending as JSON
       const draftToSend = {
         ...draft,
+        // Send both for compatibility: specialtyGroup (first of array) and specialtyGroups (full array)
+        specialtyGroup: Array.isArray(draft.specialtyGroups) && draft.specialtyGroups.length > 0
+          ? draft.specialtyGroups[0]
+          : (draft.specialtyGroup || ""),
+        specialtyGroups: Array.isArray(draft.specialtyGroups) ? draft.specialtyGroups : (draft.specialtyGroup ? [draft.specialtyGroup] : []),
+        // Clear university affiliation if rank is ללא
+        universityAffiliation: (!draft.universityRank || draft.universityRank === "ללא") ? "" : (draft.universityAffiliation || ""),
         recommenders: (draft.recommenders || []).map(({ file, ...rest }) => rest),
       };
       let updatedProfile = await updateFn(draftToSend);
@@ -811,6 +947,8 @@ function Profile() {
               <>
                 <InfoRow label="שלב בהכשרה" value={getHebrewName(userData, "academicRank_detail")} />
                 <InfoRow label="ניסיון בהנחיה" value={formatBoolean(userData.hasMentoringExperience)} />
+                <InfoRow label="דרגה אקדמית" value={userData.universityRank && userData.universityRank !== "ללא" ? userData.universityRank : "-"} />
+                <InfoRow label="שיוך אקדמי" value={userData.universityAffiliation || "-"} />
               </>
             ) : (
               <>
@@ -824,7 +962,12 @@ function Profile() {
 
             {shouldShowSpecialty && (
               <>
-                <InfoRow label="קטגוריית התמחות" value={getHebrewName(userData, "specialtyGroup_detail")} />
+                <InfoRow label="קטגוריית התמחות" value={
+                  Array.isArray(userData.specialtyGroups) && userData.specialtyGroups.length > 0
+                    ? userData.specialtyGroups.join(" | ")
+                    : getHebrewName(userData, "specialtyGroup_detail")
+                } />
+
                 <InfoRow label="התמחות" value={
                   Array.isArray(userData.specialties_detail) && userData.specialties_detail.length
                     ? extractDisplay(userData.specialties_detail)
@@ -843,7 +986,7 @@ function Profile() {
             <InfoRow label="סוג עבודה" value={getHebrewName(userData, "workType_detail")} />
             <InfoRow label="תגמול מועדף" value={getHebrewName(userData, "compensationPreference_detail")} />
             <InfoRow label="שעות שבועיות" value={userData.weeklyHours || "-"} />
-            <InfoRow label="זמינות להתחלה" value={userData.startDate || userData.availableFrom || "-"} />
+            <InfoRow label="זמינות להתחלה" value={formatDate(userData.startDate || userData.availableFrom)} />
             <InfoRow label="כלים ומיומנויות" value={userData.softwareSkills || "-"} />
           </div>
         </div>
@@ -1038,41 +1181,58 @@ function Profile() {
             </div>
 
             <div style={styles.formSection}>
-              <label style={styles.label}>קטגוריית התמחות</label>
-              <select
-                value={draft.specialtyGroup}
-                onChange={(e) => { handleFieldChange("specialtyGroup", e.target.value); setEditErrors((prev) => { const n = { ...prev }; delete n.specialtyGroup; return n; }); }}
-                style={{ ...styles.select, ...(editErrors.specialtyGroup ? { borderColor: "#ef67a0" } : {}) }}
-              >
-                {SPECIALTY_GROUPS.map((opt) => (
-                  <option key={opt.v} value={opt.v}>{opt.t}</option>
-                ))}
-              </select>
+              <label style={styles.label}>קטגוריית התמחות <span style={{ fontWeight: 400, fontSize: 11, color: "#888" }}>(ניתן לבחור מספר קטגוריות)</span></label>
+              <div style={styles.pillRow}>
+                {SPECIALTY_GROUPS.filter(o => o.v).map((opt) => {
+                  const selected = Array.isArray(draft.specialtyGroups) && draft.specialtyGroups.includes(opt.v);
+                  return (
+                    <button
+                      key={opt.v}
+                      type="button"
+                      onClick={() => {
+                        setDraft((prev) => {
+                          const current = Array.isArray(prev.specialtyGroups) ? [...prev.specialtyGroups] : [];
+                          if (current.includes(opt.v)) {
+                            const groupSpecialties = specialtiesByGroup[opt.v] || [];
+                            const nextSpecialties = (prev.specialties || []).filter(s => !groupSpecialties.includes(s));
+                            return { ...prev, specialtyGroups: current.filter(g => g !== opt.v), specialties: nextSpecialties, specialty: nextSpecialties[0] || "" };
+                          }
+                          return { ...prev, specialtyGroups: [...current, opt.v] };
+                        });
+                        setEditErrors((prev) => { const n = { ...prev }; delete n.specialtyGroup; return n; });
+                      }}
+                      style={{ ...styles.pillBtn, ...(selected ? styles.pillBtnActive : {}), ...(editErrors.specialtyGroup ? { borderColor: "#ef67a0" } : {}) }}
+                    >
+                      {opt.t}
+                    </button>
+                  );
+                })}
+              </div>
               {editErrors.specialtyGroup && <div style={{ color: "#ef67a0", fontSize: 12, marginTop: 4 }}>{editErrors.specialtyGroup}</div>}
             </div>
 
             <div style={styles.formSection}>
               <label style={styles.label}>התמחות / תחום מרכזי</label>
-              {!draft.specialtyGroup ? (
+              {(!Array.isArray(draft.specialtyGroups) || draft.specialtyGroups.length === 0) ? (
                 <div style={{ fontSize: 13, color: "#999", padding: "8px 0" }}>קודם בחרי/י קטגוריה</div>
               ) : (
                 <div style={styles.pillRow}>
-                  {getSpecialtyOptions(draft.specialtyGroup).filter((o) => o.v).map((opt) => {
-                    const selected = Array.isArray(draft.specialties) && draft.specialties.includes(opt.v);
+                  {[...new Set(draft.specialtyGroups.flatMap(g => specialtiesByGroup[g] || []))].map((spec) => {
+                    const selected = Array.isArray(draft.specialties) && draft.specialties.includes(spec);
                     return (
                       <button
-                        key={opt.v}
+                        key={spec}
                         type="button"
                         onClick={() => {
                           setDraft((prev) => {
                             const list = [...(prev.specialties || [])];
-                            if (list.includes(opt.v)) return { ...prev, specialties: list.filter((s) => s !== opt.v), specialty: list.filter((s) => s !== opt.v)[0] || "" };
-                            return { ...prev, specialties: [...list, opt.v], specialty: prev.specialty || opt.v };
+                            if (list.includes(spec)) return { ...prev, specialties: list.filter((s) => s !== spec), specialty: list.filter((s) => s !== spec)[0] || "" };
+                            return { ...prev, specialties: [...list, spec], specialty: prev.specialty || spec };
                           });
                         }}
                         style={{ ...styles.pillBtn, ...(selected ? styles.pillBtnActive : {}) }}
                       >
-                        {opt.t}
+                        {spec}
                       </button>
                     );
                   })}
@@ -1116,6 +1276,49 @@ function Profile() {
 
             {isMentor && (
               <>
+                <div style={styles.formSection}>
+                  <label style={styles.label}>דרגה אקדמית</label>
+                  <div style={styles.pillRow}>
+                    {["ללא", "מדריך", "מרצה", "מרצה בכיר", "פרופסור חבר", "פרופסור מן המניין"].map((opt) => (
+                      <button
+                        key={opt}
+                        type="button"
+                        onClick={() => {
+                          handleFieldChange("universityRank", opt);
+                          if (opt === "ללא") handleFieldChange("universityAffiliation", "");
+                        }}
+                        style={{ ...styles.pillBtn, ...(draft.universityRank === opt ? styles.pillBtnActive : {}) }}
+                      >
+                        {opt}
+                      </button>
+                    ))}
+                  </div>
+                  {draft.universityRank && draft.universityRank !== "ללא" && (
+                    <div style={{ marginTop: 8 }}>
+                      <label style={{ ...styles.label, marginBottom: 4 }}>שיוך אקדמי</label>
+                      <select
+                        value={draft.universityAffiliation || ""}
+                        onChange={(e) => handleFieldChange("universityAffiliation", e.target.value)}
+                        style={styles.select}
+                      >
+                        {[
+                          { v: "", t: "בחרי/י אוניברסיטה" },
+                          { v: "האוניברסיטה העברית בירושלים", t: "האוניברסיטה העברית בירושלים" },
+                          { v: "אוניברסיטת תל אביב", t: "אוניברסיטת תל אביב" },
+                          { v: "הטכניון", t: "הטכניון" },
+                          { v: "אוניברסיטת בן גוריון", t: "אוניברסיטת בן גוריון" },
+                          { v: "אוניברסיטת בר אילן", t: "אוניברסיטת בר אילן" },
+                          { v: "אוניברסיטת אריאל", t: "אוניברסיטת אריאל" },
+                          { v: "אוניברסיטת חיפה", t: "אוניברסיטת חיפה" },
+                          { v: "מכון ויצמן למדע", t: "מכון ויצמן למדע" },
+                          { v: "אוניברסיטת רייכמן", t: "אוניברסיטת רייכמן (הבינתחומי)" },
+                          { v: "אחר", t: "אחר" },
+                        ].map((o) => <option key={o.v} value={o.v}>{o.t}</option>)}
+                      </select>
+                    </div>
+                  )}
+                </div>
+
                 <div style={styles.formSection}>
                   <label style={styles.label}>שלב בהכשרה הרפואית</label>
                   <select
@@ -1434,15 +1637,11 @@ function Profile() {
                   />
                 </div>
 
-                <div style={styles.formSection}>
-                  <label style={styles.label}>זמינות להתחלה</label>
-                  <input
-                    type="date"
-                    value={draft.startDate || ""}
-                    onChange={(e) => handleFieldChange("startDate", e.target.value)}
-                    style={styles.input}
-                  />
-                </div>
+                <DatePickerField
+                  label="זמינות להתחלה"
+                  value={draft.startDate}
+                  onChange={(date) => handleFieldChange("startDate", date)}
+                />
 
                 <div style={styles.formSection}>
                   <label style={styles.label}>כלים ומיומנויות</label>

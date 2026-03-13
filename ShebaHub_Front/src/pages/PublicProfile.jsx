@@ -21,6 +21,17 @@ function extractDisplay(value) {
   return String(value);
 }
 
+function formatDate(isoDate) {
+  if (!isoDate || isoDate === "-") return "-";
+  if (isoDate.includes("/")) return isoDate;
+  const parts = isoDate.split("-");
+  if (parts.length === 3) {
+    const [y, m, d] = parts;
+    return `${d}/${m}/${y}`;
+  }
+  return isoDate;
+}
+
 function formatBoolean(val) {
   if (val === "כן" || val === true) return "כן";
   if (val === "לא" || val === false) return "לא";
@@ -353,6 +364,8 @@ function PublicProfile() {
             <>
               <InfoRow label="שלב בהכשרה" value={getHebrewName(profileData, "academicRank_detail")} />
               <InfoRow label="ניסיון בהנחיה" value={formatBoolean(profileData.hasMentoringExperience)} />
+              <InfoRow label="דרגה אקדמית" value={profileData.universityRank && profileData.universityRank !== "ללא" ? profileData.universityRank : "-"} />
+              <InfoRow label="שיוך אקדמי" value={profileData.universityAffiliation || "-"} />
             </>
           ) : (
             <>
@@ -366,8 +379,17 @@ function PublicProfile() {
 
           {shouldShowSpecialty && (
             <>
-              <InfoRow label="קטגוריית התמחות" value={getHebrewName(profileData, "specialtyGroup_detail")} />
-              <InfoRow label="התמחות" value={getHebrewName(profileData, "specialty_detail")} />
+              <InfoRow label="קטגוריית התמחות" value={
+                Array.isArray(profileData.specialtyGroups) && profileData.specialtyGroups.length > 0
+                  ? profileData.specialtyGroups.join(" | ")
+                  : getHebrewName(profileData, "specialtyGroup_detail")
+              } />
+              <InfoRow label="התמחות" value={
+                Array.isArray(profileData.specialties_detail) && profileData.specialties_detail.length
+                  ? extractDisplay(profileData.specialties_detail)
+                  : getHebrewName(profileData, "specialty_detail")
+              } />
+
             </>
           )}
         </div>
@@ -380,7 +402,7 @@ function PublicProfile() {
             <InfoRow label="סוג עבודה" value={getHebrewName(profileData, "workType_detail")} />
             <InfoRow label="תגמול מועדף" value={getHebrewName(profileData, "compensationPreference_detail")} />
             <InfoRow label="שעות שבועיות" value={profileData.weeklyHours || "-"} />
-            <InfoRow label="זמינות להתחלה" value={profileData.startDate || profileData.availableFrom || "-"} />
+            <InfoRow label="זמינות להתחלה" value={formatDate(profileData.startDate || profileData.availableFrom)} />
             <InfoRow label="כלים ומיומנויות" value={profileData.softwareSkills || "-"} />
           </div>
         </div>

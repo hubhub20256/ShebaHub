@@ -48,8 +48,28 @@ const STATUS_MAP = {
  */
 const ResearchApprenticeCard = ({ apprentice, onClick, children }) => {
   const navigate = useNavigate();
+  
+  const isElevatedMentor = apprentice.isOwner || apprentice.can_edit || apprentice.can_approve || apprentice.can_invite || apprentice.can_remove || apprentice.can_manage_chat;
+  const isMentorProfile = isElevatedMentor && !apprentice.hasStudentProfile;
+
+  const [mentorData, setMentorData] = useState(null);
+
+  useEffect(() => {
+    let active = true;
+    if (isMentorProfile && apprentice.id) {
+      profilesAPI.getMentor(apprentice.id)
+        .then(data => {
+          if (active) setMentorData(data);
+        })
+        .catch(err => {
+          // Ignore failures, just fallback to whatever apprentice has
+        });
+    }
+    return () => { active = false; };
+  }, [isMentorProfile, apprentice.id]);
+
   // Default image fallback
-  const avatarUrl = apprentice.profileImage || null;
+  const avatarUrl = mentorData?.avatarUrl || apprentice.profileImage || null;
   
   const handleProfileClick = (e) => {
     e.stopPropagation(); // Don't trigger the card onClick
@@ -58,12 +78,19 @@ const ResearchApprenticeCard = ({ apprentice, onClick, children }) => {
     }
   };
 
-  const isElevatedMentor = apprentice.isOwner || apprentice.can_edit || apprentice.can_approve || apprentice.can_invite || apprentice.can_remove || apprentice.can_manage_chat;
+  const displayWorkplace = mentorData?.workplace || apprentice.workplace || "לא צוין";
+  
+  let displayMedicalLevel = apprentice.medical_level;
+  if (isMentorProfile && mentorData?.academicRank_detail?.name_he) {
+    displayMedicalLevel = mentorData.academicRank_detail.name_he;
+  } else if (!displayMedicalLevel) {
+    displayMedicalLevel = "לא צוין";
+  }
   
   return (
     <div className="research-apprentice-card" onClick={onClick} dir="rtl">
       {/* Mentor/Owner tag */}
-      {isElevatedMentor && !apprentice.hasStudentProfile && (
+      {isMentorProfile && (
         <span className="rac-mentor-tag">{apprentice.isOwner ? "חוקר ראשי" : "מנחה"}</span>
       )}
       {/* Top section with avatar */}
@@ -87,14 +114,16 @@ const ResearchApprenticeCard = ({ apprentice, onClick, children }) => {
       {/* Info rows */}
       <div className="rac-info">
         <div className="rac-info-row">
-          <span className="rac-label">מוסד לימודים:</span>
-          <span className="rac-value">{apprentice.Educational_institution || "לא צוין"}</span>
+          <span className="rac-label">{isElevatedMentor ? "מקום עבודה:" : "מוסד לימודים:"}</span>
+          <span className="rac-value">
+            {isElevatedMentor ? displayWorkplace : (apprentice.Educational_institution || "לא צוין")}
+          </span>
         </div>
         
         <div className="rac-info-row">
           <span className="rac-label">שלב בהכשרה הרפואית:</span>
-          <span className="rac-value rac-value-highlight">
-            {apprentice.medical_level || "לא צוין"}
+          <span className="rac-value">
+            {displayMedicalLevel}
           </span>
         </div>
       </div>
@@ -287,9 +316,10 @@ export default function Research() {
       name: app.name,
       email: app.email,
       gender: app.gender,
-      medical_level: app.apprenticeStage,
+      medical_level: app.apprenticeStage || app.academicRank,
       school_beginner_year: app.startYear,
       Educational_institution: app.institution,
+      workplace: app.workplace,
       profileImage: app.avatarUrl,
       isAvailableForResearch: app.researchAvailability,
       hasStudentProfile: app.hasStudentProfile,
@@ -1753,11 +1783,6 @@ export default function Research() {
           overflow: hidden;
           text-overflow: ellipsis;
           max-width: 100%;
-        }
-
-        .rac-value-highlight {
-          color: #2c2c6c;
-          font-weight: 500;
         }
 
         .rac-profile-btn {
