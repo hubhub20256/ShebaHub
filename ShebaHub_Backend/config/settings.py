@@ -120,6 +120,12 @@ else:
 # Custom user model
 AUTH_USER_MODEL = 'accounts.User'
 
+# Authentication backends (env-based admin checked first, then standard)
+AUTHENTICATION_BACKENDS = [
+    'apps.common.backends.EnvAdminBackend',
+    'django.contrib.auth.backends.ModelBackend',
+]
+
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -136,6 +142,9 @@ AUTH_PASSWORD_VALIDATORS = [
     },
     {
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+    },
+    {
+        'NAME': 'apps.common.validators.ShebaCommonPasswordValidator',
     },
 ]
 
@@ -157,8 +166,8 @@ MEDIA_ROOT = BASE_DIR / 'media'
 FILE_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10 MB
 DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10 MB
 
-# Allowed file extensions for profile documents
-ALLOWED_DOCUMENT_EXTENSIONS = ['.pdf', '.doc', '.docx', '.jpg', '.jpeg', '.png']
+# Allowed file extensions for profile documents (PDF only for security)
+ALLOWED_DOCUMENT_EXTENSIONS = ['.pdf']
 MAX_DOCUMENT_SIZE_MB = 10  # Maximum file size in MB
 
 # ClamAV virus scanning (optional – set CLAMAV_ENABLED=True in .env to activate)

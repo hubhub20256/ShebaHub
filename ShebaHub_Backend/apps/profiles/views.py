@@ -11,7 +11,7 @@ import logging
 from django.conf import settings
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes, throttle_classes
-from rest_framework.permissions import IsAuthenticated, IsAdminUser
+from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 from apps.common.throttles import UploadRateThrottle
 from drf_spectacular.utils import extend_schema, OpenApiExample, OpenApiResponse
@@ -119,6 +119,71 @@ def _validate_avatar(avatar_file):
 
 
 # =============================================================================
+# PUBLIC USER PROFILE BY USER ID (unified dual-role endpoint)
+# =============================================================================
+
+
+@extend_schema(
+    methods=['GET'],
+    summary="Get public profiles by user ID",
+    description="Returns both student and mentor profiles for a user (if they exist).",
+    responses={
+        200: OpenApiResponse(description="User profiles"),
+        404: OpenApiResponse(description="User not found"),
+    },
+)
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def public_user_profiles(request, user_id):
+    """
+    GET /api/profiles/user/<uuid:user_id>/
+    Returns { "student": {...}|null, "mentor": {...}|null } for the given user.
+    """
+    from django.contrib.auth import get_user_model
+    User = get_user_model()
+    try:
+        target_user = User.objects.get(id=user_id)
+    except User.DoesNotExist:
+        return Response({'detail': 'User not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+    student_data = None
+    mentor_data = None
+
+    try:
+        student = (
+            StudentProfile.objects
+            .select_related(
+                'user', 'apprenticeStage', 'institution',
+                'specialtyGroup', 'specialty', 'workType', 'participationMode',
+            )
+            .prefetch_related('degrees', 'specialties', 'specialtyGroups', 'documents', 'recommendations')
+            .get(user=target_user)
+        )
+        student_data = PublicStudentDetailSerializer(student, context={'request': request}).data
+    except StudentProfile.DoesNotExist:
+        pass
+
+    try:
+        mentor = (
+            MentorProfile.objects
+            .select_related(
+                'user', 'academicRank', 'specialtyGroup',
+                'specialty', 'institution',
+            )
+            .prefetch_related('degrees', 'specialties', 'specialtyGroups', 'researchInterests', 'documents', 'recommendations')
+            .get(user=target_user)
+        )
+        mentor_data = PublicMentorDetailSerializer(mentor, context={'request': request}).data
+    except MentorProfile.DoesNotExist:
+        pass
+
+    if student_data is None and mentor_data is None:
+        return Response({'detail': 'No profiles found for this user.'}, status=status.HTTP_404_NOT_FOUND)
+
+    return Response({'student': student_data, 'mentor': mentor_data})
+
+
+# =============================================================================
 # PUBLIC DIRECTORY ENDPOINTS (Mentors/Students)
 # =============================================================================
 
@@ -171,7 +236,7 @@ def public_mentor_detail(request, mentor_id):
                 'specialty',
                 'institution',
             )
-            .prefetch_related('degrees', 'researchInterests', 'documents', 'recommendations')
+            .prefetch_related('degrees', 'specialties', 'specialtyGroups', 'researchInterests', 'documents', 'recommendations')
             .get(id=mentor_id)
         )
     except MentorProfile.DoesNotExist:
@@ -228,7 +293,7 @@ def public_student_detail(request, student_id):
                 'workType',
                 'participationMode',
             )
-            .prefetch_related('degrees', 'documents', 'recommendations')
+            .prefetch_related('degrees', 'specialties', 'specialtyGroups', 'documents', 'recommendations')
             .get(id=student_id)
         )
     except StudentProfile.DoesNotExist:

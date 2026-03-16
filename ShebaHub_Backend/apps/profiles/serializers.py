@@ -313,7 +313,7 @@ class ProfileDocumentUploadSerializer(serializers.Serializer):
     Serializer for uploading profile documents with validation.
 
     Validates:
-    - File extension (pdf, doc, docx, jpg, jpeg, png)
+    - File extension (PDF only)
     - File size (max 10MB by default)
     - Magic bytes (file content matches declared extension)
     - Virus scan (ClamAV, if enabled)
@@ -354,6 +354,7 @@ class StudentProfileSerializer(serializers.ModelSerializer):
         source='apprenticeStage', read_only=True
     )
     specialtyGroup_detail = SpecialtyGroupSerializer(source='specialtyGroup', read_only=True)
+    specialtyGroups_detail = SpecialtyGroupSerializer(source='specialtyGroups', many=True, read_only=True)
     specialty_detail = SpecialtySerializer(source='specialty', read_only=True)
     workType_detail = WorkTypeSerializer(source='workType', read_only=True)
     participationMode_detail = ParticipationModeSerializer(
@@ -376,6 +377,12 @@ class StudentProfileSerializer(serializers.ModelSerializer):
     )
     apprenticeStage = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     specialtyGroup = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    specialtyGroups = serializers.ListField(
+        child=serializers.CharField(),
+        required=False,
+        allow_empty=True,
+        write_only=True
+    )
     specialty = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     # M2M multi-specialization: accept list of specialty names/IDs
     specialties = serializers.ListField(
@@ -398,7 +405,10 @@ class StudentProfileSerializer(serializers.ModelSerializer):
     
     # Avatar URL for reading
     avatarUrl = serializers.SerializerMethodField(read_only=True)
-    
+
+    # Active researches (joined by student)
+    activeResearches = serializers.SerializerMethodField(read_only=True)
+
     class Meta:
         model = StudentProfile
         fields = [
@@ -407,6 +417,7 @@ class StudentProfileSerializer(serializers.ModelSerializer):
             'created_at',
             'updated_at',
             'avatarUrl',
+            'activeResearches',
             
             # Basic study info (שלב הכשרה)
             'apprenticeStage',
@@ -419,6 +430,8 @@ class StudentProfileSerializer(serializers.ModelSerializer):
             'degrees_detail',
             'specialtyGroup',
             'specialtyGroup_detail',
+            'specialtyGroups',
+            'specialtyGroups_detail',
             'specialty',
             'specialty_detail',
             'specialties',
@@ -509,6 +522,15 @@ class StudentProfileSerializer(serializers.ModelSerializer):
                     spec_ids.append(obj.id)
             data['specialties'] = spec_ids
 
+        # Convert specialtyGroups list from text to IDs
+        if 'specialtyGroups' in data and data['specialtyGroups']:
+            sg_ids = []
+            for sg_name in data['specialtyGroups']:
+                obj = get_reference_by_name(SpecialtyGroup, sg_name)
+                if obj:
+                    sg_ids.append(obj.id)
+            data['specialtyGroups'] = sg_ids
+
         return super().to_internal_value(data)
 
     def get_compensationPreference_detail(self, obj):
@@ -536,7 +558,7 @@ class StudentProfileSerializer(serializers.ModelSerializer):
         return value
     
     def validate_startDate(self, value):
-        """Validate startDate is not in the past."""
+        """Validate startDate is not in the past (only on create, not update)."""
         if value is not None:
             if isinstance(value, str):
                 from datetime import datetime
@@ -544,6 +566,9 @@ class StudentProfileSerializer(serializers.ModelSerializer):
                     value = datetime.strptime(value, "%Y-%m-%d").date()
                 except ValueError:
                     raise serializers.ValidationError("Invalid date format")
+            # Skip past-date check on update if value hasn't changed
+            if self.instance and hasattr(self.instance, 'startDate') and self.instance.startDate == value:
+                return value
             if value < date.today():
                 raise serializers.ValidationError(
                     "Start date cannot be in the past."
@@ -575,9 +600,10 @@ class StudentProfileSerializer(serializers.ModelSerializer):
         return attrs
     
     def create(self, validated_data):
-        """Create profile with M2M degrees and specialties handling."""
+        """Create profile with M2M degrees, specialties, and specialtyGroups handling."""
         degrees_data = validated_data.pop('degrees', [])
         specialties_data = validated_data.pop('specialties', [])
+        specialty_groups_data = validated_data.pop('specialtyGroups', [])
 
         # Convert FK IDs to objects
         for fk_field in ['institution', 'apprenticeStage', 'specialtyGroup',
@@ -604,12 +630,17 @@ class StudentProfileSerializer(serializers.ModelSerializer):
                 profile.specialty = spec_objects.first()
                 profile.save(update_fields=['specialty'])
 
+        if specialty_groups_data:
+            sg_objects = SpecialtyGroup.objects.filter(id__in=specialty_groups_data)
+            profile.specialtyGroups.set(sg_objects)
+
         return profile
 
     def update(self, instance, validated_data):
-        """Update profile with M2M degrees and specialties handling."""
+        """Update profile with M2M degrees, specialties, and specialtyGroups handling."""
         degrees_data = validated_data.pop('degrees', None)
         specialties_data = validated_data.pop('specialties', None)
+        specialty_groups_data = validated_data.pop('specialtyGroups', None)
 
         # Convert FK IDs to objects
         for fk_field in ['institution', 'apprenticeStage', 'specialtyGroup',
@@ -643,6 +674,10 @@ class StudentProfileSerializer(serializers.ModelSerializer):
                 instance.specialty = None
             instance.save(update_fields=['specialty'])
 
+        if specialty_groups_data is not None:
+            sg_objects = SpecialtyGroup.objects.filter(id__in=specialty_groups_data)
+            instance.specialtyGroups.set(sg_objects)
+
         return instance
     
     def get_avatarUrl(self, obj):
@@ -653,6 +688,26 @@ class StudentProfileSerializer(serializers.ModelSerializer):
                 return request.build_absolute_uri(obj.avatar.url)
             return obj.avatar.url
         return None
+
+    def get_activeResearches(self, obj):
+        from apps.research.models import Research, ResearchApplication
+        joined_ids = ResearchApplication.objects.filter(
+            applicant=obj.user,
+            status="approved",
+        ).values_list("research_id", flat=True)
+        qs = Research.objects.filter(
+            id__in=joined_ids,
+            moderation_status="approved",
+        ).exclude(status="draft").order_by("-created_at")
+        return [
+            {
+                "id": r.id,
+                "researchName": r.researchName,
+                "researchArea": r.researchArea,
+                "status": r.status,
+            }
+            for r in qs
+        ]
 
 
 class StudentProfileCreateSerializer(StudentProfileSerializer):
@@ -685,6 +740,7 @@ class MentorProfileSerializer(serializers.ModelSerializer):
     # Nested serializers for read operations
     academicRank_detail = AcademicRankSerializer(source='academicRank', read_only=True)
     specialtyGroup_detail = SpecialtyGroupSerializer(source='specialtyGroup', read_only=True)
+    specialtyGroups_detail = SpecialtyGroupSerializer(source='specialtyGroups', many=True, read_only=True)
     specialty_detail = SpecialtySerializer(source='specialty', read_only=True)
     # M2M multi-specialization
     specialties = serializers.ListField(
@@ -707,6 +763,12 @@ class MentorProfileSerializer(serializers.ModelSerializer):
     # Write fields - accept both IDs and text values
     academicRank = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     specialtyGroup = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    specialtyGroups = serializers.ListField(
+        child=serializers.CharField(),
+        required=False,
+        allow_empty=True,
+        write_only=True
+    )
     specialty = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     researchInterests = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     institution = serializers.CharField(required=False, allow_null=True, allow_blank=True)
@@ -745,6 +807,8 @@ class MentorProfileSerializer(serializers.ModelSerializer):
             'academicRank_detail',
             'specialtyGroup',
             'specialtyGroup_detail',
+            'specialtyGroups',
+            'specialtyGroups_detail',
             'specialty',
             'specialty_detail',
             'specialties',
@@ -769,6 +833,10 @@ class MentorProfileSerializer(serializers.ModelSerializer):
             'recommenders',
             'linkedinUrl',
 
+            # דרגה אקדמית ושיוך אוניברסיטאי
+            'universityRank',
+            'universityAffiliation',
+
             # Nested relations
             'documents',
             'recommendations',
@@ -778,6 +846,8 @@ class MentorProfileSerializer(serializers.ModelSerializer):
             'mentoringExperienceDetails': {'max_length': 5000},
             'previousResearchDescription': {'max_length': 5000},
             'personalAcademicDescription': {'max_length': 5000},
+            'universityRank': {'max_length': 255},
+            'universityAffiliation': {'max_length': 255},
         }
 
     def to_internal_value(self, data):
@@ -828,6 +898,15 @@ class MentorProfileSerializer(serializers.ModelSerializer):
                     spec_ids.append(obj.id)
             data['specialties'] = spec_ids
 
+        # Convert specialtyGroups list from text to IDs
+        if 'specialtyGroups' in data and data['specialtyGroups']:
+            sg_ids = []
+            for sg_name in data['specialtyGroups']:
+                obj = get_reference_by_name(SpecialtyGroup, sg_name)
+                if obj:
+                    sg_ids.append(obj.id)
+            data['specialtyGroups'] = sg_ids
+
         return super().to_internal_value(data)
 
     def validate(self, attrs):
@@ -839,9 +918,10 @@ class MentorProfileSerializer(serializers.ModelSerializer):
         return value
 
     def create(self, validated_data):
-        """Create profile with M2M degrees and specialties handling."""
+        """Create profile with M2M degrees, specialties, and specialtyGroups handling."""
         degrees_data = validated_data.pop('degrees', [])
         specialties_data = validated_data.pop('specialties', [])
+        specialty_groups_data = validated_data.pop('specialtyGroups', [])
 
         # Convert FK IDs to objects
         for fk_field in ['academicRank', 'specialtyGroup', 'specialty', 'researchInterests', 'institution']:
@@ -867,12 +947,17 @@ class MentorProfileSerializer(serializers.ModelSerializer):
                 profile.specialty = spec_objects.first()
                 profile.save(update_fields=['specialty'])
 
+        if specialty_groups_data:
+            sg_objects = SpecialtyGroup.objects.filter(id__in=specialty_groups_data)
+            profile.specialtyGroups.set(sg_objects)
+
         return profile
 
     def update(self, instance, validated_data):
-        """Update profile with M2M degrees and specialties handling."""
+        """Update profile with M2M degrees, specialties, and specialtyGroups handling."""
         degrees_data = validated_data.pop('degrees', None)
         specialties_data = validated_data.pop('specialties', None)
+        specialty_groups_data = validated_data.pop('specialtyGroups', None)
 
         # Convert FK IDs to objects
         for fk_field in ['academicRank', 'specialtyGroup', 'specialty', 'researchInterests', 'institution']:
@@ -904,6 +989,10 @@ class MentorProfileSerializer(serializers.ModelSerializer):
             else:
                 instance.specialty = None
             instance.save(update_fields=['specialty'])
+
+        if specialty_groups_data is not None:
+            sg_objects = SpecialtyGroup.objects.filter(id__in=specialty_groups_data)
+            instance.specialtyGroups.set(sg_objects)
 
         return instance
     

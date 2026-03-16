@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 from django.urls import reverse
 from django.contrib.auth import get_user_model
 from rest_framework import status
@@ -5,13 +7,21 @@ from rest_framework.test import APITestCase
 
 User = get_user_model()
 
+# Patch all throttles to always allow requests during tests
+_always_allow = patch(
+    'rest_framework.views.APIView.check_throttles',
+    return_value=None,
+)
+
 
 class SignupTestCase(APITestCase):
     """
     Test cases for user signup endpoint.
     """
-    
+
     def setUp(self):
+        _always_allow.start()
+        self.addCleanup(_always_allow.stop)
         self.signup_url = reverse('signup')
         self.valid_payload = {
             'email': 'test@example.com',
@@ -105,8 +115,10 @@ class LoginTestCase(APITestCase):
     """
     Test cases for user login endpoint.
     """
-    
+
     def setUp(self):
+        _always_allow.start()
+        self.addCleanup(_always_allow.stop)
         self.login_url = reverse('login')
         self.email = 'testuser@example.com'
         self.password = 'TestPassword123!'
@@ -202,8 +214,10 @@ class TokenRefreshTestCase(APITestCase):
     """
     Test cases for token refresh endpoint.
     """
-    
+
     def setUp(self):
+        _always_allow.start()
+        self.addCleanup(_always_allow.stop)
         self.refresh_url = reverse('token_refresh')
         
         # Create test user and get tokens

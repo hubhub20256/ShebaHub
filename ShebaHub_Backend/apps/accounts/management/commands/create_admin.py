@@ -1,12 +1,9 @@
 import os
 
 from django.contrib.auth import get_user_model
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 
 User = get_user_model()
-
-DEFAULT_EMAIL = "admin@sheba.com"
-DEFAULT_PASSWORD = "ShebahubHit@@!#42"
 
 
 class Command(BaseCommand):
@@ -15,18 +12,24 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument(
             "--email",
-            default=os.environ.get("ADMIN_EMAIL", DEFAULT_EMAIL),
-            help="Admin email (default: admin@sheba.com or ADMIN_EMAIL env var)",
+            default=os.environ.get("ADMIN_EMAIL"),
+            help="Admin email (default: ADMIN_EMAIL env var)",
         )
         parser.add_argument(
             "--password",
-            default=os.environ.get("ADMIN_PASSWORD", DEFAULT_PASSWORD),
-            help="Admin password (default: built-in or ADMIN_PASSWORD env var)",
+            default=os.environ.get("ADMIN_PASSWORD"),
+            help="Admin password (default: ADMIN_PASSWORD env var)",
         )
 
     def handle(self, *args, **options):
         email = options["email"]
         password = options["password"]
+
+        if not email or not password:
+            raise CommandError(
+                "ADMIN_EMAIL and ADMIN_PASSWORD must be set in environment "
+                "or passed via --email and --password."
+            )
 
         if User.objects.filter(email=email).exists():
             user = User.objects.get(email=email)

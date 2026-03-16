@@ -210,7 +210,7 @@ def validate_upload(uploaded_file, allowed_extensions=None, max_size_mb=None):
     if not is_valid:
         audit_logger.warning(
             f"Magic bytes mismatch for {uploaded_file.name}: {error}",
-            extra={'filename': uploaded_file.name, 'extension': ext},
+            extra={'upload_filename': uploaded_file.name, 'extension': ext},
         )
         return False, error
 

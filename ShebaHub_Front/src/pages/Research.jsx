@@ -387,6 +387,13 @@ export default function Research() {
     return [];
   }, [canApproveThis, pendingApplications]);
 
+  const isTeamFullByCount =
+    Number.isFinite(Number(data?.teamSize)) &&
+    Number(data.teamSize) > 0 &&
+    activeApprentices.length >= Number(data.teamSize);
+
+  const isResearchFull = Boolean(data?.isFull) || isTeamFullByCount;
+
   // Load applications for mentor's own research (or permitted mentor)
   useEffect(() => {
     let cancelled = false;
@@ -751,11 +758,9 @@ export default function Research() {
 
     try {
       // Fetching the file directly from the URL. 
-      // Note: We intentionally DO NOT send the Authorization Bearer token here.
-      // This is because we want the contract file to be publicly accessible to ANY user
-      // viewing this research page, regardless of whether they are a member, mentor, or even logged in.
-      // *Backend Requirement*: The backend endpoint serving this URL MUST be configured to allow unauthenticated GET requests.
-      const res = await fetch(url);
+      // Authenticated access for any logged-in account.
+      const token = localStorage.getItem("accessToken");
+      const res = await fetch(url, token ? { headers: { Authorization: `Bearer ${token}` } } : undefined);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const blob = await res.blob();
       const objectUrl = window.URL.createObjectURL(blob);
@@ -880,7 +885,7 @@ export default function Research() {
               <span style={styles.statusBadge}>{STATUS_MAP[data.status] || data.status}</span>
             )}
             {canEditThis ? (
-              data.isFull ? (
+              isResearchFull ? (
                 <span
                   style={{
                     padding: "4px 14px",
@@ -917,11 +922,11 @@ export default function Research() {
                   borderRadius: 20,
                   fontSize: 12,
                   fontWeight: 700,
-                  background: data.isFull ? "#fee2e2" : data.accepting_applications ? "#dcfce7" : "#fee2e2",
-                  color: data.isFull ? "#dc2626" : data.accepting_applications ? "#16a34a" : "#dc2626",
+                  background: isResearchFull ? "#fee2e2" : data.accepting_applications ? "#dcfce7" : "#fee2e2",
+                  color: isResearchFull ? "#dc2626" : data.accepting_applications ? "#16a34a" : "#dc2626",
                 }}
               >
-                {data.isFull ? "לא זמין להצטרפות" : data.accepting_applications ? "הגשות פתוחות" : "הגשות סגורות"}
+                {isResearchFull ? "לא זמין להצטרפות" : data.accepting_applications ? "הגשות פתוחות" : "הגשות סגורות"}
               </span>
             )}
             <span style={styles.idBadge}>ID: {id}</span>
@@ -1253,7 +1258,7 @@ export default function Research() {
                           עזוב מחקר
                         </button>
                       </>
-                    ) : (data.isFull) ? (
+                    ) : (isResearchFull) ? (
                       <div style={{
                         textAlign: "center",
                         color: "#dc2626",

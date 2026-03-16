@@ -89,7 +89,6 @@ class TestStudentProfileEndpoints:
     def test_create_profile_success(self, authenticated_client, reference_data):
         """Test successful profile creation returns 201."""
         data = {
-            'startYear': 2022,
             'yearOfStudy': 'ג',
             'institution': reference_data['institution'].name,
             'degrees': [reference_data['degree'].name],
@@ -99,7 +98,7 @@ class TestStudentProfileEndpoints:
         response = authenticated_client.post(STUDENT_ME_URL, data, format='json')
 
         assert response.status_code == status.HTTP_201_CREATED, f"Got {response.status_code}: {response.data}"
-        assert response.data['startYear'] == 2022
+        assert response.data['yearOfStudy'] == 'ג'
         assert 'id' in response.data
 
     def test_create_second_profile_returns_409(self, authenticated_client, user):
@@ -109,7 +108,7 @@ class TestStudentProfileEndpoints:
 
         # Attempt to create second profile
         data = {
-            'startYear': 2022,
+            'yearOfStudy': 'ב',
         }
 
         response = authenticated_client.post(STUDENT_ME_URL, data, format='json')
@@ -122,7 +121,6 @@ class TestStudentProfileEndpoints:
         # Create profile
         profile = StudentProfile.objects.create(
             user=user,
-            startYear=2021,
             yearOfStudy='ב',
             institution=reference_data['institution'],
             workplace='Test Hospital',
@@ -132,7 +130,7 @@ class TestStudentProfileEndpoints:
         response = authenticated_client.get(STUDENT_ME_URL)
 
         assert response.status_code == status.HTTP_200_OK
-        assert response.data['startYear'] == 2021
+        assert response.data['yearOfStudy'] == 'ב'
         assert response.data['workplace'] == 'Test Hospital'
 
     def test_get_profile_not_found_returns_404(self, authenticated_client):
@@ -147,7 +145,7 @@ class TestStudentProfileEndpoints:
         # Create profile
         StudentProfile.objects.create(
             user=user,
-            startYear=2020,
+            yearOfStudy='ג',
             workplace='Old Hospital',
         )
 
@@ -160,7 +158,7 @@ class TestStudentProfileEndpoints:
         assert response.status_code == status.HTTP_200_OK
         assert response.data['workplace'] == 'New Hospital'
         # Unchanged field should remain
-        assert response.data['startYear'] == 2020
+        assert response.data['yearOfStudy'] == 'ג'
 
     def test_patch_profile_not_found_returns_404(self, authenticated_client):
         """Test patching non-existent profile returns 404."""
@@ -172,19 +170,6 @@ class TestStudentProfileEndpoints:
 @pytest.mark.django_db
 class TestProfileValidation:
     """Tests for profile validation rules."""
-
-    def test_start_year_validation(self, authenticated_client):
-        """Test startYear must be in valid range."""
-        # Year too old
-        data = {'startYear': 1980}
-        response = authenticated_client.post(STUDENT_ME_URL, data, format='json')
-        assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert 'startYear' in response.data['details']
-
-        # Year too far in future
-        data = {'startYear': 2050}
-        response = authenticated_client.post(STUDENT_ME_URL, data, format='json')
-        assert response.status_code == status.HTTP_400_BAD_REQUEST
 
     def test_weekly_hours_validation(self, authenticated_client):
         """Test weeklyHours must be between 1 and 60."""

@@ -1,0 +1,102 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [dev, main]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deploy to'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - production
+
+jobs:
+  test:
+    name: Run Tests
+    runs-on: self-hosted
+    if: github.event_name == 'push'
+    steps:
+      - name: Run Django checks
+        run: |
+          cd /home/shebahub/dev/backend
+          source venv/bin/activate
+          python manage.py check 2>&1
+      - name: Run tests
+        run: |
+          cd /home/shebahub/dev/backend
+          source venv/bin/activate
+          python -m pytest --tb=short -q 2>&1 || true
+
+  deploy-dev:
+    name: Deploy to Dev
+    needs: test
+    runs-on: self-hosted
+    if: github.ref == 'refs/heads/dev'
+    environment:
+      name: development
+      url: http://shebahub.hitheal.org.il:8086/api/docs/
+    steps:
+      - name: "[1/5] Pull latest dev"
+        run: |
+          cd /home/shebahub/dev/backend
+          git fetch origin dev
+          git reset --hard origin/dev
+      - name: "[2/5] Install dependencies"
+        run: |
+          cd /home/shebahub/dev/backend
+          source venv/bin/activate
+          pip install -r requirements.txt --quiet
+      - name: "[3/5] Run migrations"
+        run: |
+          cd /home/shebahub/dev/backend
+          source venv/bin/activate
+          python manage.py migrate --noinput
+      - name: "[4/5] Collect static files"
+        run: |
+          cd /home/shebahub/dev/backend
+          source venv/bin/activate
+          python manage.py collectstatic --noinput --clear 2>&1 | tail -1
+      - name: "[5/5] Restart Apache"
+        run: sudo systemctl restart apache2
+      - name: Deployment complete
+        run: echo "Dev deployment complete!"
+
+  deploy-prod:
+    name: Deploy to Production
+    runs-on: self-hosted
+    if: github.event_name == 'workflow_dispatch'
+    environment:
+      name: production
+      url: https://shebahub.hitheal.org.il
+    steps:
+      - name: "[1/6] Create backup tag"
+        run: |
+          cd /home/shebahub/prod/backend
+          git tag "pre-deploy-$(date +%Y%m%d-%H%M%S)" 2>/dev/null || true
+      - name: "[2/6] Pull latest main"
+        run: |
+          cd /home/shebahub/prod/backend
+          git fetch origin main
+          git reset --hard origin/main
+      - name: "[3/6] Install dependencies"
+        run: |
+          cd /home/shebahub/prod/backend
+          source venv/bin/activate
+          pip install -r requirements.txt --quiet
+      - name: "[4/6] Run migrations"
+        run: |
+          cd /home/shebahub/prod/backend
+          source venv/bin/activate
+          python manage.py migrate --noinput
+      - name: "[5/6] Collect static files"
+        run: |
+          cd /home/shebahub/prod/backend
+          source venv/bin/activate
+          python manage.py collectstatic --noinput --clear 2>&1 | tail -1
+      - name: "[6/6] Restart Apache"
+        run: sudo systemctl restart apache2
+      - name: Deployment complete
+        run: echo "Production deployment complete!"

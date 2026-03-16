@@ -12,15 +12,18 @@ import "../styles/Register.css";
 const translateError = (error) => {
   const translations = {
     // שגיאות אימייל
-    "A user with this email already exists.": "משתמש עם כתובת אימייל זו כבר קיים",
+    "A user with this email already exists.":
+      "משתמש עם כתובת אימייל זו כבר קיים",
     "Enter a valid email address.": "נא להזין כתובת אימייל תקינה",
     "This field is required.": "שדה חובה",
     "This field may not be blank.": "שדה זה לא יכול להיות ריק",
     // שגיאות סיסמה
-    "This password is too short. It must contain at least 8 characters.": "הסיסמה קצרה מדי. היא חייבת להכיל לפחות 8 תווים",
+    "This password is too short. It must contain at least 8 characters.":
+      "הסיסמה קצרה מדי. היא חייבת להכיל לפחות 8 תווים",
     "This password is too common.": "הסיסמה נפוצה מדי, בבקשה בחר בסיסמה אחרת",
     "This password is entirely numeric.": "הסיסמה לא יכולה להכיל רק מספרים",
-    "The password is too similar to the email address.": "הסיסמה דומה מדי לכתובת האימייל",
+    "The password is too similar to the email address.":
+      "הסיסמה דומה מדי לכתובת האימייל",
     "Passwords do not match.": "הסיסמאות אינן תואמות",
     // שגיאות כלליות
     "Invalid credentials": "פרטי ההתחברות שגויים",
@@ -70,8 +73,8 @@ const Register = () => {
     if (formData.email && formData.confirmEmail !== formData.email)
       newErrors.confirmEmail = "כתובות האימייל אינן תואמות";
 
-    if (!formData.password || formData.password.length < 14)
-      newErrors.password = "הסיסמה חייבת להכיל לפחות 14 תווים";
+    if (!formData.password || formData.password.length < 8)
+      newErrors.password = "הסיסמה חייבת להכיל לפחות 8 תווים";
     if (formData.password && formData.password.length > 64)
       newErrors.password = "הסיסמה יכולה להכיל לכל היותר 64 תווים";
     if (formData.password !== formData.confirmPassword)
@@ -87,7 +90,7 @@ const Register = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
@@ -122,7 +125,13 @@ const Register = () => {
         const newErrors = {};
 
         // Map of backend field names to form field names
-        const fieldMap = ['email', 'password', 'confirmPassword', 'firstName', 'lastName'];
+        const fieldMap = [
+          "email",
+          "password",
+          "confirmPassword",
+          "firstName",
+          "lastName",
+        ];
         for (const field of fieldMap) {
           if (fieldErrors[field]) {
             const msg = Array.isArray(fieldErrors[field])
@@ -144,7 +153,7 @@ const Register = () => {
         } else {
           // Extract the first error from any unhandled field
           const allKeys = Object.keys(fieldErrors);
-          const firstKey = allKeys.find(k => fieldErrors[k]);
+          const firstKey = allKeys.find((k) => fieldErrors[k]);
           if (firstKey) {
             const msg = Array.isArray(fieldErrors[firstKey])
               ? fieldErrors[firstKey][0]
@@ -162,11 +171,7 @@ const Register = () => {
     }
   };
 
-  const description = (
-    <>
-      ברוכ/ה הבא/ה
-    </>
-  );
+  const description = <>ברוכ/ה הבא/ה</>;
 
   if (registrationComplete) {
     return (
@@ -178,7 +183,13 @@ const Register = () => {
         footerPath="/"
       >
         <div style={{ textAlign: "center", padding: "20px 0" }}>
-          <p style={{ fontSize: "1.1rem", color: "var(--text-color)", marginBottom: "12px" }}>
+          <p
+            style={{
+              fontSize: "1.1rem",
+              color: "var(--text-color)",
+              marginBottom: "12px",
+            }}
+          >
             נשלח אליך אימייל לאימות כתובת הדואר האלקטרוני
           </p>
           <p style={{ fontSize: "0.9rem", color: "var(--text-secondary)" }}>
@@ -210,7 +221,7 @@ const Register = () => {
     >
       <form onSubmit={handleSubmit} className="register-form">
         {serverError && <div className="register-error">{serverError}</div>}
-        
+
         <FormInput
           name="firstName"
           placeholder="שם פרטי"
@@ -248,7 +259,7 @@ const Register = () => {
         <FormInput
           type="password"
           name="password"
-          placeholder="סיסמה (14-64 תווים)"
+          placeholder="סיסמה (8-64 תווים)"
           value={formData.password}
           onChange={handleChange}
           error={errors.password}
@@ -285,13 +296,21 @@ const Register = () => {
               onChange={handleChange}
               disabled={isLoading}
             />
-            <span>הסכמה ל<a href="/about" target="_blank" rel="noopener noreferrer" style={{ color: "inherit", textDecoration: "underline" }}>תנאי שימוש</a></span>
+            <span>
+              הסכמה ל
+              <a
+                href="/about"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ color: "inherit", textDecoration: "underline" }}
+              >
+                תנאי שימוש
+              </a>
+            </span>
           </label>
         </div>
         {errors.agreed && (
-          <span className="register-error">
-            {errors.agreed}
-          </span>
+          <span className="register-error">{errors.agreed}</span>
         )}
         <FormButton disabled={isLoading}>
           {isLoading ? "נרשם..." : "הרשמה"}
