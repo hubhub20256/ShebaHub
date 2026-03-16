@@ -758,11 +758,9 @@ export default function Research() {
 
     try {
       // Fetching the file directly from the URL. 
-      // Note: We intentionally DO NOT send the Authorization Bearer token here.
-      // This is because we want the contract file to be publicly accessible to ANY user
-      // viewing this research page, regardless of whether they are a member, mentor, or even logged in.
-      // *Backend Requirement*: The backend endpoint serving this URL MUST be configured to allow unauthenticated GET requests.
-      const res = await fetch(url);
+      // Authenticated access for any logged-in account.
+      const token = localStorage.getItem("accessToken");
+      const res = await fetch(url, token ? { headers: { Authorization: `Bearer ${token}` } } : undefined);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const blob = await res.blob();
       const objectUrl = window.URL.createObjectURL(blob);
