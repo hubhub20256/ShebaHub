@@ -380,9 +380,14 @@ function PublicProfile() {
           {shouldShowSpecialty && (
             <>
               <InfoRow label="קטגוריית התמחות" value={
-                Array.isArray(profileData.specialtyGroups) && profileData.specialtyGroups.length > 0
-                  ? profileData.specialtyGroups.join(" | ")
-                  : getHebrewName(profileData, "specialtyGroup_detail")
+                Array.isArray(profileData.specialtyGroups_detail) && profileData.specialtyGroups_detail.length > 0
+                  ? profileData.specialtyGroups_detail
+                    .map((g) => extractDisplay(g))
+                    .filter((v) => v && v !== "-")
+                    .join(" | ")
+                  : Array.isArray(profileData.specialtyGroups) && profileData.specialtyGroups.length > 0
+                    ? profileData.specialtyGroups.join(" | ")
+                    : getHebrewName(profileData, "specialtyGroup_detail")
               } />
               <InfoRow label="התמחות" value={
                 Array.isArray(profileData.specialties_detail) && profileData.specialties_detail.length

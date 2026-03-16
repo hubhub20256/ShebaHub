@@ -387,6 +387,13 @@ export default function Research() {
     return [];
   }, [canApproveThis, pendingApplications]);
 
+  const isTeamFullByCount =
+    Number.isFinite(Number(data?.teamSize)) &&
+    Number(data.teamSize) > 0 &&
+    activeApprentices.length >= Number(data.teamSize);
+
+  const isResearchFull = Boolean(data?.isFull) || isTeamFullByCount;
+
   // Load applications for mentor's own research (or permitted mentor)
   useEffect(() => {
     let cancelled = false;
@@ -880,7 +887,7 @@ export default function Research() {
               <span style={styles.statusBadge}>{STATUS_MAP[data.status] || data.status}</span>
             )}
             {canEditThis ? (
-              data.isFull ? (
+              isResearchFull ? (
                 <span
                   style={{
                     padding: "4px 14px",
@@ -917,11 +924,11 @@ export default function Research() {
                   borderRadius: 20,
                   fontSize: 12,
                   fontWeight: 700,
-                  background: data.isFull ? "#fee2e2" : data.accepting_applications ? "#dcfce7" : "#fee2e2",
-                  color: data.isFull ? "#dc2626" : data.accepting_applications ? "#16a34a" : "#dc2626",
+                  background: isResearchFull ? "#fee2e2" : data.accepting_applications ? "#dcfce7" : "#fee2e2",
+                  color: isResearchFull ? "#dc2626" : data.accepting_applications ? "#16a34a" : "#dc2626",
                 }}
               >
-                {data.isFull ? "לא זמין להצטרפות" : data.accepting_applications ? "הגשות פתוחות" : "הגשות סגורות"}
+                {isResearchFull ? "לא זמין להצטרפות" : data.accepting_applications ? "הגשות פתוחות" : "הגשות סגורות"}
               </span>
             )}
             <span style={styles.idBadge}>ID: {id}</span>
@@ -1253,7 +1260,7 @@ export default function Research() {
                           עזוב מחקר
                         </button>
                       </>
-                    ) : (data.isFull) ? (
+                    ) : (isResearchFull) ? (
                       <div style={{
                         textAlign: "center",
                         color: "#dc2626",

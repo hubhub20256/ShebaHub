@@ -202,7 +202,13 @@ function normalizeProfileForDraft(profile) {
     specialtyGroups: (() => {
       // Build the specialtyGroups array from the existing data
       const sg = resolveField(profile, "specialtyGroup");
-      if (Array.isArray(profile.specialtyGroups)) return profile.specialtyGroups.filter(Boolean);
+      const detailGroups = Array.isArray(profile.specialtyGroups_detail)
+        ? profile.specialtyGroups_detail.map((g) => extractDisplay(g)).filter((x) => x && x !== "-")
+        : [];
+      if (detailGroups.length > 0) return detailGroups;
+      if (Array.isArray(profile.specialtyGroups)) {
+        return profile.specialtyGroups.map((g) => extractDisplay(g)).filter((x) => x && x !== "-");
+      }
       if (sg && sg !== "-" && sg !== "") return [sg];
       return [];
     })(),
@@ -963,9 +969,14 @@ function Profile() {
             {shouldShowSpecialty && (
               <>
                 <InfoRow label="קטגוריית התמחות" value={
-                  Array.isArray(userData.specialtyGroups) && userData.specialtyGroups.length > 0
-                    ? userData.specialtyGroups.join(" | ")
-                    : getHebrewName(userData, "specialtyGroup_detail")
+                  Array.isArray(userData.specialtyGroups_detail) && userData.specialtyGroups_detail.length > 0
+                    ? userData.specialtyGroups_detail
+                      .map((g) => extractDisplay(g))
+                      .filter((v) => v && v !== "-")
+                      .join(" | ")
+                    : Array.isArray(userData.specialtyGroups) && userData.specialtyGroups.length > 0
+                      ? userData.specialtyGroups.join(" | ")
+                      : getHebrewName(userData, "specialtyGroup_detail")
                 } />
 
                 <InfoRow label="התמחות" value={
