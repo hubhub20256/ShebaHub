@@ -332,6 +332,11 @@ def invite_to_research(request, research_id: int):
     if not user_id:
         return Response({"detail": "user_id is required."}, status=status.HTTP_400_BAD_REQUEST)
 
+    # Optional role param: "student" or "mentor"
+    invited_role = (request.data.get("role") or "").strip().lower()
+    if invited_role and invited_role not in ("student", "mentor"):
+        return Response({"detail": "role must be 'student' or 'mentor'."}, status=status.HTTP_400_BAD_REQUEST)
+
     try:
         target_user = User.objects.get(id=user_id)
     except (User.DoesNotExist, ValueError):
@@ -343,7 +348,14 @@ def invite_to_research(request, research_id: int):
     if not has_student and not has_mentor:
         return Response({"detail": "למשתמש/ת אין פרופיל במערכת."}, status=status.HTTP_400_BAD_REQUEST)
 
-    if has_student:
+    # Validate role-specific profile existence
+    if invited_role == "student" and not has_student:
+        return Response({"detail": "למשתמש/ת אין פרופיל מתלמד/ת."}, status=status.HTTP_400_BAD_REQUEST)
+    if invited_role == "mentor" and not has_mentor:
+        return Response({"detail": "למשתמש/ת אין פרופיל מנחה."}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Availability check: skip for mentors / role=mentor invites
+    if invited_role != "mentor" and has_student:
         student_profile = StudentProfile.objects.get(user=target_user)
         if not student_profile.isAvailableForResearch:
             return Response(
@@ -360,10 +372,12 @@ def invite_to_research(request, research_id: int):
         }:
             return Response({"detail": "המתלמד/ת כבר נמצא/ת במחקר או שכבר נשלחה הזמנה."}, status=status.HTTP_400_BAD_REQUEST)
         obj.status = ResearchApplication.Status.INVITED
-        obj.save(update_fields=["status", "updated_at"])
+        obj.invited_role = invited_role
+        obj.save(update_fields=["status", "invited_role", "updated_at"])
     except ResearchApplication.DoesNotExist:
         obj = ResearchApplication.objects.create(
-            research=research, applicant=target_user, status=ResearchApplication.Status.INVITED
+            research=research, applicant=target_user,
+            status=ResearchApplication.Status.INVITED, invited_role=invited_role,
         )
 
     _create_notification(
@@ -486,13 +500,13 @@ def apply_to_research(request, research_id: int):
     if research.owner_id == request.user.id:
         return Response({"detail": "You cannot apply to your own research."}, status=status.HTTP_400_BAD_REQUEST)
 
-    is_mentor = getattr(request.user, "has_mentor_profile", False)
-
-    if not research.accepting_applications and not is_mentor:
+    if not research.accepting_applications:
         return Response({"detail": "המחקר אינו מקבל הגשות כרגע."}, status=status.HTTP_400_BAD_REQUEST)
 
-    # Direct capacity check (mentors don't count towards teamSize)
-    if research.teamSize and not is_mentor:
+    # Direct capacity check (mentors don't count towards teamSize, but still
+    # cannot apply when team is full — they must be invited by the owner).
+    is_mentor = getattr(request.user, "has_mentor_profile", False)
+    if research.teamSize:
         if _approved_non_mentor_count(research) >= research.teamSize:
             if research.accepting_applications:
                 research.accepting_applications = False

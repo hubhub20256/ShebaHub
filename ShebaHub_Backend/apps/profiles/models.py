@@ -228,7 +228,15 @@ class StudentProfile(models.Model):
         related_name='student_profiles',
         db_column='specialty_group_id'
     )
-    
+
+    # FE: specialtyGroups - קטגוריות התמחות (M2M for multi-select)
+    specialtyGroups = models.ManyToManyField(
+        SpecialtyGroup,
+        blank=True,
+        related_name='student_profiles_multi',
+        help_text="Multiple specialty groups (e.g. מקצועות הבסיס, מקצועות העל)"
+    )
+
     # FE: specialty - התמחות / תחום מרכזי (legacy FK – kept for data migration)
     specialty = models.ForeignKey(
         Specialty,
@@ -422,7 +430,15 @@ class MentorProfile(models.Model):
         related_name='mentor_profiles',
         db_column='specialty_group_id'
     )
-    
+
+    # FE: specialtyGroups - קטגוריות התמחות (M2M for multi-select)
+    specialtyGroups = models.ManyToManyField(
+        SpecialtyGroup,
+        blank=True,
+        related_name='mentor_profiles_multi',
+        help_text="Multiple specialty groups (e.g. מקצועות הבסיס, מקצועות העל)"
+    )
+
     # FE: specialty - התמחות / תחום מרכזי (legacy FK – kept for data migration)
     specialty = models.ForeignKey(
         Specialty,
@@ -535,6 +551,22 @@ class MentorProfile(models.Model):
         blank=True,
         db_column='linkedin_url',
         help_text="LinkedIn profile URL"
+    )
+
+    # FE: universityRank - דרגה אקדמית (מרצה, מרצה בכיר, פרופסור חבר, פרופסור מן המניין)
+    universityRank = models.CharField(
+        max_length=255,
+        blank=True,
+        db_column='university_rank',
+        help_text="Academic university rank"
+    )
+
+    # FE: universityAffiliation - שיוך אוניברסיטאי (אוניברסיטת תל אביב, etc.)
+    universityAffiliation = models.CharField(
+        max_length=255,
+        blank=True,
+        db_column='university_affiliation',
+        help_text="University affiliation"
     )
 
     # -------------------------------------------------------------------------

@@ -7,6 +7,8 @@ All endpoints are under /api/v1/profiles/ or /api/v1/reference-data/
 from django.urls import path
 
 from .views import (
+    # Public user profile by user ID
+    public_user_profiles,
     # Public directory endpoints
     public_mentor_list,
     public_mentor_detail,
@@ -45,6 +47,9 @@ from .views import (
 )
 
 urlpatterns = [
+    # Public user profile by user ID (unified dual-role endpoint)
+    path('user/<uuid:user_id>/', public_user_profiles, name='public-user-profiles'),
+
     # Public directory endpoints (used by FE /mentors and /apprentices)
     path('mentors/', public_mentor_list, name='public-mentor-list'),
     path('mentors/<uuid:mentor_id>/', public_mentor_detail, name='public-mentor-detail'),

@@ -231,23 +231,11 @@ class ResearchCreateSerializer(serializers.ModelSerializer):
         return value
 
     def validate_startDate(self, value):
-        """Ensure start date is not in the past."""
-        if value is not None:
-            from datetime import date
-            if value < date.today():
-                raise serializers.ValidationError(
-                    "Start date cannot be in the past."
-                )
+        """Accept any valid date (past dates allowed for ongoing research)."""
         return value
 
     def validate_estimatedCompletionDate(self, value):
-        """Ensure estimated completion date is not in the past."""
-        if value is not None:
-            from datetime import date
-            if value < date.today():
-                raise serializers.ValidationError(
-                    "Estimated completion date cannot be in the past."
-                )
+        """Accept any valid date (past dates allowed for completed research)."""
         return value
 
     def validate(self, attrs):
@@ -290,6 +278,9 @@ class ResearchApplicationSerializer(serializers.ModelSerializer):
     researchAvailability = serializers.SerializerMethodField(read_only=True)
     isAvailableForResearch = serializers.SerializerMethodField(read_only=True)
     hasStudentProfile = serializers.SerializerMethodField(read_only=True)
+    workplace = serializers.SerializerMethodField(read_only=True)
+    academicRank = serializers.SerializerMethodField(read_only=True)
+    isMentor = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = ResearchApplication
@@ -308,9 +299,13 @@ class ResearchApplicationSerializer(serializers.ModelSerializer):
             "startYear",
             "institution",
             "avatarUrl",
+            "workplace",
+            "academicRank",
+            "isMentor",
             "researchAvailability",
             "isAvailableForResearch",
             "hasStudentProfile",
+            "invited_role",
             "mentor_note",
             "can_edit",
             "can_approve",
@@ -413,17 +408,27 @@ class ResearchApplicationSerializer(serializers.ModelSerializer):
 
     def get_institution(self, obj):
         profile = self._get_student_profile(obj)
-        if not profile or not profile.institution:
-            return None
-        return profile.institution.name_he or profile.institution.name
+        if profile and profile.institution:
+            return profile.institution.name_he or profile.institution.name
+        # Fallback to mentor profile's workplace
+        mentor = self._get_mentor_profile(obj)
+        if mentor and mentor.workplace:
+            return mentor.workplace
+        return None
 
     def get_avatarUrl(self, obj):
         profile = self._get_student_profile(obj)
-        if not profile or not profile.avatar:
-            return None
-        request = self.context.get("request")
-        url = profile.avatar.url
-        return request.build_absolute_uri(url) if request else url
+        if profile and profile.avatar:
+            request = self.context.get("request")
+            url = profile.avatar.url
+            return request.build_absolute_uri(url) if request else url
+        # Fallback to mentor profile avatar
+        mentor = self._get_mentor_profile(obj)
+        if mentor and mentor.avatar:
+            request = self.context.get("request")
+            url = mentor.avatar.url
+            return request.build_absolute_uri(url) if request else url
+        return None
 
     def get_researchAvailability(self, obj):
         profile = self._get_student_profile(obj)
@@ -436,6 +441,24 @@ class ResearchApplicationSerializer(serializers.ModelSerializer):
 
     def get_hasStudentProfile(self, obj):
         return self._get_student_profile(obj) is not None
+
+    def get_workplace(self, obj):
+        profile = self._get_student_profile(obj)
+        if profile and profile.workplace:
+            return profile.workplace
+        mentor = self._get_mentor_profile(obj)
+        if mentor and mentor.workplace:
+            return mentor.workplace
+        return None
+
+    def get_academicRank(self, obj):
+        mentor = self._get_mentor_profile(obj)
+        if not mentor or not mentor.academicRank:
+            return None
+        return mentor.academicRank.name_he or mentor.academicRank.name
+
+    def get_isMentor(self, obj):
+        return self._get_mentor_profile(obj) is not None
 
 
 class ContactMessageSerializer(serializers.ModelSerializer):

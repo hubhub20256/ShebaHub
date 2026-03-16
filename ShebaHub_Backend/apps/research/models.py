@@ -128,6 +128,11 @@ class ResearchApplication(models.Model):
         related_name="research_applications",
     )
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
+    invited_role = models.CharField(
+        max_length=10, blank=True, default='',
+        choices=[('', ''), ('student', 'Student'), ('mentor', 'Mentor')],
+        help_text='Role the user was invited as (only for INVITED status)'
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     mentor_note = models.TextField(blank=True, help_text="Optional note from mentor on application decision")
