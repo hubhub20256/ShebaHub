@@ -18,6 +18,8 @@ export default function AdminOverview() {
   const cards = [
     { label: "סה״כ משתמשים", value: stats.total_users },
     { label: "משתמשים פעילים", value: stats.active_users },
+    { label: "מתמחים רשומים", value: stats.registered_students ?? "waiting for api update" },
+    { label: "מנחים רשומים", value: stats.registered_mentors ?? "waiting for api update" },
     { label: "משתמשים מושבתים", value: stats.deactivated_users },
     { label: "אימייל לא מאומת", value: stats.unverified_emails },
     { label: "סה״כ מחקרים", value: stats.total_researches },
