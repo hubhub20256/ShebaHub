@@ -22,6 +22,7 @@ export default function CreateResearch() {
     estimatedCompletionDate: "",
     weeklyHours: "",
     durationMonths: "",
+    academicTracks:[],
     compensation: [],
     workMode: "",
     requirements: "",
@@ -335,9 +336,15 @@ export default function CreateResearch() {
               onChange={handleChange}
               type="number"
               min="1"
-              required={true}
+              required={false}
               error={errors.durationMonths}
             />
+{/* 
+הימרתי את הפונקציה לפונקציה כללית אז כעיקרון אפשר למחוק את זה ר משאירה בנתיים ליתר בטחון שנוודא שהכל עובד טוב
+
+
+
+
 
             <div className="cr-field" id="field-compensation">
               <label className="cr-label">סוגי תגמול <span className="cr-required-star">*</span></label>
@@ -361,7 +368,25 @@ export default function CreateResearch() {
                 ))}
               </div>
               {errors.compensation && <span className="cr-error">{errors.compensation}</span>}
-            </div>
+            </div> */}
+
+
+           <MultiSelectToggle
+            label="סוגי תגמול"
+            selectedValues={form.compensation}
+            options={["מלגה", "שכר", "קרדיט אקדמי", "ללא תגמול / התנדבות", "גמיש"]}
+            onChange={(val) => updateField("compensation", val)}
+            error={errors.compensation}
+            />
+
+
+            <MultiSelectToggle
+            label="מסלולי לימוד אקדמיים רלוונטיים"
+            selectedValues={form.academicTracks}
+            options={["עבודת גמר", "תזה", "PhD", "מדעי יסוד"]}
+            onChange={(val) => updateField("academicTracks", val)}
+            error={errors.academicTracks}
+            />
              
              <HospitalSelectField
               label="מיקום"
@@ -404,7 +429,16 @@ export default function CreateResearch() {
               error={errors.status}
             />
             
-            <InputField label="אישור הלסינקי" name="helsinkiApproval" value={form.helsinkiApproval} onChange={handleChange} placeholder="מספר אישור / סטטוס" required={false} />
+      
+
+            <ToggleField
+            label="אישור הלסינקי"
+            value={form.helsinkiApproval}
+            onChange={(val) => updateField("helsinkiApproval",val)}
+            options={["כן","לא"]}
+            required={false}
+            />
+
 
              <ToggleField 
               label="נתונים" 
@@ -599,6 +633,42 @@ function CustomSelectField({ label, name, value, onChange, options, placeholder,
     </div>
   );
 }
+
+function MultiSelectToggle({label,selectedValues, options, onChange, error})
+{
+  const toggleOption = (opt) => {
+    const current = [...(selectedValues || [])];
+    if(current.includes(opt)) {
+      onChange(current.filter(t => t != opt));
+    } else {
+      onChange([...current, opt]);
+    }
+    };
+    return (
+      <div className="cr-filed">
+        <label className="cr-label">{label}</label>
+        <div style={{ display: "flex", "flexWrap": "wrap",gap: 8, marginTop: 4}}>
+          {
+            options.map((opt) => (
+              <button
+              key={opt}
+              type="button"
+              onClick={() => toggleOption(opt)}
+              className={`cr-toggle-btn ${selectedValues?.includes(opt) ? "cr-toggle-btn-active" : ""}`}
+              style={{fontSize:12,padding:"6px 14px"}}
+              >
+                {opt}
+          
+              </button>
+                 ))}
+           
+        </div>
+        {error && <span className="cr-error">{error}</span>}
+
+      </div>
+    );
+
+  }
 
 function HospitalSelectField({ label, name, value, onChange, required = false, error }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -951,6 +1021,9 @@ function FileField({ label, name, file, onChange, required = false, error }) {
     </div>
   );
 }
+
+
+
 
 function DatePickerField({ label, value, onChange, required = false, minDate, error }) {
   const [isOpen, setIsOpen] = useState(false);
