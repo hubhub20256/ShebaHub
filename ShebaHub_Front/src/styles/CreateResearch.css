@@ -301,6 +301,36 @@
   font-weight: bold;
 }
 
+.cr-calendar-footer {
+  margin-top: 0.75rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid #eee;
+  display: flex;
+  justify-content: center;
+}
+
+.cr-calendar-clear-btn {
+  border: none;
+  background: transparent;
+  color: #8b8fa3;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  border-radius: 999px;
+  transition: color 0.15s, background 0.15s;
+}
+
+.cr-calendar-clear-btn:hover:not(:disabled) {
+  color: var(--cr-theme-color);
+  background: rgba(44, 44, 108, 0.08);
+}
+
+.cr-calendar-clear-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 .cr-actions {
   display: flex;
   justify-content: center;
@@ -359,4 +389,7 @@
 [data-theme="dark"] .cr-calendar-nav-btn { color: #aaa !important; }
 [data-theme="dark"] .cr-day-label { color: #888 !important; }
 [data-theme="dark"] .cr-day-btn { color: var(--text-color) !important; }
+[data-theme="dark"] .cr-calendar-footer { border-top-color: var(--border-color) !important; }
+[data-theme="dark"] .cr-calendar-clear-btn { color: #9aa0b2 !important; }
+[data-theme="dark"] .cr-calendar-clear-btn:hover:not(:disabled) { background: rgba(255, 255, 255, 0.06) !important; }
 [data-theme="dark"] .cr-primary-btn { box-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, 0.3) !important; }

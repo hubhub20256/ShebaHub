@@ -1052,12 +1052,18 @@ function DatePickerField({ label, value, onChange, required = false, minDate, er
     const newDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + offset, 1);
     setCurrentMonth(newDate);
   };
+  const handleClearDate = (e) => {
+    e.stopPropagation();
+    onChange("");
+    setIsOpen(false);
+  };
 
   const daysInMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0).getDate();
   const startDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1).getDay();
 
   const monthNames = ["ינואר", "פברואר", "מרץ", "אפריל", "מאי", "יוני", "יולי", "אוגוסט", "ספטמבר", "אוקטובר", "נובמבר", "דצמבר"];
   const dayNames = ["א", "ב", "ג", "ד", "ה", "ו", "ש"];
+  const hasValue = Boolean(value);
 
   return (
     <div className="cr-field" ref={containerRef}>
@@ -1111,6 +1117,16 @@ function DatePickerField({ label, value, onChange, required = false, minDate, er
                 </button>
               );
             })}
+          </div>
+          <div className="cr-calendar-footer">
+            <button
+              type="button"
+              className="cr-calendar-clear-btn"
+              onClick={handleClearDate}
+              disabled={!hasValue}
+            >
+              נקה תאריך
+            </button>
           </div>
         </div>
       )}
