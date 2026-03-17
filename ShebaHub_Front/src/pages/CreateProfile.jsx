@@ -616,7 +616,25 @@ export default function CreateMentorProfile() {
                     error={errors.apprenticeStage}
                     options={[{ v: "", t: "בחרי/י שלב" }, { v: "סטודנט", t: "סטודנט" }, { v: "לפני סטאז׳", t: "לפני סטאז׳" }, { v: "סטאז׳ר", t: "סטאז׳ר" }, { v: "אחרי סטאז׳", t: "אחרי סטאז׳" }, { v: "מתמחה", t: "מתמחה" }, { v: "רופא מתמחה", t: "רופא מתמחה" }, { v: "אחר", t: "אחר" }]}
                   />
-                  <SelectField label="שנת תחילת הלימודים" name="startYear" value={form.startYear} onChange={handleChange} options={[{ v: "", t: "בחרי שנה" }, ...START_YEARS]} />
+            
+
+                  <InputField
+                  label="שנת תחילת לימודים"
+                  name="startYear"
+                  type="number"
+                  value={form.startYear}
+                  onChange={handleChange}
+                  placeholder="YYYY (למשל 2026)"
+                  min="1900"
+                  max="2999"
+                  onInput={(e) => {
+                    if(e.target.value.length > 4)
+                    {
+                      e.target.value = e.target.value.slice(0,4);
+                    }
+                  }}
+
+                   />
                 </>
               )}
 
@@ -719,7 +737,12 @@ export default function CreateMentorProfile() {
               )}
 
               {role === "mentor" && (
-                <SelectField label="שלב בהכשרה הרפואית" name="academicRank" value={form.academicRank} onChange={handleChange} options={[{ v: "", t: "בחרי שלב בהכשרה" }, { v: "סטאז׳", t: "סטאז׳" }, { v: "מתמחה", t: "מתמחה" }, { v: "מומחה/ית", t: "מומחה/ית" }, { v: "התמחות־על / עמית/ת", t: "התמחות־על / עמית/ת" }]} />
+                <SelectField label="שלב בהכשרה הרפואית" name="academicRank" 
+                value={form.academicRank} onChange={handleChange} 
+                options={[{ v: "", t: "בחרי שלב בהכשרה" }, 
+                  { v: "סטאז׳", t: "סטאז׳" }, 
+                  { v: "מתמחה", t: "מתמחה" }, 
+                  { v: "מומחה/ית", t: "מומחה/ית" }]} />
               )}
             </div>
           </div>
@@ -848,7 +871,20 @@ export default function CreateMentorProfile() {
             {role === "apprentice" ? (
               <>
                 <div className="mentor-grid" style={styles.grid}>
-                  <SelectField label="סוג העבודה המבוקשת" name="workType" value={form.workType} onChange={handleChange} options={[{ v: "", t: "בחרי עבודה" }, { v: "איסוף נתונים", t: "איסוף נתונים" }, { v: "כתיבה מדעית", t: "כתיבה מדעית" }, { v: "ניתוח סטטיסטי", t: "ניתוח סטטיסטי" }]} />
+    
+
+                   <TextAreaField
+                   label="סוג העבודה המבוקשת"
+                   name="workType"
+                   value={form.workType}
+                   onChange={handleChange}
+                   placeholder="למשל: איסוף נתונים, ניתוח סטטיסטי, כתיבה מדעית..."
+                   rows={2}
+                    />
+
+
+
+                   
                   <div style={styles.field} id="field-compensationPreference">
                     <label style={styles.label}>העדפת תגמול</label>
                     <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 4 }}>
@@ -903,7 +939,22 @@ export default function CreateMentorProfile() {
             ) : (
               <>
                 <div className="mentor-grid" style={styles.grid}>
-                  <SelectField label="תחומי עניין מחקר" name="researchInterests" value={form.researchInterests} onChange={handleChange} options={[{ v: "", t: "בחרי/י תחומים" }, { v: "AI ברפואה", t: "AI ברפואה" }, { v: "אפידמיולוגיה", t: "אפידמיולוגיה" }, { v: "רפואה דחופה", t: "רפואה דחופה" }, { v: "מחקר קליני", t: "מחקר קליני" }]} />
+                  {/* <SelectField label="תחומי עניין מחקר" name="researchInterests" 
+                  value={form.researchInterests} 
+                  onChange={handleChange} 
+                  options={[{ v: "", t: "בחרי/י תחומים" }, { v: "AI ברפואה", t: "AI ברפואה" }, { v: "אפידמיולוגיה", t: "אפידמיולוגיה" }, { v: "רפואה דחופה", t: "רפואה דחופה" }, { v: "מחקר קליני", t: "מחקר קליני" }]} /> */}
+
+                  <TextAreaField
+                  label="תחומי עניין מחקריים"
+                  name="researchInterests"
+                  value={form.researchInterests}
+                  onChange={handleChange}
+                  placeholder="למשל: AI ברפואה, אפידמיולוגיה, רפואה דחופה ..."
+                  rows={2}
+                   />
+
+             
+                
                 </div>
                 <TextAreaField label="תיאור מחקרים קודמים" name="previousResearchDescription" value={form.previousResearchDescription} onChange={handleChange} />
               </>
@@ -1120,11 +1171,21 @@ export default function CreateMentorProfile() {
 
 // --- SUB-COMPONENTS ---
 
-function InputField({ label, name, value, onChange, placeholder, disabled, error, type = "text" }) {
+function InputField({ label, name, value, onChange, placeholder, disabled, error, type = "text" ,min, max, onInput}) {
   return (
     <div style={styles.field}>
       <label style={styles.label}>{label}</label>
-      <input type={type} name={name} value={value} onChange={onChange} placeholder={placeholder} disabled={disabled} style={{ ...styles.input, ...(disabled ? styles.disabled : {}), ...(error ? styles.inputError : {}) }} />
+      <input 
+      type={type} 
+      name={name}
+      value={value} 
+      onChange={onChange} 
+      placeholder={placeholder} 
+      disabled={disabled} 
+      min={min}
+      max={max}
+      onInput={onInput}
+      style={{ ...styles.input, ...(disabled ? styles.disabled : {}), ...(error ? styles.inputError : {}) }} />
       {error && <div style={styles.error}>{error}</div>}
     </div>
   );
