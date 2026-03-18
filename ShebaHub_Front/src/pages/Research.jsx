@@ -507,8 +507,13 @@ export default function Research() {
 
   const handleStatusChange = async (newStatus) => {
     if (!id || !canEditThis) return;
+    const shouldCloseApplications =
+      newStatus === "closed" || newStatus === "completed";
     try {
-      const updated = await researchAPI.updateMyResearch(id, { status: newStatus });
+      const updated = await researchAPI.updateMyResearch(id, {
+        status: newStatus,
+        ...(shouldCloseApplications ? { accepting_applications: false } : {}),
+      });
       setResearch(updated);
       // Re-fetch approved applicants (public list) so counts stay in sync
       try {
