@@ -12,6 +12,7 @@ export default function CreateResearch() {
   const isEditMode = Boolean(id);
   usePageTitle(isEditMode ? "עריכת מחקר" : "יצירת מחקר");
   const navigate = useNavigate();
+  
   const [form, setForm] = useState({
     researchName: "",
     description: "",
@@ -40,16 +41,17 @@ export default function CreateResearch() {
   const [removeContract, setRemoveContract] = useState(false);
   const [isLoadingExisting, setIsLoadingExisting] = useState(false);
   const [isMentor, setIsMentor] = useState(true);
-
   const [isSaving, setIsSaving] = useState(false);
   const [submitError, setSubmitError] = useState(null);
   const [errors, setErrors] = useState({});
 
+  // פונקציה לעדכון שדות טקסט רגילים
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm(prev => ({ ...prev, [name]: value }));
   };
 
+  // פונקציה לעדכון שדות מותאמים אישית (כמו MultiSelect או Hospital)
   const updateField = (name, value) => {
     setForm(prev => ({ ...prev, [name]: value }));
   };
@@ -58,20 +60,29 @@ export default function CreateResearch() {
     const file = e.target.files[0];
     
     if (file) {
-      // אנחנו שולחים type: 'contract' כדי שה-Utility ידע לאכוף PDF בלבד
-      const error = validateFile(file, { type: 'contract' });
-      
-      if (error) {
-        setErrors(prev => ({ ...prev, contract: error }));
-        toast.error(error); // ה-Toast יציג: "יש להעלות קובץ PDF בלבד"
+      // 1. בדיקה ידנית שהקובץ הוא PDF (מכיוון שלא שינינו את ה-Utility)
+      const ext = '.' + file.name.split('.').pop().toLowerCase();
+      if (ext !== '.pdf') {
+        const errorMsg = "יש להעלות קובץ PDF בלבד";
+        setErrors(prev => ({ ...prev, contract: errorMsg }));
+        toast.error(errorMsg);
         
-        // איפוס קריטי: מונע מהקובץ הלא תקין להיכנס ל-State
         e.target.value = ''; 
         setForm(prev => ({ ...prev, contract: null })); 
         return;
       }
-  
-      // אם הקובץ תקין (PDF)
+
+      // 2. בדיקת גודל דרך ה-Utility (שנשאר ללא שינוי)
+      const error = validateFile(file, { type: 'document' });
+      if (error) {
+        setErrors(prev => ({ ...prev, contract: error }));
+        toast.error(`שגיאת קובץ: ${error}`);
+        e.target.value = '';
+        setForm(prev => ({ ...prev, contract: null }));
+        return;
+      }
+
+      // 3. תקין
       setErrors(prev => { 
         const next = { ...prev }; 
         delete next.contract; 
@@ -83,7 +94,6 @@ export default function CreateResearch() {
       setForm(prev => ({ ...prev, contract: null }));
     }
   };
-
   useEffect(() => {
     let cancelled = false;
 
