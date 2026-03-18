@@ -12,6 +12,7 @@ export default function CreateResearch() {
   const isEditMode = Boolean(id);
   usePageTitle(isEditMode ? "עריכת מחקר" : "יצירת מחקר");
   const navigate = useNavigate();
+  
   const [form, setForm] = useState({
     researchName: "",
     description: "",
@@ -40,36 +41,59 @@ export default function CreateResearch() {
   const [removeContract, setRemoveContract] = useState(false);
   const [isLoadingExisting, setIsLoadingExisting] = useState(false);
   const [isMentor, setIsMentor] = useState(true);
-
   const [isSaving, setIsSaving] = useState(false);
   const [submitError, setSubmitError] = useState(null);
   const [errors, setErrors] = useState({});
 
+  // פונקציה לעדכון שדות טקסט רגילים
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm(prev => ({ ...prev, [name]: value }));
   };
 
+  // פונקציה לעדכון שדות מותאמים אישית (כמו MultiSelect או Hospital)
   const updateField = (name, value) => {
     setForm(prev => ({ ...prev, [name]: value }));
   };
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
+    
     if (file) {
+      // 1. בדיקה ידנית שהקובץ הוא PDF (מכיוון שלא שינינו את ה-Utility)
+      const ext = '.' + file.name.split('.').pop().toLowerCase();
+      if (ext !== '.pdf') {
+        const errorMsg = "יש להעלות קובץ PDF בלבד";
+        setErrors(prev => ({ ...prev, contract: errorMsg }));
+        toast.error(errorMsg);
+        
+        e.target.value = ''; 
+        setForm(prev => ({ ...prev, contract: null })); 
+        return;
+      }
+
+      // 2. בדיקת גודל דרך ה-Utility (שנשאר ללא שינוי)
       const error = validateFile(file, { type: 'document' });
       if (error) {
         setErrors(prev => ({ ...prev, contract: error }));
         toast.error(`שגיאת קובץ: ${error}`);
         e.target.value = '';
+        setForm(prev => ({ ...prev, contract: null }));
         return;
       }
-      setErrors(prev => { const next = { ...prev }; delete next.contract; return next; });
-      setRemoveContract(false);
-    }
-    setForm(prev => ({ ...prev, contract: file }));
-  };
 
+      // 3. תקין
+      setErrors(prev => { 
+        const next = { ...prev }; 
+        delete next.contract; 
+        return next; 
+      });
+      setRemoveContract(false);
+      setForm(prev => ({ ...prev, contract: file }));
+    } else {
+      setForm(prev => ({ ...prev, contract: null }));
+    }
+  };
   useEffect(() => {
     let cancelled = false;
 
@@ -1012,7 +1036,15 @@ function FileField({ label, name, file, onChange, required = false, error }) {
     <div className="cr-field">
       <Label text={label} required={required} />
       <div className="cr-file-wrapper">
-        <input type="file" name={name} id={`file-${name}`} onChange={onChange} className="cr-file-input" required={required} accept=".pdf" />
+        <input 
+          type="file" 
+          name={name} 
+          id={`file-${name}`} 
+          onChange={onChange} 
+          className="cr-file-input" 
+          required={required} 
+          accept="application/pdf" // שינוי מ-.pdf ל-MIME type מלא לסינון חזק יותר
+        />        
         <label htmlFor={`file-${name}`} className="cr-file-label">
           {file ? `קובץ נבחר: ${file.name}` : "לחץ להעלאת קובץ"}
         </label>
