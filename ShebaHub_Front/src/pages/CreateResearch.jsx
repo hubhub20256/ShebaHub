@@ -56,18 +56,32 @@ export default function CreateResearch() {
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
+    
     if (file) {
-      const error = validateFile(file, { type: 'document' });
+      // אנחנו שולחים type: 'contract' כדי שה-Utility ידע לאכוף PDF בלבד
+      const error = validateFile(file, { type: 'contract' });
+      
       if (error) {
         setErrors(prev => ({ ...prev, contract: error }));
-        toast.error(`שגיאת קובץ: ${error}`);
-        e.target.value = '';
+        toast.error(error); // ה-Toast יציג: "יש להעלות קובץ PDF בלבד"
+        
+        // איפוס קריטי: מונע מהקובץ הלא תקין להיכנס ל-State
+        e.target.value = ''; 
+        setForm(prev => ({ ...prev, contract: null })); 
         return;
       }
-      setErrors(prev => { const next = { ...prev }; delete next.contract; return next; });
+  
+      // אם הקובץ תקין (PDF)
+      setErrors(prev => { 
+        const next = { ...prev }; 
+        delete next.contract; 
+        return next; 
+      });
       setRemoveContract(false);
+      setForm(prev => ({ ...prev, contract: file }));
+    } else {
+      setForm(prev => ({ ...prev, contract: null }));
     }
-    setForm(prev => ({ ...prev, contract: file }));
   };
 
   useEffect(() => {
@@ -1012,7 +1026,15 @@ function FileField({ label, name, file, onChange, required = false, error }) {
     <div className="cr-field">
       <Label text={label} required={required} />
       <div className="cr-file-wrapper">
-        <input type="file" name={name} id={`file-${name}`} onChange={onChange} className="cr-file-input" required={required} accept=".pdf" />
+        <input 
+          type="file" 
+          name={name} 
+          id={`file-${name}`} 
+          onChange={onChange} 
+          className="cr-file-input" 
+          required={required} 
+          accept="application/pdf" // שינוי מ-.pdf ל-MIME type מלא לסינון חזק יותר
+        />        
         <label htmlFor={`file-${name}`} className="cr-file-label">
           {file ? `קובץ נבחר: ${file.name}` : "לחץ להעלאת קובץ"}
         </label>
