@@ -46,7 +46,6 @@ const ACADEMIC_RANKS = [
   { v: "סטאז׳", t: "סטאז׳" },
   { v: "מתמחה", t: "מתמחה" },
   { v: "מומחה/ית", t: "מומחה/ית" },
-  { v: "התמחות־על / עמית/ת", t: "התמחות־על / עמית/ת" },
 ];
 
 const APPRENTICE_STAGES = [
@@ -1567,7 +1566,7 @@ function Profile() {
           <div className="profile-column">
             {isMentor && (
               <>
-                <SectionCard title="תחומי עניין ומחקר">
+                <SectionCard title="תחומי עניין מחקריים">
                   <InfoRow
                     label="תחומי עניין"
                     value={userData.researchInterests || "-"}
@@ -2035,7 +2034,7 @@ function Profile() {
                 </div>
 
                 <div style={styles.formSection}>
-                  <label style={styles.label}>תחומי עניין ומחקר</label>
+                  <label style={styles.label}>תחומי עניין מחקריים</label>
                   <textarea
                     value={draft.researchInterests || ""}
                     onChange={(e) =>
