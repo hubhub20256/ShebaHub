@@ -192,6 +192,34 @@ class TestProfileValidation:
         response = authenticated_client.post(STUDENT_ME_URL, data, format='json')
         assert response.status_code == status.HTTP_201_CREATED
 
+    def test_start_year_2000_accepted(self, authenticated_client):
+        """Year 2000 is within the valid range."""
+        data = {'startYear': 2000}
+        response = authenticated_client.post(STUDENT_ME_URL, data, format='json')
+        assert response.status_code == status.HTTP_201_CREATED
+        assert response.data['startYear'] == 2000
+
+    def test_start_year_1955_accepted(self, authenticated_client):
+        """Year 1955 should now be accepted (previously rejected as < 1990)."""
+        data = {'startYear': 1955}
+        response = authenticated_client.post(STUDENT_ME_URL, data, format='json')
+        assert response.status_code == status.HTTP_201_CREATED
+        assert response.data['startYear'] == 1955
+
+    def test_start_year_far_future_rejected(self, authenticated_client):
+        """Year far in the future (current_year + 10) should be rejected."""
+        from datetime import date
+        far_future = date.today().year + 10
+        data = {'startYear': far_future}
+        response = authenticated_client.post(STUDENT_ME_URL, data, format='json')
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+    def test_start_year_non_numeric_rejected(self, authenticated_client):
+        """Non-numeric string for startYear should be rejected."""
+        data = {'startYear': 'not-a-year'}
+        response = authenticated_client.post(STUDENT_ME_URL, data, format='json')
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
 @pytest.fixture
 def admin_user(db):
     """Create an admin user."""

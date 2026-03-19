@@ -11,6 +11,7 @@ from rest_framework.response import Response
 
 from apps.common.email_service import EmailService
 from apps.common.permissions import IsAdminUser
+from apps.profiles.models import StudentProfile, MentorProfile
 from apps.research.models import Research, ResearchApplication
 from .models import AdminActionLog, AnnouncementDismissal, SiteSetting, SystemAnnouncement
 from .serializers import (
@@ -65,6 +66,8 @@ def dashboard_stats(request):
         "active_announcements": SystemAnnouncement.objects.filter(
             is_active=True,
         ).filter(Q(expires_at__isnull=True) | Q(expires_at__gt=now)).count(),
+        "registered_students": StudentProfile.objects.count(),
+        "registered_mentors": MentorProfile.objects.count(),
     }
     serializer = DashboardStatsSerializer(data)
     return Response(serializer.data)

@@ -289,13 +289,11 @@ class StudentProfile(models.Model):
     # Research & Availability (מחקר וזמינות)
     # -------------------------------------------------------------------------
     # FE: workType - סוג העבודה המבוקשת
-    workType = models.ForeignKey(
-        WorkType,
-        on_delete=models.SET_NULL,
-        null=True,
+    workType = models.CharField(
+        max_length=255,
         blank=True,
-        related_name='student_profiles',
-        db_column='work_type_id'
+        db_column='work_type_text',
+        help_text="Type of work sought (free text)"
     )
     
     # FE: compensationPreference - העדפת תגמול (multi-select, stored as JSON list)
@@ -510,14 +508,11 @@ class MentorProfile(models.Model):
     # Research Background (רקע מחקרי ותחומי עניין)
     # -------------------------------------------------------------------------
     # FE: researchInterests - תחומי עניין מחקר
-    researchInterests = models.ForeignKey(
-        ResearchInterest,
-        on_delete=models.PROTECT,
-        null=True,
+    researchInterests = models.CharField(
+        max_length=500,
         blank=True,
-        related_name='mentor_profiles',
-        db_column='research_interests_id',
-        help_text="Research interest area"
+        db_column='research_interests_text',
+        help_text="Research interest area (free text)"
     )
     
     # FE: previousResearchDescription - תיאור מחקרים קודמים

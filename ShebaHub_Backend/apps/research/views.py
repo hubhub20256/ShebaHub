@@ -1245,27 +1245,19 @@ def secure_contract_download(request, research_id: int):
             status=status.HTTP_404_NOT_FOUND,
         )
 
-    # Authorization: owner, approved applicants only, or staff
-    is_owner = research.owner_id == request.user.id
-    is_staff = request.user.is_staff
-    is_applicant = ResearchApplication.objects.filter(
-        research=research,
-        applicant=request.user,
-        status=ResearchApplication.Status.APPROVED,
-    ).exists()
-
-    if not (is_owner or is_staff or is_applicant):
-        return Response(
-            {"detail": "You do not have permission to download this contract."},
-            status=status.HTTP_403_FORBIDDEN,
-        )
+    # Authorization: match research_detail visibility logic
+    is_owner_or_staff = research.owner_id == request.user.id or request.user.is_staff
+    if research.moderation_status in ("flagged", "rejected") and not is_owner_or_staff:
+        return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
+    if research.status == "draft" and not is_owner_or_staff:
+        return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
 
     audit_logger.info(
         f"Contract downloaded: research #{research.id} ({research.researchName})",
         extra={
             "user_id": str(request.user.id),
             "research_id": research.id,
-            "is_owner": is_owner,
+            "is_owner": research.owner_id == request.user.id,
         },
     )
 
