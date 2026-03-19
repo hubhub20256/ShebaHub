@@ -21,6 +21,8 @@ class SiteSetting(models.Model):
     mentor_note_max_length = models.PositiveIntegerField(default=1000)
     applications_globally_enabled = models.BooleanField(default=True)
     registration_enabled = models.BooleanField(default=True)
+    student_registration_enabled = models.BooleanField(default=True)
+    mentor_registration_enabled = models.BooleanField(default=True)
     require_email_verification_to_apply = models.BooleanField(default=False)
 
     updated_at = models.DateTimeField(auto_now=True)

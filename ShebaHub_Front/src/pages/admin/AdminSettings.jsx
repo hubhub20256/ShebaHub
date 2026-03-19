@@ -46,6 +46,16 @@ const FIELDS = [
     type: "toggle",
   },
   {
+    key: "student_registration_enabled",
+    label: "הרשמה כסטודנט מופעלת",
+    type: "toggle",
+  },
+  {
+    key: "mentor_registration_enabled",
+    label: "הרשמה כמנטור מופעלת",
+    type: "toggle",
+  },
+  {
     key: "require_email_verification_to_apply",
     label: "דרוש אימות אימייל להגשה",
     type: "toggle",

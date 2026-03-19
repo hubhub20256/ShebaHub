@@ -135,6 +135,8 @@ class SiteSettingSerializer(serializers.ModelSerializer):
             "mentor_note_max_length",
             "applications_globally_enabled",
             "registration_enabled",
+            "student_registration_enabled",
+            "mentor_registration_enabled",
             "require_email_verification_to_apply",
             "updated_at",
         ]
@@ -163,6 +165,8 @@ class DashboardStatsSerializer(serializers.Serializer):
     total_applications = serializers.IntegerField()
     pending_applications = serializers.IntegerField()
     active_announcements = serializers.IntegerField()
+    registered_students = serializers.IntegerField()
+    registered_mentors = serializers.IntegerField()
 
 
 class SystemAnnouncementSerializer(serializers.ModelSerializer):
