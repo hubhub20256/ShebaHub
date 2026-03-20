@@ -39,6 +39,7 @@ class ResearchSerializer(serializers.ModelSerializer):
             "weeklyHours",
             "durationMonths",
             "compensation",
+            "academic_tracks",
             "workMode",
             "requirements",
             "skillsAndTools",
@@ -141,6 +142,7 @@ class ResearchCreateSerializer(serializers.ModelSerializer):
             "weeklyHours",
             "durationMonths",
             "compensation",
+            "academic_tracks",
             "workMode",
             "requirements",
             "skillsAndTools",
@@ -220,6 +222,19 @@ class ResearchCreateSerializer(serializers.ModelSerializer):
     def validate_compensation(self, value):
         """Ensure compensation is a list of strings."""
         return self._validate_string_list(value, "compensation")
+
+    def validate_academic_tracks(self, value):
+        """Ensure academic_tracks is a list of unique strings."""
+        value = self._validate_string_list(value, "academic_tracks")
+        # Remove duplicates while preserving order
+        seen = set()
+        deduped = []
+        for item in value:
+            stripped = item.strip()
+            if stripped and stripped not in seen:
+                seen.add(stripped)
+                deduped.append(stripped)
+        return deduped
 
     def validate_contract(self, value):
         """Validate uploaded contract file using the file security pipeline."""

@@ -69,6 +69,10 @@ class Research(models.Model):
         default=list, blank=True,
         help_text='Primary compensation types, e.g. ["מלגה", "שכר"]'
     )
+    academic_tracks = models.JSONField(
+        default=list, blank=True,
+        help_text='Relevant academic study tracks, e.g. ["עבודת גמר", "תזה", "PhD"]'
+    )
     workMode = models.CharField(max_length=50, blank=True)
     requirements = models.TextField(blank=True)
     skillsAndTools = models.TextField(blank=True)
