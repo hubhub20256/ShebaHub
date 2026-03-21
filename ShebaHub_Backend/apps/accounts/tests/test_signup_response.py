@@ -45,7 +45,7 @@ class TestSignupResponseFormat(APITestCase):
             'confirmPassword': 'StrongPassword123!',
             'firstName': 'Test',
             'lastName': 'User',
-            'gender': 'male',
+            'gender': 'man',
         }
 
     def test_success_response_is_json_with_tokens_and_user(self):

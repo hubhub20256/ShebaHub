@@ -201,8 +201,8 @@ def public_mentor_list(request):
     qs = (
         MentorProfile.objects
         .filter(user__is_staff=False)
-        .select_related('user', 'specialty', 'institution')
-        .prefetch_related('degrees', 'specialties')
+        .select_related('user', 'specialty', 'institution', 'specialtyGroup', 'academicRank')
+        .prefetch_related('degrees', 'specialties', 'specialtyGroups')
         .order_by('-created_at')
     )
     if SiteSetting.load().require_email_verification_to_apply:
@@ -257,7 +257,8 @@ def public_student_list(request):
     qs = (
         StudentProfile.objects
         .filter(user__is_staff=False)
-        .select_related('user', 'apprenticeStage', 'institution')
+        .select_related('user', 'apprenticeStage', 'institution', 'specialtyGroup', 'specialty', 'participationMode')
+        .prefetch_related('degrees', 'specialties', 'specialtyGroups')
         .order_by('-created_at')
     )
     if SiteSetting.load().require_email_verification_to_apply:

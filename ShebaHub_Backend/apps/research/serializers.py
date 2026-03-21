@@ -403,9 +403,9 @@ class ResearchApplicationSerializer(serializers.ModelSerializer):
 
     def get_gender(self, obj):
         value = getattr(obj.applicant, "gender", None)
-        if value == "male":
+        if value == "man":
             return "זכר"
-        if value == "female":
+        if value == "woman":
             return "נקבה"
         if value == "other":
             return "אחר"

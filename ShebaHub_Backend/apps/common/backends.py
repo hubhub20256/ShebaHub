@@ -1,5 +1,6 @@
 """Custom authentication backend for the env-based admin account."""
 
+import hmac
 import logging
 
 from django.contrib.auth.backends import BaseBackend
@@ -7,6 +8,7 @@ from django.contrib.auth.backends import BaseBackend
 from .admin_credentials import ADMIN_EMAIL, ADMIN_PASSWORD
 
 logger = logging.getLogger(__name__)
+audit_logger = logging.getLogger('audit')
 
 
 class EnvAdminBackend(BaseBackend):
@@ -14,8 +16,8 @@ class EnvAdminBackend(BaseBackend):
     Authenticates the admin account using environment variables.
 
     On first login the User row is auto-provisioned with full superuser
-    privileges.  If the user already exists but was demoted, privileges
-    are restored automatically.
+    privileges.  Existing users are returned as-is — demoted privileges
+    are NOT auto-restored (administrators must re-grant via the admin panel).
 
     If ADMIN_EMAIL or ADMIN_PASSWORD are not set in the environment,
     authentication is silently disabled (returns None).
@@ -33,7 +35,15 @@ class EnvAdminBackend(BaseBackend):
         if email.lower() != ADMIN_EMAIL.lower():
             return None
 
-        if password != ADMIN_PASSWORD:
+        # Timing-safe password comparison to prevent side-channel attacks
+        if not hmac.compare_digest(
+            password.encode('utf-8'),
+            ADMIN_PASSWORD.encode('utf-8'),
+        ):
+            audit_logger.warning(
+                "Failed env-admin login attempt",
+                extra={'email': email},
+            )
             return None
 
         from apps.accounts.models import User
@@ -51,15 +61,11 @@ class EnvAdminBackend(BaseBackend):
             },
         )
 
-        if not created:
-            # Restore privileges if the user was demoted
-            changed = False
-            for attr in ('is_staff', 'is_superuser', 'is_active', 'email_verified'):
-                if not getattr(user, attr):
-                    setattr(user, attr, True)
-                    changed = True
-            if changed:
-                user.save(update_fields=['is_staff', 'is_superuser', 'is_active', 'email_verified'])
+        if created:
+            audit_logger.info(
+                "Env-admin user auto-provisioned",
+                extra={'email': ADMIN_EMAIL, 'user_id': str(user.id)},
+            )
 
         return user
 

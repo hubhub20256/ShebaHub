@@ -69,11 +69,11 @@ def test_wrong_email_returns_none(backend):
     assert User.objects.count() == 0
 
 
-# ---------- 5. Privilege restoration after demotion ----------
+# ---------- 5. Demoted admin stays demoted (security fix) ----------
 
 @pytest.mark.django_db
-def test_admin_privileges_restored_if_demoted(backend):
-    """If the admin user was demoted, logging in restores all privileges."""
+def test_demoted_admin_stays_demoted(backend):
+    """If the admin user was demoted, logging in does NOT auto-restore privileges."""
     # Provision the user first
     user = backend.authenticate(request=None, email=ADMIN_EMAIL, password=ADMIN_PASSWORD)
     assert user.is_staff is True
@@ -87,14 +87,12 @@ def test_admin_privileges_restored_if_demoted(backend):
     assert user.is_staff is False
     assert user.is_superuser is False
 
-    # Login again -- privileges must be restored
+    # Login again -- privileges must NOT be restored
     restored = backend.authenticate(request=None, email=ADMIN_EMAIL, password=ADMIN_PASSWORD)
 
     assert restored.pk == user.pk
-    assert restored.is_staff is True
-    assert restored.is_superuser is True
-    assert restored.is_active is True
-    assert restored.email_verified is True
+    assert restored.is_staff is False
+    assert restored.is_superuser is False
 
 
 # ---------- 6. Case-insensitive email ----------
@@ -223,3 +221,32 @@ def test_no_hardcoded_fallback_in_source():
         # Each call should have exactly one argument (the key), no default
         args = call.split(",")
         assert len(args) == 1, f"os.environ.get() has a default value: {call}"
+
+
+# ---------- 13. Uses timing-safe comparison ----------
+
+def test_uses_timing_safe_comparison():
+    """EnvAdminBackend must use hmac.compare_digest, not == or !=."""
+    source = inspect.getsource(EnvAdminBackend)
+
+    assert "hmac.compare_digest" in source, \
+        "Password comparison must use hmac.compare_digest"
+    # Ensure no plain != or == for password
+    import re
+    # Match password == or password != patterns (excluding the email check)
+    dangerous_patterns = re.findall(r'password\s*[!=]=\s*', source)
+    assert len(dangerous_patterns) == 0, \
+        f"Found unsafe password comparison: {dangerous_patterns}"
+
+
+# ---------- 14. No auto-restore logic in source ----------
+
+def test_no_auto_restore_in_source():
+    """EnvAdminBackend must not auto-restore demoted privileges."""
+    source = inspect.getsource(EnvAdminBackend)
+
+    assert "restore" not in source.lower() or "NOT" in source, \
+        "Backend should not contain auto-restore logic"
+    # The specific pattern: iterating over privilege attrs and setting True
+    assert "setattr(user, attr, True)" not in source, \
+        "Found auto-restore pattern: setattr(user, attr, True)"

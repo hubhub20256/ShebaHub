@@ -79,7 +79,7 @@ class Research(models.Model):
     output = models.TextField(blank=True)
 
     location = models.CharField(max_length=255, blank=True)
-    status = models.CharField(max_length=50, choices=StatusChoices.choices, default=StatusChoices.DRAFT, blank=True)
+    status = models.CharField(max_length=50, choices=StatusChoices.choices, default=StatusChoices.DRAFT, blank=True, db_index=True)
     helsinkiApproval = models.CharField(max_length=100, blank=True)
     dataType = models.CharField(max_length=50, blank=True)
 
@@ -90,6 +90,7 @@ class Research(models.Model):
         max_length=20,
         choices=ModerationStatus.choices,
         default=ModerationStatus.APPROVED,
+        db_index=True,
     )
     moderation_note = models.TextField(blank=True)
 
@@ -131,7 +132,7 @@ class ResearchApplication(models.Model):
         on_delete=models.CASCADE,
         related_name="research_applications",
     )
-    status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING, db_index=True)
     invited_role = models.CharField(
         max_length=10, blank=True, default='',
         choices=[('', ''), ('student', 'Student'), ('mentor', 'Mentor')],
@@ -181,7 +182,7 @@ class ContactMessage(models.Model):
     )
     subject = models.CharField(max_length=255)
     body = models.TextField(max_length=2000)
-    is_read = models.BooleanField(default=False)
+    is_read = models.BooleanField(default=False, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

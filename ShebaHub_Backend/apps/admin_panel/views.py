@@ -360,6 +360,10 @@ def edit_user(request, pk):
     if "is_staff" in request.data and request.data["is_staff"] and not request.user.is_superuser:
         return Response({"detail": "Only superusers can grant staff status."}, status=status.HTTP_403_FORBIDDEN)
 
+    # Guard: is_superuser cannot be changed via this endpoint
+    if "is_superuser" in request.data:
+        return Response({"detail": "Cannot modify superuser status via this endpoint."}, status=status.HTTP_403_FORBIDDEN)
+
     serializer = AdminUserEditSerializer(data=request.data, partial=True)
     if not serializer.is_valid():
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

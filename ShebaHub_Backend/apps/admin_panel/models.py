@@ -111,7 +111,7 @@ class SystemAnnouncement(models.Model):
     body = models.TextField(max_length=2000)
     audience = models.CharField(max_length=10, choices=Audience.choices, default=Audience.ALL)
     priority = models.CharField(max_length=10, choices=Priority.choices, default=Priority.INFO)
-    is_active = models.BooleanField(default=True)
+    is_active = models.BooleanField(default=True, db_index=True)
     expires_at = models.DateTimeField(null=True, blank=True)
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,

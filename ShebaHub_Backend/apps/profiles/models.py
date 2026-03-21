@@ -26,7 +26,7 @@ class BaseReferenceModel(models.Model):
     id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=255, unique=True)
     name_he = models.CharField(max_length=255, blank=True, help_text="Hebrew name for display")
-    is_active = models.BooleanField(default=True)
+    is_active = models.BooleanField(default=True, db_index=True)
     sort_order = models.PositiveIntegerField(default=0)
     
     class Meta:
@@ -180,7 +180,7 @@ class StudentProfile(models.Model):
     # FE: apprenticeStage - שלב בהכשרה רפואית
     apprenticeStage = models.ForeignKey(
         MedicalTrainingStage,
-        on_delete=models.SET_NULL,
+        on_delete=models.PROTECT,
         null=True,
         blank=True,
         related_name='student_profiles',
@@ -206,7 +206,7 @@ class StudentProfile(models.Model):
     # FE: institution - מוסד לימודים
     institution = models.ForeignKey(
         Institution,
-        on_delete=models.SET_NULL,
+        on_delete=models.PROTECT,
         null=True,
         blank=True,
         related_name='student_profiles'
@@ -222,7 +222,7 @@ class StudentProfile(models.Model):
     # FE: specialtyGroup - קטגוריית התמחות
     specialtyGroup = models.ForeignKey(
         SpecialtyGroup,
-        on_delete=models.SET_NULL,
+        on_delete=models.PROTECT,
         null=True,
         blank=True,
         related_name='student_profiles',
@@ -240,7 +240,7 @@ class StudentProfile(models.Model):
     # FE: specialty - התמחות / תחום מרכזי (legacy FK – kept for data migration)
     specialty = models.ForeignKey(
         Specialty,
-        on_delete=models.SET_NULL,
+        on_delete=models.PROTECT,
         null=True,
         blank=True,
         related_name='student_profiles'
@@ -305,7 +305,7 @@ class StudentProfile(models.Model):
     # FE: participationMode - אופן ההשתתפות
     participationMode = models.ForeignKey(
         ParticipationMode,
-        on_delete=models.SET_NULL,
+        on_delete=models.PROTECT,
         null=True,
         blank=True,
         related_name='student_profiles',
@@ -383,6 +383,7 @@ class StudentProfile(models.Model):
 
     class Meta:
         db_table = 'student_profiles'
+        ordering = ['-created_at']
         verbose_name = 'Student Profile'
         verbose_name_plural = 'Student Profiles'
     
@@ -572,6 +573,7 @@ class MentorProfile(models.Model):
 
     class Meta:
         db_table = 'mentor_profiles'
+        ordering = ['-created_at']
         verbose_name = 'Mentor Profile'
         verbose_name_plural = 'Mentor Profiles'
     
