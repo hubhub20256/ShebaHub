@@ -133,7 +133,7 @@ def _validate_avatar(avatar_file):
     },
 )
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def public_user_profiles(request, user_id):
     """
     GET /api/profiles/user/<uuid:user_id>/

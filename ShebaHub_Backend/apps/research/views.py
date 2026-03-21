@@ -968,6 +968,13 @@ def research_approved_applicants(request, research_id: int):
     except Research.DoesNotExist:
         return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
 
+    # Authorization: only the research owner or staff can view approved applicants
+    if research.owner != request.user and not request.user.is_staff:
+        return Response(
+            {"detail": "Permission denied – only the research owner can view applicants."},
+            status=status.HTTP_403_FORBIDDEN,
+        )
+
     qs = (
         ResearchApplication.objects.filter(
             research=research,

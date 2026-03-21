@@ -70,7 +70,7 @@ class AdminResearchEditSerializer(serializers.ModelSerializer):
             "requirements", "skillsAndTools", "output",
             "compensation", "academic_tracks", "helsinkiApproval", "dataType",
             "teamSize",
-            "weeklyHours", "durationWeeks",
+            "weeklyHours", "durationMonths",
             "startDate", "estimatedCompletionDate",
         ]
 
@@ -195,7 +195,7 @@ class ActiveAnnouncementSerializer(serializers.ModelSerializer):
 class AdminUserEditSerializer(serializers.Serializer):
     firstName = serializers.CharField(max_length=150, required=False)
     lastName = serializers.CharField(max_length=150, required=False)
-    gender = serializers.ChoiceField(choices=["man", "woman", "other"], required=False, allow_null=True)
+    gender = serializers.ChoiceField(choices=["male", "female", "other"], required=False, allow_null=True)
     is_staff = serializers.BooleanField(required=False)
     email_verified = serializers.BooleanField(required=False)
     is_active = serializers.BooleanField(required=False)

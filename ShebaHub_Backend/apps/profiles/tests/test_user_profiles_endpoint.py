@@ -113,6 +113,25 @@ def no_profile_user(db):
     )
 
 
+@pytest.fixture
+def viewer_user(db):
+    """An authenticated user used to call the endpoint."""
+    return User.objects.create_user(
+        email='viewer@example.com',
+        password='TestPass123!',
+        firstName='Viewer',
+        lastName='User',
+        email_verified=True,
+    )
+
+
+@pytest.fixture
+def auth_client(api_client, viewer_user):
+    """API client authenticated as viewer_user."""
+    api_client.force_authenticate(user=viewer_user)
+    return api_client
+
+
 # ---------------------------------------------------------------------------
 # Tests
 # ---------------------------------------------------------------------------
@@ -121,10 +140,10 @@ def no_profile_user(db):
 class TestPublicUserProfiles:
     URL_TEMPLATE = '/api/profiles/user/{}/'
 
-    def test_dual_role_user_returns_both_profiles(self, api_client, dual_role_user):
+    def test_dual_role_user_returns_both_profiles(self, auth_client, dual_role_user):
         """Dual-role user should return both student and mentor data."""
         url = self.URL_TEMPLATE.format(dual_role_user.id)
-        response = api_client.get(url)
+        response = auth_client.get(url)
         assert response.status_code == status.HTTP_200_OK
         assert response.data['student'] is not None
         assert response.data['mentor'] is not None
@@ -134,51 +153,51 @@ class TestPublicUserProfiles:
         assert response.data['student']['userId'] == str(dual_role_user.id)
         assert response.data['mentor']['userId'] == str(dual_role_user.id)
 
-    def test_student_only_user(self, api_client, student_only_user):
+    def test_student_only_user(self, auth_client, student_only_user):
         """Student-only user should return student data, mentor=null."""
         url = self.URL_TEMPLATE.format(student_only_user.id)
-        response = api_client.get(url)
+        response = auth_client.get(url)
         assert response.status_code == status.HTTP_200_OK
         assert response.data['student'] is not None
         assert response.data['mentor'] is None
 
-    def test_mentor_only_user(self, api_client, mentor_only_user):
+    def test_mentor_only_user(self, auth_client, mentor_only_user):
         """Mentor-only user should return mentor data, student=null."""
         url = self.URL_TEMPLATE.format(mentor_only_user.id)
-        response = api_client.get(url)
+        response = auth_client.get(url)
         assert response.status_code == status.HTTP_200_OK
         assert response.data['student'] is None
         assert response.data['mentor'] is not None
 
-    def test_no_profile_user_returns_404(self, api_client, no_profile_user):
+    def test_no_profile_user_returns_404(self, auth_client, no_profile_user):
         """User with no profiles returns 404."""
         url = self.URL_TEMPLATE.format(no_profile_user.id)
-        response = api_client.get(url)
+        response = auth_client.get(url)
         assert response.status_code == status.HTTP_404_NOT_FOUND
 
-    def test_nonexistent_user_returns_404(self, api_client):
+    def test_nonexistent_user_returns_404(self, auth_client):
         """Non-existent user UUID returns 404."""
         url = self.URL_TEMPLATE.format(uuid.uuid4())
-        response = api_client.get(url)
+        response = auth_client.get(url)
         assert response.status_code == status.HTTP_404_NOT_FOUND
 
-    def test_allows_unauthenticated_access(self, api_client, student_only_user):
-        """Endpoint is AllowAny — no authentication needed."""
+    def test_rejects_unauthenticated_access(self, api_client, student_only_user):
+        """Endpoint requires authentication — unauthenticated returns 401."""
         response = api_client.get(self.URL_TEMPLATE.format(student_only_user.id))
-        assert response.status_code == status.HTTP_200_OK
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
-    def test_student_response_contains_specialtyGroups_detail(self, api_client, dual_role_user):
+    def test_student_response_contains_specialtyGroups_detail(self, auth_client, dual_role_user):
         """Student profile should include specialtyGroups_detail field."""
         url = self.URL_TEMPLATE.format(dual_role_user.id)
-        response = api_client.get(url)
+        response = auth_client.get(url)
         assert response.status_code == status.HTTP_200_OK
         student = response.data['student']
         assert 'specialtyGroups_detail' in student
 
-    def test_mentor_response_contains_specialtyGroups_detail(self, api_client, dual_role_user):
+    def test_mentor_response_contains_specialtyGroups_detail(self, auth_client, dual_role_user):
         """Mentor profile should include specialtyGroups_detail field."""
         url = self.URL_TEMPLATE.format(dual_role_user.id)
-        response = api_client.get(url)
+        response = auth_client.get(url)
         assert response.status_code == status.HTTP_200_OK
         mentor = response.data['mentor']
         assert 'specialtyGroups_detail' in mentor

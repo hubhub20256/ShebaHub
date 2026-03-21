@@ -520,7 +520,7 @@ class ResearchChatSettingsSerializer(serializers.ModelSerializer):
 
 
 class ResearchChatMessageSerializer(serializers.ModelSerializer):
-    sender_id = serializers.IntegerField(source="sender.id", read_only=True)
+    sender_id = serializers.CharField(source="sender.id", read_only=True)
     sender_name = serializers.SerializerMethodField(read_only=True)
     sender_avatar_url = serializers.SerializerMethodField(read_only=True)
     sender_is_mentor = serializers.SerializerMethodField(read_only=True)

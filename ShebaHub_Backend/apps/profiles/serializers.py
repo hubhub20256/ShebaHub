@@ -279,6 +279,22 @@ class ProfessionalRecommendationSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'created_at']
 
 
+class PublicRecommendationSerializer(serializers.ModelSerializer):
+    """Public-facing recommendation serializer – omits recommender_email."""
+
+    class Meta:
+        model = ProfessionalRecommendation
+        fields = [
+            'id',
+            'recommender_name',
+            'recommender_title',
+            'recommender_institution',
+            'relationship',
+            'created_at',
+        ]
+        read_only_fields = fields
+
+
 # =============================================================================
 # PROFILE DOCUMENT SERIALIZER
 # =============================================================================
@@ -1198,6 +1214,7 @@ class PublicStudentDetailSerializer(StudentProfileSerializer):
     userId = serializers.CharField(source='user.id', read_only=True)
     gender = serializers.CharField(source='user.gender', read_only=True)
     genderDisplay = serializers.SerializerMethodField(read_only=True)
+    recommendations = PublicRecommendationSerializer(many=True, read_only=True)
 
     class Meta(StudentProfileSerializer.Meta):
         fields = [
@@ -1230,6 +1247,7 @@ class PublicMentorDetailSerializer(MentorProfileSerializer):
     userId = serializers.CharField(source='user.id', read_only=True)
     gender = serializers.CharField(source='user.gender', read_only=True)
     genderDisplay = serializers.SerializerMethodField(read_only=True)
+    recommendations = PublicRecommendationSerializer(many=True, read_only=True)
 
     class Meta(MentorProfileSerializer.Meta):
         fields = [
