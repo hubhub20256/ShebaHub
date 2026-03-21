@@ -70,13 +70,13 @@ class User(AbstractBaseUser, PermissionsMixin):
     )
     
     # Email verification
-    email_verified = models.BooleanField(default=False)
+    email_verified = models.BooleanField(default=False, db_index=True)
 
     # Account lockout fields
     failed_login_attempts = models.PositiveIntegerField(default=0)
     locked_until = models.DateTimeField(null=True, blank=True)
 
-    is_active = models.BooleanField(default=True)
+    is_active = models.BooleanField(default=True, db_index=True)
     is_staff = models.BooleanField(default=False)
     is_superuser = models.BooleanField(default=False)
     date_joined = models.DateTimeField(default=timezone.now)

@@ -2,9 +2,9 @@
 Tests for StudentProfile.yearOfStudy CharField validation.
 
 Tests cover:
-- Accepting long Hebrew text within the 50-char limit
+- Accepting Hebrew year values within the 10-char limit
 - Accepting short Hebrew letters
-- Rejecting values exceeding max_length of 50
+- Rejecting values exceeding max_length of 10
 """
 
 import pytest
@@ -51,15 +51,15 @@ def auth_student(api_client, student_user):
 
 @pytest.mark.django_db
 class TestYearOfStudy:
-    """Tests for the yearOfStudy CharField (max_length=50)."""
+    """Tests for the yearOfStudy CharField (max_length=10)."""
 
-    def test_accepts_long_text(self, auth_student):
-        """yearOfStudy should accept descriptive Hebrew text up to 50 chars."""
-        long_value = "שנה ד' לתואר שני"
-        assert len(long_value) <= 50
+    def test_accepts_year_value(self, auth_student):
+        """yearOfStudy should accept typical pill values like ד'."""
+        value = "ד'"
+        assert len(value) <= 10
 
         data = {
-            'yearOfStudy': long_value,
+            'yearOfStudy': value,
         }
 
         response = auth_student.post(STUDENT_ME_URL, data, format='json')
@@ -68,8 +68,8 @@ class TestYearOfStudy:
         profile = StudentProfile.objects.get(
             user__email='year-student@example.com',
         )
-        assert profile.yearOfStudy == long_value
-        assert response.data['yearOfStudy'] == long_value
+        assert profile.yearOfStudy == value
+        assert response.data['yearOfStudy'] == value
 
     def test_accepts_hebrew_letters(self, auth_student):
         """yearOfStudy should accept a single Hebrew letter like 'ד'."""
@@ -85,10 +85,10 @@ class TestYearOfStudy:
         )
         assert profile.yearOfStudy == 'ד'
 
-    def test_rejects_over_50_chars(self, auth_student):
-        """yearOfStudy longer than 50 characters should be rejected."""
-        too_long = 'א' * 51
-        assert len(too_long) == 51
+    def test_rejects_over_10_chars(self, auth_student):
+        """yearOfStudy longer than 10 characters should be rejected."""
+        too_long = 'א' * 11
+        assert len(too_long) == 11
 
         data = {
             'yearOfStudy': too_long,

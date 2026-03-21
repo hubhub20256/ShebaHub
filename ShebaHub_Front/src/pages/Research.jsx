@@ -16,7 +16,13 @@
  * @since 2024
  */
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import { profilesAPI, researchAPI } from "../services/api";
@@ -48,8 +54,14 @@ const STATUS_MAP = {
  */
 const ResearchApprenticeCard = ({ apprentice, onClick, children }) => {
   const navigate = useNavigate();
-  
-  const isElevatedMentor = apprentice.isOwner || apprentice.can_edit || apprentice.can_approve || apprentice.can_invite || apprentice.can_remove || apprentice.can_manage_chat;
+
+  const isElevatedMentor =
+    apprentice.isOwner ||
+    apprentice.can_edit ||
+    apprentice.can_approve ||
+    apprentice.can_invite ||
+    apprentice.can_remove ||
+    apprentice.can_manage_chat;
   const isMentorProfile = isElevatedMentor && !apprentice.hasStudentProfile;
 
   const [mentorData, setMentorData] = useState(null);
@@ -57,20 +69,23 @@ const ResearchApprenticeCard = ({ apprentice, onClick, children }) => {
   useEffect(() => {
     let active = true;
     if (isMentorProfile && apprentice.id) {
-      profilesAPI.getMentor(apprentice.id)
-        .then(data => {
+      profilesAPI
+        .getMentor(apprentice.id)
+        .then((data) => {
           if (active) setMentorData(data);
         })
-        .catch(err => {
+        .catch((err) => {
           // Ignore failures, just fallback to whatever apprentice has
         });
     }
-    return () => { active = false; };
+    return () => {
+      active = false;
+    };
   }, [isMentorProfile, apprentice.id]);
 
   // Default image fallback
   const avatarUrl = mentorData?.avatarUrl || apprentice.profileImage || null;
-  
+
   const handleProfileClick = (e) => {
     e.stopPropagation(); // Don't trigger the card onClick
     if (apprentice && apprentice.id) {
@@ -78,27 +93,30 @@ const ResearchApprenticeCard = ({ apprentice, onClick, children }) => {
     }
   };
 
-  const displayWorkplace = mentorData?.workplace || apprentice.workplace || "לא צוין";
-  
+  const displayWorkplace =
+    mentorData?.workplace || apprentice.workplace || "לא צוין";
+
   let displayMedicalLevel = apprentice.medical_level;
   if (isMentorProfile && mentorData?.academicRank_detail?.name_he) {
     displayMedicalLevel = mentorData.academicRank_detail.name_he;
   } else if (!displayMedicalLevel) {
     displayMedicalLevel = "לא צוין";
   }
-  
+
   return (
     <div className="research-apprentice-card" onClick={onClick} dir="rtl">
       {/* Mentor/Owner tag */}
       {isMentorProfile && (
-        <span className="rac-mentor-tag">{apprentice.isOwner ? "חוקר ראשי" : "מנחה"}</span>
+        <span className="rac-mentor-tag">
+          {apprentice.isOwner ? "חוקר ראשי" : "מנחה"}
+        </span>
       )}
       {/* Top section with avatar */}
       <div className="rac-avatar-container">
         {avatarUrl ? (
-          <img 
-            src={avatarUrl} 
-            alt={apprentice.name} 
+          <img
+            src={avatarUrl}
+            alt={apprentice.name}
             className="rac-avatar-img"
           />
         ) : (
@@ -107,42 +125,39 @@ const ResearchApprenticeCard = ({ apprentice, onClick, children }) => {
           </div>
         )}
       </div>
-      
+
       {/* Name */}
       <h3 className="rac-name">{apprentice.name}</h3>
-      
+
       {/* Info rows */}
       <div className="rac-info">
         <div className="rac-info-row">
-          <span className="rac-label">{isElevatedMentor ? "מקום עבודה:" : "מוסד לימודים:"}</span>
+          <span className="rac-label">
+            {isElevatedMentor ? "מקום עבודה:" : "מוסד לימודים:"}
+          </span>
           <span className="rac-value">
-            {isElevatedMentor ? displayWorkplace : (apprentice.Educational_institution || "לא צוין")}
+            {isElevatedMentor
+              ? displayWorkplace
+              : apprentice.Educational_institution || "לא צוין"}
           </span>
         </div>
-        
+
         <div className="rac-info-row">
           <span className="rac-label">שלב בהכשרה הרפואית:</span>
-          <span className="rac-value">
-            {displayMedicalLevel}
-          </span>
+          <span className="rac-value">{displayMedicalLevel}</span>
         </div>
       </div>
-      
+
       {/* Profile button */}
       <button className="rac-profile-btn" onClick={handleProfileClick}>
         לחץ לפרופיל מלא
       </button>
 
       {/* Action Buttons (Approve/Decline) */}
-      {children && (
-        <div className="rac-actions-container">
-          {children}
-        </div>
-      )}
+      {children && <div className="rac-actions-container">{children}</div>}
     </div>
   );
 };
-
 
 // --- Theme Constants ---
 const THEME_COLOR = "#2C2C6C";
@@ -177,8 +192,9 @@ export default function Research() {
   const [applicationsError, setApplicationsError] = useState(null);
 
   // Real research (non-owner): show approved apprentices too
-  const [publicApprovedApplications, setPublicApprovedApplications] =
-    useState([]);
+  const [publicApprovedApplications, setPublicApprovedApplications] = useState(
+    [],
+  );
   const [publicApprovedLoading, setPublicApprovedLoading] = useState(false);
   const [publicApprovedError, setPublicApprovedError] = useState(null);
 
@@ -245,7 +261,8 @@ export default function Research() {
         if (cancelled) return;
         setResearch(researchData);
         if (myRes !== null) setMyResearches(Array.isArray(myRes) ? myRes : []);
-        if (joined !== null) setJoinedResearches(Array.isArray(joined) ? joined : []);
+        if (joined !== null)
+          setJoinedResearches(Array.isArray(joined) ? joined : []);
       } catch (err) {
         if (!cancelled)
           setError(err?.data?.detail || "לא הצלחתי לטעון את המחקר");
@@ -266,7 +283,9 @@ export default function Research() {
     try {
       const data = await researchAPI.getResearch(id);
       setResearch(data);
-    } catch { /* non-blocking */ }
+    } catch {
+      /* non-blocking */
+    }
   }, [id]);
 
   // Re-fetch research when tab becomes visible again (30s throttle)
@@ -294,24 +313,52 @@ export default function Research() {
       .filter(Boolean);
   }, [data]);
 
+  const academicTracks = useMemo(() => {
+    const tracks = data?.academic_tracks || data?.academicTracks;
+    if (!tracks) return [];
+    if (typeof tracks === 'string') {
+      try {
+        const parsed = JSON.parse(tracks);
+        if (Array.isArray(parsed)) return parsed.filter(Boolean);
+      } catch (e) {
+        return tracks.split(",").map((x) => String(x).trim()).filter(Boolean);
+      }
+    }
+    if (Array.isArray(tracks)) return tracks.filter(Boolean);
+    return [];
+  }, [data]);
+
   /**
    * Determine key logic values — granular per-mentor permissions
    */
   const myResearchEntry = myResearches.find((r) => String(r.id) === String(id));
   const isOwner = myResearchEntry?.is_owner === true;
-  const canEditThis = isOwner || myResearchEntry?.my_permissions?.can_edit === true;
-  const canApproveThis = isOwner || myResearchEntry?.my_permissions?.can_approve === true;
-  const canInviteThis = isOwner || myResearchEntry?.my_permissions?.can_invite === true;
-  const canRemoveThis = isOwner || myResearchEntry?.my_permissions?.can_remove === true;
-  const canManageChatThis = isOwner || myResearchEntry?.my_permissions?.can_manage_chat === true;
-  const hasAnyPermission = canEditThis || canApproveThis || canInviteThis || canRemoveThis || canManageChatThis;
+  const canEditThis =
+    isOwner || myResearchEntry?.my_permissions?.can_edit === true;
+  const canApproveThis =
+    isOwner || myResearchEntry?.my_permissions?.can_approve === true;
+  const canInviteThis =
+    isOwner || myResearchEntry?.my_permissions?.can_invite === true;
+  const canRemoveThis =
+    isOwner || myResearchEntry?.my_permissions?.can_remove === true;
+  const canManageChatThis =
+    isOwner || myResearchEntry?.my_permissions?.can_manage_chat === true;
+  const hasAnyPermission =
+    canEditThis ||
+    canApproveThis ||
+    canInviteThis ||
+    canRemoveThis ||
+    canManageChatThis;
   const showEditButton = isMentor && canEditThis;
 
   const mapApplicationToApprenticeCard = (app) => {
     if (!app) return null;
     return {
       applicationId: app.id,
-      id: app.applicantProfileId || app.applicantMentorProfileId || app.applicantId,
+      id:
+        app.applicantProfileId ||
+        app.applicantMentorProfileId ||
+        app.applicantId,
       applicantUserId: app.applicantId,
       name: app.name,
       email: app.email,
@@ -338,17 +385,27 @@ export default function Research() {
         .map(mapApplicationToApprenticeCard)
         .filter(Boolean);
     }
-    return (Array.isArray(publicApprovedApplications)
-      ? publicApprovedApplications
-      : [])
+    return (
+      Array.isArray(publicApprovedApplications)
+        ? publicApprovedApplications
+        : []
+    )
       .map(mapApplicationToApprenticeCard)
       .filter(Boolean);
   }, [approvedApplications, hasAnyPermission, publicApprovedApplications]);
 
-  const _isMentorInResearch = (a) => a.can_edit || a.can_approve || a.can_invite || a.can_remove || a.can_manage_chat;
+  const _isMentorInResearch = (a) =>
+    a.can_edit ||
+    a.can_approve ||
+    a.can_invite ||
+    a.can_remove ||
+    a.can_manage_chat;
 
-  const activeApprentices = useMemo(() => allApproved.filter((a) => !_isMentorInResearch(a)), [allApproved]);
-  
+  const activeApprentices = useMemo(
+    () => allApproved.filter((a) => !_isMentorInResearch(a)),
+    [allApproved],
+  );
+
   const activeMentors = useMemo(() => {
     const mentors = [];
     const seenUserIds = new Set();
@@ -376,7 +433,13 @@ export default function Research() {
     }
 
     return mentors;
-  }, [allApproved, data?.ownerName, data?.ownerAvatarUrl, data?.ownerProfileId, data?.ownerId]);
+  }, [
+    allApproved,
+    data?.ownerName,
+    data?.ownerAvatarUrl,
+    data?.ownerProfileId,
+    data?.ownerId,
+  ]);
 
   const activeApplicants = useMemo(() => {
     if (canApproveThis) {
@@ -414,7 +477,9 @@ export default function Research() {
         setApprovedApplications(Array.isArray(approved) ? approved : []);
       } catch (err) {
         if (cancelled) return;
-        setApplicationsError(err?.data?.detail || "לא הצלחתי לטעון בקשות הצטרפות");
+        setApplicationsError(
+          err?.data?.detail || "לא הצלחתי לטעון בקשות הצטרפות",
+        );
       } finally {
         if (!cancelled) setApplicationsLoading(false);
       }
@@ -449,7 +514,7 @@ export default function Research() {
         } else {
           setPublicApprovedApplications([]);
           setPublicApprovedError(
-            err?.data?.detail || "לא הצלחתי לטעון מתלמדים שהתקבלו"
+            err?.data?.detail || "לא הצלחתי לטעון מתלמדים שהתקבלו",
           );
         }
       } finally {
@@ -523,7 +588,9 @@ export default function Research() {
         ]);
         setPendingApplications(Array.isArray(pending) ? pending : []);
         setApprovedApplications(Array.isArray(approved) ? approved : []);
-      } catch { /* non-blocking */ }
+      } catch {
+        /* non-blocking */
+      }
       toast.success("סטטוס המחקר עודכן בהצלחה");
     } catch (err) {
       toast.error(err?.data?.detail || "לא הצלחתי לעדכן את סטטוס המחקר");
@@ -534,13 +601,17 @@ export default function Research() {
     if (!id || !canEditThis) return;
     const newValue = !data.accepting_applications;
     try {
-      const updated = await researchAPI.updateMyResearch(id, { accepting_applications: newValue });
+      const updated = await researchAPI.updateMyResearch(id, {
+        accepting_applications: newValue,
+      });
       setResearch(updated);
       // Re-fetch from server to get canonical accepting_applications value
       try {
         const fresh = await researchAPI.getResearch(id);
         setResearch(fresh);
-      } catch { /* non-blocking */ }
+      } catch {
+        /* non-blocking */
+      }
     } catch (err) {
       toast.error(err?.data?.detail || "לא הצלחתי לעדכן");
     }
@@ -554,7 +625,9 @@ export default function Research() {
       return;
     }
 
-    const researchTitle = data?.researchName ? `"${data.researchName}"` : `ב־ID ${id}`;
+    const researchTitle = data?.researchName
+      ? `"${data.researchName}"`
+      : `ב־ID ${id}`;
 
     setConfirmDialog({
       message: `האם אתה בטוח שברצונך למחוק את המחקר ${researchTitle}?\nלא ניתן לשחזר פעולה זו.`,
@@ -649,7 +722,7 @@ export default function Research() {
       toast.error(
         isEmailNotVerified
           ? "יש לאמת את כתובת האימייל לפני הגשת מועמדות למחקר. בדוק/י את תיבת הדואר הנכנס."
-          : errMsg || "לא הצלחתי להגיש מועמדות"
+          : errMsg || "לא הצלחתי להגיש מועמדות",
       );
     }
   };
@@ -664,7 +737,9 @@ export default function Research() {
       try {
         const updated = await researchAPI.getResearch(id);
         setResearch(updated);
-      } catch { /* non-blocking */ }
+      } catch {
+        /* non-blocking */
+      }
       refreshCount();
       toast.success("המועמדות בוטלה");
     } catch (err) {
@@ -685,7 +760,9 @@ export default function Research() {
         ]);
         setPublicApprovedApplications(Array.isArray(approved) ? approved : []);
         setResearch(updated);
-      } catch { /* non-blocking */ }
+      } catch {
+        /* non-blocking */
+      }
       refreshCount();
       toast.success("ההזמנה התקבלה בהצלחה!");
     } catch (err) {
@@ -702,7 +779,9 @@ export default function Research() {
       try {
         const updated = await researchAPI.getResearch(id);
         setResearch(updated);
-      } catch { /* non-blocking */ }
+      } catch {
+        /* non-blocking */
+      }
       refreshCount();
       toast.success("ההזמנה נדחתה");
     } catch (err) {
@@ -721,13 +800,19 @@ export default function Research() {
           // Re-fetch approved applicants
           try {
             const approved = await researchAPI.listApprovedApplicants(id);
-            setPublicApprovedApplications(Array.isArray(approved) ? approved : []);
-          } catch { /* non-blocking */ }
+            setPublicApprovedApplications(
+              Array.isArray(approved) ? approved : [],
+            );
+          } catch {
+            /* non-blocking */
+          }
           // Re-fetch research to update isFull / accepting_applications
           try {
             const updated = await researchAPI.getResearch(id);
             setResearch(updated);
-          } catch { /* non-blocking */ }
+          } catch {
+            /* non-blocking */
+          }
           refreshCount();
           toast.success("עזבת את המחקר בהצלחה");
         } catch (err) {
@@ -740,16 +825,27 @@ export default function Research() {
   const handlePermissionToggle = async (applicationId, field, currentValue) => {
     if (!id || !isOwner) return;
     try {
-      const updated = await researchAPI.updateMentorPermissions(id, applicationId, {
-        [field]: !currentValue,
-      });
+      const updated = await researchAPI.updateMentorPermissions(
+        id,
+        applicationId,
+        {
+          [field]: !currentValue,
+        },
+      );
       // Update the approved applications list with the new permission values
       setApprovedApplications((prev) =>
         prev.map((app) =>
           app.id === applicationId
-            ? { ...app, can_edit: updated.can_edit, can_approve: updated.can_approve, can_invite: updated.can_invite, can_remove: updated.can_remove, can_manage_chat: updated.can_manage_chat }
-            : app
-        )
+            ? {
+                ...app,
+                can_edit: updated.can_edit,
+                can_approve: updated.can_approve,
+                can_invite: updated.can_invite,
+                can_remove: updated.can_remove,
+                can_manage_chat: updated.can_manage_chat,
+              }
+            : app,
+        ),
       );
     } catch (err) {
       toast.error(err?.data?.detail || "לא הצלחתי לעדכן הרשאות");
@@ -762,10 +858,13 @@ export default function Research() {
     const fileName = data?.contractFileName || "contract";
 
     try {
-      // Fetching the file directly from the URL. 
+      // Fetching the file directly from the URL.
       // Authenticated access for any logged-in account.
       const token = localStorage.getItem("accessToken");
-      const res = await fetch(url, token ? { headers: { Authorization: `Bearer ${token}` } } : undefined);
+      const res = await fetch(
+        url,
+        token ? { headers: { Authorization: `Bearer ${token}` } } : undefined,
+      );
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const blob = await res.blob();
       const objectUrl = window.URL.createObjectURL(blob);
@@ -777,7 +876,9 @@ export default function Research() {
       a.remove();
       window.URL.revokeObjectURL(objectUrl);
     } catch {
-      toast.error("שגיאה בהורדת הקובץ. ייתכן שהקובץ אינו זמין יותר או שאין לך הרשאה מתאימה.");
+      toast.error(
+        "שגיאה בהורדת הקובץ. ייתכן שהקובץ אינו זמין יותר או שאין לך הרשאה מתאימה.",
+      );
     }
   };
 
@@ -800,10 +901,14 @@ export default function Research() {
     return out;
   };
 
-  const createdResearchOptions = isMentor ? distinctResearchesById(myResearches) : [];
+  const createdResearchOptions = isMentor
+    ? distinctResearchesById(myResearches)
+    : [];
   const joinedResearchOptions = distinctResearchesById(joinedResearches);
-  const hasCreatedAndJoined = createdResearchOptions.length > 0 && joinedResearchOptions.length > 0;
-  const showResearchDropdown = createdResearchOptions.length > 0 || joinedResearchOptions.length > 0;
+  const hasCreatedAndJoined =
+    createdResearchOptions.length > 0 && joinedResearchOptions.length > 0;
+  const showResearchDropdown =
+    createdResearchOptions.length > 0 || joinedResearchOptions.length > 0;
 
   if (loading) {
     return (
@@ -839,12 +944,80 @@ export default function Research() {
   return (
     <div className="research-detail-page" style={styles.page} dir="rtl">
       {confirmDialog && (
-        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.5)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 9999 }} onClick={() => setConfirmDialog(null)}>
-          <div style={{ background: "var(--card-bg, #fff)", color: "var(--text-color, #333)", borderRadius: 12, padding: "24px 28px", maxWidth: "min(400px, 90vw)", width: "90%", boxShadow: "0 8px 30px rgba(0,0,0,0.2)", direction: "rtl" }} onClick={(e) => e.stopPropagation()}>
-            <div style={{ fontSize: 15, lineHeight: 1.6, marginBottom: 20, whiteSpace: "pre-line" }}>{confirmDialog.message}</div>
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
-              <button onClick={() => setConfirmDialog(null)} style={{ padding: "8px 20px", borderRadius: 20, border: "1px solid var(--border-color, #ddd)", background: "var(--card-bg, #fff)", color: "var(--text-color, #666)", cursor: "pointer", fontWeight: 600, fontSize: 14 }}>ביטול</button>
-              <button onClick={() => { setConfirmDialog(null); confirmDialog.onConfirm(); }} style={{ padding: "8px 20px", borderRadius: 20, border: "none", background: THEME_COLOR, color: "#fff", cursor: "pointer", fontWeight: 600, fontSize: 14 }}>אישור</button>
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(0,0,0,0.5)",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            zIndex: 9999,
+          }}
+          onClick={() => setConfirmDialog(null)}
+        >
+          <div
+            style={{
+              background: "var(--card-bg, #fff)",
+              color: "var(--text-color, #333)",
+              borderRadius: 12,
+              padding: "24px 28px",
+              maxWidth: "min(400px, 90vw)",
+              width: "90%",
+              boxShadow: "0 8px 30px rgba(0,0,0,0.2)",
+              direction: "rtl",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div
+              style={{
+                fontSize: 15,
+                lineHeight: 1.6,
+                marginBottom: 20,
+                whiteSpace: "pre-line",
+              }}
+            >
+              {confirmDialog.message}
+            </div>
+            <div
+              style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}
+            >
+              <button
+                onClick={() => setConfirmDialog(null)}
+                style={{
+                  padding: "8px 20px",
+                  borderRadius: 20,
+                  border: "1px solid var(--border-color, #ddd)",
+                  background: "var(--card-bg, #fff)",
+                  color: "var(--text-color, #666)",
+                  cursor: "pointer",
+                  fontWeight: 600,
+                  fontSize: 14,
+                }}
+              >
+                ביטול
+              </button>
+              <button
+                onClick={() => {
+                  setConfirmDialog(null);
+                  confirmDialog.onConfirm();
+                }}
+                style={{
+                  padding: "8px 20px",
+                  borderRadius: 20,
+                  border: "none",
+                  background: THEME_COLOR,
+                  color: "#fff",
+                  cursor: "pointer",
+                  fontWeight: 600,
+                  fontSize: 14,
+                }}
+              >
+                אישור
+              </button>
             </div>
           </div>
         </div>
@@ -887,7 +1060,9 @@ export default function Research() {
                 <option value="completed">הושלם</option>
               </select>
             ) : (
-              <span style={styles.statusBadge}>{STATUS_MAP[data.status] || data.status}</span>
+              <span style={styles.statusBadge}>
+                {STATUS_MAP[data.status] || data.status}
+              </span>
             )}
             {canEditThis ? (
               isResearchFull ? (
@@ -904,21 +1079,25 @@ export default function Research() {
                   לא זמין להצטרפות (הצוות מלא)
                 </span>
               ) : (
-              <button
-                onClick={handleToggleApplications}
-                style={{
-                  padding: "4px 14px",
-                  borderRadius: 20,
-                  border: "none",
-                  fontSize: 12,
-                  fontWeight: 700,
-                  cursor: "pointer",
-                  background: data.accepting_applications ? "#dcfce7" : "#fee2e2",
-                  color: data.accepting_applications ? "#16a34a" : "#dc2626",
-                }}
-              >
-                {data.accepting_applications ? "הגשות פתוחות" : "הגשות סגורות"}
-              </button>
+                <button
+                  onClick={handleToggleApplications}
+                  style={{
+                    padding: "4px 14px",
+                    borderRadius: 20,
+                    border: "none",
+                    fontSize: 12,
+                    fontWeight: 700,
+                    cursor: "pointer",
+                    background: data.accepting_applications
+                      ? "#dcfce7"
+                      : "#fee2e2",
+                    color: data.accepting_applications ? "#16a34a" : "#dc2626",
+                  }}
+                >
+                  {data.accepting_applications
+                    ? "הגשות פתוחות"
+                    : "הגשות סגורות"}
+                </button>
               )
             ) : (
               <span
@@ -927,30 +1106,55 @@ export default function Research() {
                   borderRadius: 20,
                   fontSize: 12,
                   fontWeight: 700,
-                  background: isResearchFull ? "#fee2e2" : data.accepting_applications ? "#dcfce7" : "#fee2e2",
-                  color: isResearchFull ? "#dc2626" : data.accepting_applications ? "#16a34a" : "#dc2626",
+                  background: isResearchFull
+                    ? "#fee2e2"
+                    : data.accepting_applications
+                      ? "#dcfce7"
+                      : "#fee2e2",
+                  color: isResearchFull
+                    ? "#dc2626"
+                    : data.accepting_applications
+                      ? "#16a34a"
+                      : "#dc2626",
                 }}
               >
-                {isResearchFull ? "לא זמין להצטרפות" : data.accepting_applications ? "הגשות פתוחות" : "הגשות סגורות"}
+                {isResearchFull
+                  ? "לא זמין להצטרפות"
+                  : data.accepting_applications
+                    ? "הגשות פתוחות"
+                    : "הגשות סגורות"}
               </span>
             )}
             <span style={styles.idBadge}>ID: {id}</span>
           </div>
 
-          <div className="action-bar-controls" style={{ display: "flex", gap: 10, alignItems: "center" }}>
+          <div
+            className="action-bar-controls"
+            style={{ display: "flex", gap: 10, alignItems: "center" }}
+          >
             {showResearchDropdown && (
-              <div className="researchSelectWrap" title={hasCreatedAndJoined ? "בחר מחקר (שיצרת / שנרשמת אליו)" : "בחר מחקר"}>
+              <div
+                className="researchSelectWrap"
+                title={
+                  hasCreatedAndJoined
+                    ? "בחר מחקר (שיצרת / שנרשמת אליו)"
+                    : "בחר מחקר"
+                }
+              >
                 <span className="researchSelectArrow" aria-hidden="true">
                   ▾
                 </span>
                 <select
                   className="researchSelect"
                   value={
-                    createdResearchOptions.some((r) => String(r.id) === String(id)) ||
-                    joinedResearchOptions.some((r) => String(r.id) === String(id))
+                    createdResearchOptions.some(
+                      (r) => String(r.id) === String(id),
+                    ) ||
+                    joinedResearchOptions.some(
+                      (r) => String(r.id) === String(id),
+                    )
                       ? String(id || "")
                       : ""
-                      
                   }
                   onChange={handleSelectMyResearch}
                 >
@@ -965,7 +1169,10 @@ export default function Research() {
                             — מחקרים שיצרתי —
                           </option>
                           {createdResearchOptions.map((r) => (
-                            <option key={`created-${r.id}`} value={String(r.id)}>
+                            <option
+                              key={`created-${r.id}`}
+                              value={String(r.id)}
+                            >
                               {r.researchName}
                             </option>
                           ))}
@@ -1002,13 +1209,14 @@ export default function Research() {
             )}
 
             {showEditButton && (
-            
-                <button className="rd-edit-btn" onClick={handleEditClick} style={styles.editButton}>
-                  <EditIcon />
-                  עריכה
-                </button>
-             
-              
+              <button
+                className="rd-edit-btn"
+                onClick={handleEditClick}
+                style={styles.editButton}
+              >
+                <EditIcon />
+                עריכה
+              </button>
             )}
           </div>
         </div>
@@ -1023,30 +1231,71 @@ export default function Research() {
             }}
           >
             <Section title="תיאור המחקר">
-              <p className="rd-text" style={styles.text}>{data.description}</p>
+              <p className="rd-text" style={styles.text}>
+                {data.description}
+              </p>
             </Section>
 
-            <Section title="דרישות ומיומנויות">
+            <Section title="דרישות, מיומנויות ומסלולים רלוונטיים">
               <div className="rd-info-box" style={styles.infoBox}>
-                <h4 className="rd-info-title" style={styles.infoTitle}>דרישות סף:</h4>
-                <p className="rd-text" style={styles.text}>{data.requirements}</p>
+                <h4 className="rd-info-title" style={styles.infoTitle}>
+                  דרישות סף:
+                </h4>
+                <p className="rd-text" style={styles.text}>
+                  {data.requirements}
+                </p>
 
                 <div className="rd-divider" style={styles.divider}></div>
 
-                <h4 className="rd-info-title" style={styles.infoTitle}>כלים וטכנולוגיות:</h4>
+                <h4 className="rd-info-title" style={styles.infoTitle}>
+                  כלים וטכנולוגיות:
+                </h4>
                 <div style={styles.tagsContainer}>
                   {skills.map((skill, idx) => (
-                    <span className="rd-skill-tag" key={idx} style={styles.skillTag}>
+                    <span
+                      className="rd-skill-tag"
+                      key={idx}
+                      style={styles.skillTag}
+                    >
                       {skill.trim()}
                     </span>
                   ))}
+                </div>
+
+                <div className="rd-divider" style={styles.divider}></div>
+                <h4 className="rd-info-title" style={styles.infoTitle}>
+                  מסלולי לימוד אקדמיים רלוונטיים:
+                </h4>
+                <div style={styles.tagsContainer}>
+                  {academicTracks.length > 0 ? (
+                    academicTracks.map((track, idx) => (
+                      <span
+                        className="rd-skill-tag"
+                        key={idx}
+                        style={styles.skillTag}
+                      >
+                        {track.trim()}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="rd-skill-tag" style={styles.skillTag}>
+                      לא צוין
+                    </span>
+                  )}
                 </div>
               </div>
             </Section>
 
             <Section title="תוצרים ותגמול">
               <div className="details-grid">
-                <DetailItem label="סוג תגמול" value={Array.isArray(data.compensation) ? data.compensation.join(", ") : data.compensation} />
+                <DetailItem
+                  label="סוג תגמול"
+                  value={
+                    Array.isArray(data.compensation)
+                      ? data.compensation.join(", ")
+                      : data.compensation
+                  }
+                />
                 <DetailItem label="תוצרי מחקר מצופים" value={data.output} />
               </div>
             </Section>
@@ -1055,7 +1304,9 @@ export default function Research() {
               <div className="file-card rd-file-card" style={styles.fileCard}>
                 <div style={styles.fileIcon}>📄</div>
                 <div style={styles.fileInfo}>
-                  <div className="rd-file-name" style={styles.fileName}>{data.contractFileName}</div>
+                  <div className="rd-file-name" style={styles.fileName}>
+                    {data.contractFileName}
+                  </div>
                   <div style={styles.fileAction}>לחץ להורדת חוזה</div>
                 </div>
                 {/* 
@@ -1103,13 +1354,20 @@ export default function Research() {
               value={data.teamSize ? `${data.teamSize} מתלמדים` : ""}
             />
             <SidebarItem label="סוג נתונים" value={data.dataType} />
+            <SidebarItem
+              label="האם יש אישור הלסינקי"
+              value={data.helsinkiApproval}
+            />
 
             {data.ownerName && (
               <>
                 <div className="rd-divider" style={styles.divider}></div>
                 <div
                   className="rd-owner-ticket"
-                  onClick={() => data.ownerProfileId && navigate(`/user/${data.ownerProfileId}`)}
+                  onClick={() =>
+                    data.ownerProfileId &&
+                    navigate(`/user/${data.ownerProfileId}`)
+                  }
                   style={{
                     display: "flex",
                     alignItems: "center",
@@ -1121,37 +1379,79 @@ export default function Research() {
                     cursor: data.ownerProfileId ? "pointer" : "default",
                     transition: "all 0.2s ease",
                   }}
-                  onMouseEnter={(e) => { if (data.ownerProfileId) e.currentTarget.style.borderColor = "#6cd5bf"; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = "#e5e7eb"; }}
+                  onMouseEnter={(e) => {
+                    if (data.ownerProfileId)
+                      e.currentTarget.style.borderColor = "#6cd5bf";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = "#e5e7eb";
+                  }}
                 >
-                  <div style={{
-                    width: 36,
-                    height: 36,
-                    borderRadius: "50%",
-                    overflow: "hidden",
-                    flexShrink: 0,
-                    background: "#f0fdf9",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    border: "1px solid #e8f5f2",
-                  }}>
+                  <div
+                    style={{
+                      width: 36,
+                      height: 36,
+                      borderRadius: "50%",
+                      overflow: "hidden",
+                      flexShrink: 0,
+                      background: "#f0fdf9",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      border: "1px solid #e8f5f2",
+                    }}
+                  >
                     {data.ownerAvatarUrl ? (
-                      <img src={data.ownerAvatarUrl} alt={data.ownerName} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                      <img
+                        src={data.ownerAvatarUrl}
+                        alt={data.ownerName}
+                        style={{
+                          width: "100%",
+                          height: "100%",
+                          objectFit: "cover",
+                        }}
+                      />
                     ) : (
                       <span style={{ fontSize: 16, color: "#94a3b8" }}>👤</span>
                     )}
                   </div>
                   <div style={{ minWidth: 0, flex: 1 }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: THEME_COLOR, lineHeight: 1.2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    <div
+                      style={{
+                        fontSize: 13,
+                        fontWeight: 700,
+                        color: THEME_COLOR,
+                        lineHeight: 1.2,
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
                       {data.ownerName}
                     </div>
-                    <div style={{ fontSize: 11, color: "#6b7280", lineHeight: 1.2, marginTop: 1 }}>
+                    <div
+                      style={{
+                        fontSize: 11,
+                        color: "#6b7280",
+                        lineHeight: 1.2,
+                        marginTop: 1,
+                      }}
+                    >
                       {data.ownerRole || "חוקר ראשי"}
                     </div>
                   </div>
                   {data.ownerProfileId && (
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="#9ca3af"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      style={{ flexShrink: 0 }}
+                    >
                       <path d="M15 18l-6-6 6-6" />
                     </svg>
                   )}
@@ -1161,52 +1461,107 @@ export default function Research() {
 
             {activeMentors.filter((m) => !m.isOwner).length > 0 && (
               <>
-                {activeMentors.filter((m) => !m.isOwner).map((mentor) => (
-                  <div
-                    key={mentor.id}
-                    className="rd-owner-ticket"
-                    onClick={() => mentor.id && navigate(`/user/${mentor.id}`)}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 10,
-                      padding: "8px 10px",
-                      borderRadius: 10,
-                      border: "1px solid #e5e7eb",
-                      background: "#fafafa",
-                      cursor: mentor.id ? "pointer" : "default",
-                      transition: "all 0.2s ease",
-                      marginTop: 6,
-                    }}
-                    onMouseEnter={(e) => { if (mentor.id) e.currentTarget.style.borderColor = "#6cd5bf"; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.borderColor = "#e5e7eb"; }}
-                  >
-                    <div style={{
-                      width: 36, height: 36, borderRadius: "50%", overflow: "hidden", flexShrink: 0,
-                      background: "#f0fdf9", display: "flex", alignItems: "center", justifyContent: "center",
-                      border: "1px solid #e8f5f2",
-                    }}>
-                      {mentor.profileImage ? (
-                        <img src={mentor.profileImage} alt={mentor.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                      ) : (
-                        <span style={{ fontSize: 16, color: "#94a3b8" }}>👤</span>
+                {activeMentors
+                  .filter((m) => !m.isOwner)
+                  .map((mentor) => (
+                    <div
+                      key={mentor.id}
+                      className="rd-owner-ticket"
+                      onClick={() =>
+                        mentor.id && navigate(`/user/${mentor.id}`)
+                      }
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 10,
+                        padding: "8px 10px",
+                        borderRadius: 10,
+                        border: "1px solid #e5e7eb",
+                        background: "#fafafa",
+                        cursor: mentor.id ? "pointer" : "default",
+                        transition: "all 0.2s ease",
+                        marginTop: 6,
+                      }}
+                      onMouseEnter={(e) => {
+                        if (mentor.id)
+                          e.currentTarget.style.borderColor = "#6cd5bf";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.borderColor = "#e5e7eb";
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: 36,
+                          height: 36,
+                          borderRadius: "50%",
+                          overflow: "hidden",
+                          flexShrink: 0,
+                          background: "#f0fdf9",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          border: "1px solid #e8f5f2",
+                        }}
+                      >
+                        {mentor.profileImage ? (
+                          <img
+                            src={mentor.profileImage}
+                            alt={mentor.name}
+                            style={{
+                              width: "100%",
+                              height: "100%",
+                              objectFit: "cover",
+                            }}
+                          />
+                        ) : (
+                          <span style={{ fontSize: 16, color: "#94a3b8" }}>
+                            👤
+                          </span>
+                        )}
+                      </div>
+                      <div style={{ minWidth: 0, flex: 1 }}>
+                        <div
+                          style={{
+                            fontSize: 13,
+                            fontWeight: 700,
+                            color: THEME_COLOR,
+                            lineHeight: 1.2,
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {mentor.name}
+                        </div>
+                        <div
+                          style={{
+                            fontSize: 11,
+                            color: "#6b7280",
+                            lineHeight: 1.2,
+                            marginTop: 1,
+                          }}
+                        >
+                          מנחה
+                        </div>
+                      </div>
+                      {mentor.id && (
+                        <svg
+                          width="14"
+                          height="14"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="#9ca3af"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          style={{ flexShrink: 0 }}
+                        >
+                          <path d="M15 18l-6-6 6-6" />
+                        </svg>
                       )}
                     </div>
-                    <div style={{ minWidth: 0, flex: 1 }}>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: THEME_COLOR, lineHeight: 1.2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                        {mentor.name}
-                      </div>
-                      <div style={{ fontSize: 11, color: "#6b7280", lineHeight: 1.2, marginTop: 1 }}>
-                        מנחה
-                      </div>
-                    </div>
-                    {mentor.id && (
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
-                        <path d="M15 18l-6-6 6-6" />
-                      </svg>
-                    )}
-                  </div>
-                ))}
+                  ))}
               </>
             )}
 
@@ -1214,17 +1569,19 @@ export default function Research() {
               <div style={{ marginTop: 24 }}>
                 {myApplication?.status === "invited" ? (
                   <div>
-                    <div style={{
-                      background: "#eef2ff",
-                      border: "1px solid #c7d2fe",
-                      borderRadius: 12,
-                      padding: "12px 16px",
-                      marginBottom: 12,
-                      textAlign: "center",
-                      fontSize: 14,
-                      fontWeight: 600,
-                      color: "#4338ca",
-                    }}>
+                    <div
+                      style={{
+                        background: "#eef2ff",
+                        border: "1px solid #c7d2fe",
+                        borderRadius: 12,
+                        padding: "12px 16px",
+                        marginBottom: 12,
+                        textAlign: "center",
+                        fontSize: 14,
+                        fontWeight: 600,
+                        color: "#4338ca",
+                      }}
+                    >
                       קיבלת הזמנה למחקר זה
                     </div>
                     <button
@@ -1256,31 +1613,40 @@ export default function Research() {
                         </button>
                         <button
                           className="rd-secondary-btn"
-                          style={{ ...styles.secondaryBtn, marginTop: 10, color: "#dc2626", borderColor: "#dc2626" }}
+                          style={{
+                            ...styles.secondaryBtn,
+                            marginTop: 10,
+                            color: "#dc2626",
+                            borderColor: "#dc2626",
+                          }}
                           onClick={handleLeaveResearch}
                           disabled={myApplicationLoading}
                         >
                           עזוב מחקר
                         </button>
                       </>
-                    ) : (isResearchFull) ? (
-                      <div style={{
-                        textAlign: "center",
-                        color: "#dc2626",
-                        fontSize: 14,
-                        fontWeight: 600,
-                        padding: "10px 0",
-                      }}>
+                    ) : isResearchFull ? (
+                      <div
+                        style={{
+                          textAlign: "center",
+                          color: "#dc2626",
+                          fontSize: 14,
+                          fontWeight: 600,
+                          padding: "10px 0",
+                        }}
+                      >
                         הצוות מלא - לא זמין להצטרפות
                       </div>
-                    ) : (!data.accepting_applications) ? (
-                      <div style={{
-                        textAlign: "center",
-                        color: "#dc2626",
-                        fontSize: 14,
-                        fontWeight: 600,
-                        padding: "10px 0",
-                      }}>
+                    ) : !data.accepting_applications ? (
+                      <div
+                        style={{
+                          textAlign: "center",
+                          color: "#dc2626",
+                          fontSize: 14,
+                          fontWeight: 600,
+                          padding: "10px 0",
+                        }}
+                      >
                         ההגשות למחקר זה סגורות כרגע
                       </div>
                     ) : (
@@ -1355,17 +1721,25 @@ export default function Research() {
               }}
             >
               {(hasAnyPermission ? applicationsError : publicApprovedError) && (
-                <div style={{ marginTop: 12, color: "#b91c1c", fontWeight: 700 }}>
+                <div
+                  style={{ marginTop: 12, color: "#b91c1c", fontWeight: 700 }}
+                >
                   {hasAnyPermission ? applicationsError : publicApprovedError}
                 </div>
               )}
 
-              {(hasAnyPermission ? applicationsLoading : publicApprovedLoading) ? (
-                <div style={{ marginTop: 12, color: "#6b7280", fontWeight: 700 }}>
+              {(
+                hasAnyPermission ? applicationsLoading : publicApprovedLoading
+              ) ? (
+                <div
+                  style={{ marginTop: 12, color: "#6b7280", fontWeight: 700 }}
+                >
                   טוען מתלמדים מהשרת...
                 </div>
               ) : activeApprentices.length === 0 ? (
-                <div style={{ marginTop: 12, color: "#6b7280", fontWeight: 700 }}>
+                <div
+                  style={{ marginTop: 12, color: "#6b7280", fontWeight: 700 }}
+                >
                   אין מתלמדים שהתקבלו עדיין.
                 </div>
               ) : (
@@ -1379,20 +1753,37 @@ export default function Research() {
                       apprentice={student}
                     >
                       {isOwner && (
-                        <div className="mentor-permissions-toggles" onClick={(e) => e.stopPropagation()}>
-                          <div className="permissions-title">הרשאות (מתן הרשאות תקדם את המשתמש למנחה):</div>
+                        <div
+                          className="mentor-permissions-toggles"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <div className="permissions-title">
+                            הרשאות (מתן הרשאות תקדם את המשתמש למנחה):
+                          </div>
                           {[
                             { field: "can_edit", label: "עריכת מחקר" },
-                            { field: "can_approve", label: "אישור/דחיית מועמדים" },
+                            {
+                              field: "can_approve",
+                              label: "אישור/דחיית מועמדים",
+                            },
                             { field: "can_invite", label: "הזמנת משתמשים" },
                             { field: "can_remove", label: "הסרת חברי צוות" },
                             { field: "can_manage_chat", label: "ניהול צ'אט" },
                           ].map(({ field, label }) => (
-                            <label key={field} className="permission-toggle-label">
+                            <label
+                              key={field}
+                              className="permission-toggle-label"
+                            >
                               <input
                                 type="checkbox"
                                 checked={!!student[field]}
-                                onChange={() => handlePermissionToggle(student.applicationId, field, student[field])}
+                                onChange={() =>
+                                  handlePermissionToggle(
+                                    student.applicationId,
+                                    field,
+                                    student[field],
+                                  )
+                                }
                                 className="permission-checkbox"
                               />
                               <span>{label}</span>
@@ -1422,7 +1813,10 @@ export default function Research() {
         )}
 
         {/* --- Mentors in Research Section --- */}
-        {(hasAnyPermission || activeMentors.length > 0 || publicApprovedLoading || activeApprentices.length > 0) && (
+        {(hasAnyPermission ||
+          activeMentors.length > 0 ||
+          publicApprovedLoading ||
+          activeApprentices.length > 0) && (
           <div style={{ marginTop: 32 }}>
             <div
               className="accordion-header"
@@ -1463,12 +1857,18 @@ export default function Research() {
                 transition: "all 0.6s cubic-bezier(0.4, 0, 0.2, 1)",
               }}
             >
-              {(hasAnyPermission ? applicationsLoading : publicApprovedLoading) ? (
-                <div style={{ marginTop: 12, color: "#6b7280", fontWeight: 700 }}>
+              {(
+                hasAnyPermission ? applicationsLoading : publicApprovedLoading
+              ) ? (
+                <div
+                  style={{ marginTop: 12, color: "#6b7280", fontWeight: 700 }}
+                >
                   טוען מנחים מהשרת...
                 </div>
               ) : activeMentors.length === 0 ? (
-                <div style={{ marginTop: 12, color: "#6b7280", fontWeight: 700 }}>
+                <div
+                  style={{ marginTop: 12, color: "#6b7280", fontWeight: 700 }}
+                >
                   אין מנחים נוספים במחקר.
                 </div>
               ) : (
@@ -1477,25 +1877,37 @@ export default function Research() {
                   style={{ marginTop: 16 }}
                 >
                   {activeMentors.map((mentor) => (
-                    <ResearchApprenticeCard
-                      key={mentor.id}
-                      apprentice={mentor}
-                    >
+                    <ResearchApprenticeCard key={mentor.id} apprentice={mentor}>
                       {isOwner && !mentor.isOwner && (
-                        <div className="mentor-permissions-toggles" onClick={(e) => e.stopPropagation()}>
+                        <div
+                          className="mentor-permissions-toggles"
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           <div className="permissions-title">הרשאות:</div>
                           {[
                             { field: "can_edit", label: "עריכת מחקר" },
-                            { field: "can_approve", label: "אישור/דחיית מועמדים" },
+                            {
+                              field: "can_approve",
+                              label: "אישור/דחיית מועמדים",
+                            },
                             { field: "can_invite", label: "הזמנת משתמשים" },
                             { field: "can_remove", label: "הסרת חברי צוות" },
                             { field: "can_manage_chat", label: "ניהול צ'אט" },
                           ].map(({ field, label }) => (
-                            <label key={field} className="permission-toggle-label">
+                            <label
+                              key={field}
+                              className="permission-toggle-label"
+                            >
                               <input
                                 type="checkbox"
                                 checked={!!mentor[field]}
-                                onChange={() => handlePermissionToggle(mentor.applicationId, field, mentor[field])}
+                                onChange={() =>
+                                  handlePermissionToggle(
+                                    mentor.applicationId,
+                                    field,
+                                    mentor[field],
+                                  )
+                                }
                                 className="permission-checkbox"
                               />
                               <span>{label}</span>
@@ -1525,7 +1937,8 @@ export default function Research() {
         )}
 
         {/* --- Research Chat Section --- */}
-        {(isOwner || joinedResearches.some((r) => String(r.id) === String(id))) && (
+        {(isOwner ||
+          joinedResearches.some((r) => String(r.id) === String(id))) && (
           <ResearchChat
             researchId={id}
             isOwner={isOwner}
@@ -1580,17 +1993,23 @@ export default function Research() {
               }}
             >
               {applicationsError && (
-                <div style={{ marginTop: 12, color: "#b91c1c", fontWeight: 700 }}>
+                <div
+                  style={{ marginTop: 12, color: "#b91c1c", fontWeight: 700 }}
+                >
                   {applicationsError}
                 </div>
               )}
 
               {applicationsLoading ? (
-                <div style={{ marginTop: 12, color: "#6b7280", fontWeight: 700 }}>
+                <div
+                  style={{ marginTop: 12, color: "#6b7280", fontWeight: 700 }}
+                >
                   טוען מועמדים מהשרת...
                 </div>
               ) : activeApplicants.length === 0 ? (
-                <div style={{ marginTop: 12, color: "#6b7280", fontWeight: 700 }}>
+                <div
+                  style={{ marginTop: 12, color: "#6b7280", fontWeight: 700 }}
+                >
                   אין מועמדים ממתינים.
                 </div>
               ) : (
@@ -1599,30 +2018,33 @@ export default function Research() {
                   style={{ marginTop: 16 }}
                 >
                   {activeApplicants.map((applicant) => (
-                    <div key={applicant.applicationId || applicant.id} className="applicant-card-wrapper">
-                      <ResearchApprenticeCard 
+                    <div
+                      key={applicant.applicationId || applicant.id}
+                      className="applicant-card-wrapper"
+                    >
+                      <ResearchApprenticeCard
                         apprentice={applicant}
                         /* onClick handler removed: using profile button instead */
                       >
                         <div className="applicant-actions">
-                            <button
-                              className="btn-approve"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleApproveApplicant(applicant.applicationId);
-                              }}
-                            >
-                              ✓ אשר
-                            </button>
-                            <button
-                              className="btn-decline"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDeclineApplicant(applicant.applicationId);
-                              }}
-                            >
-                              ✗ דחה
-                            </button>
+                          <button
+                            className="btn-approve"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleApproveApplicant(applicant.applicationId);
+                            }}
+                          >
+                            ✓ אשר
+                          </button>
+                          <button
+                            className="btn-decline"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeclineApplicant(applicant.applicationId);
+                            }}
+                          >
+                            ✗ דחה
+                          </button>
                         </div>
                       </ResearchApprenticeCard>
                     </div>
@@ -1633,23 +2055,17 @@ export default function Research() {
           </div>
         )}
 
-
         {isOwner && (
           <div style={styles.bottomActionsContainer}>
-            <button
-              style={styles.deleteButton}
-              onClick={handleDeleteResearch}
-            >
+            <button style={styles.deleteButton} onClick={handleDeleteResearch}>
               <DeleteIcon />
               מחיקת המחקר
             </button>
           </div>
         )}
-     
       </div>
 
       {/* --- Details Modal --- */}
-
 
       <style>{`
         .research-layout {
@@ -2171,22 +2587,32 @@ export default function Research() {
 
 const Section = ({ title, children }) => (
   <div style={{ marginBottom: 20 }}>
-    <h3 className="rd-section-title" style={styles.sectionTitle}>{title}</h3>
+    <h3 className="rd-section-title" style={styles.sectionTitle}>
+      {title}
+    </h3>
     {children}
   </div>
 );
 
 const DetailItem = ({ label, value }) => (
   <div>
-    <div className="rd-label" style={styles.label}>{label}</div>
-    <div className="rd-value" style={styles.value}>{value}</div>
+    <div className="rd-label" style={styles.label}>
+      {label}
+    </div>
+    <div className="rd-value" style={styles.value}>
+      {value}
+    </div>
   </div>
 );
 
 const SidebarItem = ({ label, value }) => (
   <div style={styles.sidebarItem}>
-    <div className="rd-sidebar-label" style={styles.sidebarLabel}>{label}</div>
-    <div className="rd-sidebar-value" style={styles.sidebarValue}>{value}</div>
+    <div className="rd-sidebar-label" style={styles.sidebarLabel}>
+      {label}
+    </div>
+    <div className="rd-sidebar-value" style={styles.sidebarValue}>
+      {value}
+    </div>
   </div>
 );
 
@@ -2280,9 +2706,9 @@ const styles = {
 
   actionBar: {
     display: "flex",
-    justifyContent: "center", 
-    flexWrap: "wrap",        
-    gap: 20,                  
+    justifyContent: "center",
+    flexWrap: "wrap",
+    gap: 20,
     alignItems: "center",
     marginBottom: 24,
     paddingBottom: 16,
@@ -2446,12 +2872,12 @@ const styles = {
   },
 
   bottomActionsContainer: {
-    display: "flex",          // משתמשים ב-Flexbox
+    display: "flex", // משתמשים ב-Flexbox
     justifyContent: "center", // מרכוז אופקי
-    alignItems: "center",     // מרכוז אנכי
-    marginTop: "40px",        // רווח מהתוכן שמעל
-    paddingTop: "20px",       // רווח פנימי
+    alignItems: "center", // מרכוז אנכי
+    marginTop: "40px", // רווח מהתוכן שמעל
+    paddingTop: "20px", // רווח פנימי
     borderTop: "1px solid #eee", // קו עדין מפריד (אופציונלי, נותן תחושת סדר)
-    width: "100%",            // תופס את כל רוחב הכרטיס כדי שיוכל למרכז
+    width: "100%", // תופס את כל רוחב הכרטיס כדי שיוכל למרכז
   },
 };

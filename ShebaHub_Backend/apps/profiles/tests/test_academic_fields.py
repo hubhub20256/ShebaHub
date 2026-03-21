@@ -147,6 +147,7 @@ class TestAcademicFields:
         )
 
         client = APIClient()
+        client.force_authenticate(user=user)
         # Use the unified profile endpoint
         resp = client.get(f'/api/profiles/user/{user.id}/')
         assert resp.status_code == status.HTTP_200_OK

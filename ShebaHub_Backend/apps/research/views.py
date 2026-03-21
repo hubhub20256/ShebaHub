@@ -9,6 +9,7 @@ from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 
 from django.contrib.auth import get_user_model
+from django.db import transaction
 from apps.profiles.models import StudentProfile, MentorProfile
 from apps.common.email_service import EmailService
 from apps.common.permissions import IsEmailVerified
@@ -75,7 +76,7 @@ def researches(request):
     )
     qs = Research.objects.filter(
         moderation_status="approved",
-    ).annotate(status_priority=status_order).order_by("status_priority", "-created_at")
+    ).select_related("owner").annotate(status_priority=status_order).order_by("status_priority", "-created_at")
     return Response(ResearchSerializer(qs, many=True, context={"request": request}).data)
 
 
@@ -93,7 +94,7 @@ def researches(request):
 def research_detail(request, research_id: int):
     """GET /api/research/<id>/ -> get one research (authenticated read)"""
     try:
-        obj = Research.objects.get(id=research_id)
+        obj = Research.objects.select_related("owner").get(id=research_id)
     except Research.DoesNotExist:
         return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
 
@@ -145,7 +146,7 @@ def my_researches(request):
 
     if request.method == "GET":
         # Owned researches
-        owned_qs = Research.objects.filter(owner=request.user).order_by("-created_at")
+        owned_qs = Research.objects.filter(owner=request.user).select_related("owner").order_by("-created_at")
         owned_data = ResearchSerializer(owned_qs, many=True, context={"request": request}).data
         for item in owned_data:
             item["is_owner"] = True
@@ -492,71 +493,72 @@ def decline_invite(request, research_id: int):
 @throttle_classes([ResearchApplicationRateThrottle])
 def apply_to_research(request, research_id: int):
     """POST /api/research/<id>/apply/ -> authenticated user applies to a research."""
-    try:
-        research = Research.objects.get(id=research_id)
-    except Research.DoesNotExist:
-        return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
+    with transaction.atomic():
+        try:
+            research = Research.objects.select_for_update().get(id=research_id)
+        except Research.DoesNotExist:
+            return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
 
-    if research.owner_id == request.user.id:
-        return Response({"detail": "You cannot apply to your own research."}, status=status.HTTP_400_BAD_REQUEST)
+        if research.owner_id == request.user.id:
+            return Response({"detail": "You cannot apply to your own research."}, status=status.HTTP_400_BAD_REQUEST)
 
-    if not research.accepting_applications:
-        return Response({"detail": "המחקר אינו מקבל הגשות כרגע."}, status=status.HTTP_400_BAD_REQUEST)
+        if not research.accepting_applications:
+            return Response({"detail": "המחקר אינו מקבל הגשות כרגע."}, status=status.HTTP_400_BAD_REQUEST)
 
-    # Direct capacity check (mentors don't count towards teamSize, but still
-    # cannot apply when team is full — they must be invited by the owner).
-    is_mentor = getattr(request.user, "has_mentor_profile", False)
-    if research.teamSize:
-        if _approved_non_mentor_count(research) >= research.teamSize:
-            if research.accepting_applications:
-                research.accepting_applications = False
-                research.save(update_fields=["accepting_applications"])
-            return Response({"detail": "הצוות מלא, לא ניתן להצטרף."}, status=status.HTTP_400_BAD_REQUEST)
+        # Direct capacity check (mentors don't count towards teamSize, but still
+        # cannot apply when team is full — they must be invited by the owner).
+        is_mentor = getattr(request.user, "has_mentor_profile", False)
+        if research.teamSize:
+            if _approved_non_mentor_count(research) >= research.teamSize:
+                if research.accepting_applications:
+                    research.accepting_applications = False
+                    research.save(update_fields=["accepting_applications"])
+                return Response({"detail": "הצוות מלא, לא ניתן להצטרף."}, status=status.HTTP_400_BAD_REQUEST)
 
-    # Site-wide application settings
-    site = SiteSetting.load()
+        # Site-wide application settings
+        site = SiteSetting.load()
 
-    if not site.applications_globally_enabled:
-        return Response({"detail": "הגשת מועמדויות מושבתת כרגע."}, status=status.HTTP_403_FORBIDDEN)
+        if not site.applications_globally_enabled:
+            return Response({"detail": "הגשת מועמדויות מושבתת כרגע."}, status=status.HTTP_403_FORBIDDEN)
 
-    if site.require_email_verification_to_apply and not getattr(request.user, "email_verified", False):
-        return Response({"detail": "יש לאמת את כתובת האימייל לפני הגשת מועמדות."}, status=status.HTTP_403_FORBIDDEN)
+        if site.require_email_verification_to_apply and not getattr(request.user, "email_verified", False):
+            return Response({"detail": "יש לאמת את כתובת האימייל לפני הגשת מועמדות."}, status=status.HTTP_403_FORBIDDEN)
 
-    if site.max_applications_per_student > 0:
-        active_count = ResearchApplication.objects.filter(
-            applicant=request.user,
-            status__in=[ResearchApplication.Status.PENDING, ResearchApplication.Status.APPROVED],
-        ).count()
-        if active_count >= site.max_applications_per_student:
-            return Response(
-                {"detail": f"ניתן להגיש מועמדות ל-{site.max_applications_per_student} מחקרים לכל היותר."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        if site.max_applications_per_student > 0:
+            active_count = ResearchApplication.objects.filter(
+                applicant=request.user,
+                status__in=[ResearchApplication.Status.PENDING, ResearchApplication.Status.APPROVED],
+            ).count()
+            if active_count >= site.max_applications_per_student:
+                return Response(
+                    {"detail": f"ניתן להגיש מועמדות ל-{site.max_applications_per_student} מחקרים לכל היותר."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
 
-    if site.max_applications_per_research > 0:
-        research_active_count = ResearchApplication.objects.filter(
-            research=research,
-            status__in=[ResearchApplication.Status.PENDING, ResearchApplication.Status.APPROVED],
-        ).count()
-        if research_active_count >= site.max_applications_per_research:
-            return Response(
-                {"detail": "מספר המועמדויות למחקר זה הגיע למקסימום."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        if site.max_applications_per_research > 0:
+            research_active_count = ResearchApplication.objects.filter(
+                research=research,
+                status__in=[ResearchApplication.Status.PENDING, ResearchApplication.Status.APPROVED],
+            ).count()
+            if research_active_count >= site.max_applications_per_research:
+                return Response(
+                    {"detail": "מספר המועמדויות למחקר זה הגיע למקסימום."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
 
-    # User must have at least a student or mentor profile to apply
-    has_profile = getattr(request.user, "has_student_profile", False) or getattr(request.user, "has_mentor_profile", False)
-    if not has_profile:
-        return Response({"detail": "יש ליצור פרופיל לפני הגשת מועמדות."}, status=status.HTTP_403_FORBIDDEN)
+        # User must have at least a student or mentor profile to apply
+        has_profile = getattr(request.user, "has_student_profile", False) or getattr(request.user, "has_mentor_profile", False)
+        if not has_profile:
+            return Response({"detail": "יש ליצור פרופיל לפני הגשת מועמדות."}, status=status.HTTP_403_FORBIDDEN)
 
-    try:
-        obj = ResearchApplication.objects.get(research=research, applicant=request.user)
-        if obj.status in {ResearchApplication.Status.PENDING, ResearchApplication.Status.APPROVED}:
-            return Response({"detail": "Application already exists."}, status=status.HTTP_400_BAD_REQUEST)
-        obj.status = ResearchApplication.Status.PENDING
-        obj.save(update_fields=["status", "updated_at"])
-    except ResearchApplication.DoesNotExist:
-        obj = ResearchApplication.objects.create(research=research, applicant=request.user)
+        try:
+            obj = ResearchApplication.objects.get(research=research, applicant=request.user)
+            if obj.status in {ResearchApplication.Status.PENDING, ResearchApplication.Status.APPROVED}:
+                return Response({"detail": "Application already exists."}, status=status.HTTP_400_BAD_REQUEST)
+            obj.status = ResearchApplication.Status.PENDING
+            obj.save(update_fields=["status", "updated_at"])
+        except ResearchApplication.DoesNotExist:
+            obj = ResearchApplication.objects.create(research=research, applicant=request.user)
 
     _create_notification(
         sender=request.user,
@@ -968,6 +970,13 @@ def research_approved_applicants(request, research_id: int):
     except Research.DoesNotExist:
         return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
 
+    # Authorization: only the research owner or staff can view approved applicants
+    if research.owner != request.user and not request.user.is_staff:
+        return Response(
+            {"detail": "Permission denied – only the research owner can view applicants."},
+            status=status.HTTP_403_FORBIDDEN,
+        )
+
     qs = (
         ResearchApplication.objects.filter(
             research=research,
@@ -1245,27 +1254,19 @@ def secure_contract_download(request, research_id: int):
             status=status.HTTP_404_NOT_FOUND,
         )
 
-    # Authorization: owner, approved applicants only, or staff
-    is_owner = research.owner_id == request.user.id
-    is_staff = request.user.is_staff
-    is_applicant = ResearchApplication.objects.filter(
-        research=research,
-        applicant=request.user,
-        status=ResearchApplication.Status.APPROVED,
-    ).exists()
-
-    if not (is_owner or is_staff or is_applicant):
-        return Response(
-            {"detail": "You do not have permission to download this contract."},
-            status=status.HTTP_403_FORBIDDEN,
-        )
+    # Authorization: match research_detail visibility logic
+    is_owner_or_staff = research.owner_id == request.user.id or request.user.is_staff
+    if research.moderation_status in ("flagged", "rejected") and not is_owner_or_staff:
+        return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
+    if research.status == "draft" and not is_owner_or_staff:
+        return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
 
     audit_logger.info(
         f"Contract downloaded: research #{research.id} ({research.researchName})",
         extra={
             "user_id": str(request.user.id),
             "research_id": research.id,
-            "is_owner": is_owner,
+            "is_owner": research.owner_id == request.user.id,
         },
     )
 

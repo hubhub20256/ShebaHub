@@ -11,6 +11,7 @@ from rest_framework.response import Response
 
 from apps.common.email_service import EmailService
 from apps.common.permissions import IsAdminUser
+from apps.profiles.models import StudentProfile, MentorProfile
 from apps.research.models import Research, ResearchApplication
 from .models import AdminActionLog, AnnouncementDismissal, SiteSetting, SystemAnnouncement
 from .serializers import (
@@ -65,6 +66,8 @@ def dashboard_stats(request):
         "active_announcements": SystemAnnouncement.objects.filter(
             is_active=True,
         ).filter(Q(expires_at__isnull=True) | Q(expires_at__gt=now)).count(),
+        "registered_students": StudentProfile.objects.count(),
+        "registered_mentors": MentorProfile.objects.count(),
     }
     serializer = DashboardStatsSerializer(data)
     return Response(serializer.data)
@@ -356,6 +359,10 @@ def edit_user(request, pk):
     # Guard: cannot grant is_staff unless requester is superuser
     if "is_staff" in request.data and request.data["is_staff"] and not request.user.is_superuser:
         return Response({"detail": "Only superusers can grant staff status."}, status=status.HTTP_403_FORBIDDEN)
+
+    # Guard: is_superuser cannot be changed via this endpoint
+    if "is_superuser" in request.data:
+        return Response({"detail": "Cannot modify superuser status via this endpoint."}, status=status.HTTP_403_FORBIDDEN)
 
     serializer = AdminUserEditSerializer(data=request.data, partial=True)
     if not serializer.is_valid():

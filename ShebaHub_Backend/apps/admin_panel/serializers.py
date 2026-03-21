@@ -33,6 +33,7 @@ class AdminResearchSerializer(serializers.ModelSerializer):
             "skillsAndTools",
             "output",
             "compensation",
+            "academic_tracks",
             "helsinkiApproval",
             "dataType",
             "teamSize",
@@ -67,9 +68,9 @@ class AdminResearchEditSerializer(serializers.ModelSerializer):
             "moderation_status", "moderation_note",
             "location", "workMode",
             "requirements", "skillsAndTools", "output",
-            "compensation", "helsinkiApproval", "dataType",
+            "compensation", "academic_tracks", "helsinkiApproval", "dataType",
             "teamSize",
-            "weeklyHours", "durationWeeks",
+            "weeklyHours", "durationMonths",
             "startDate", "estimatedCompletionDate",
         ]
 
@@ -135,6 +136,8 @@ class SiteSettingSerializer(serializers.ModelSerializer):
             "mentor_note_max_length",
             "applications_globally_enabled",
             "registration_enabled",
+            "student_registration_enabled",
+            "mentor_registration_enabled",
             "require_email_verification_to_apply",
             "updated_at",
         ]
@@ -163,6 +166,8 @@ class DashboardStatsSerializer(serializers.Serializer):
     total_applications = serializers.IntegerField()
     pending_applications = serializers.IntegerField()
     active_announcements = serializers.IntegerField()
+    registered_students = serializers.IntegerField()
+    registered_mentors = serializers.IntegerField()
 
 
 class SystemAnnouncementSerializer(serializers.ModelSerializer):
@@ -190,7 +195,7 @@ class ActiveAnnouncementSerializer(serializers.ModelSerializer):
 class AdminUserEditSerializer(serializers.Serializer):
     firstName = serializers.CharField(max_length=150, required=False)
     lastName = serializers.CharField(max_length=150, required=False)
-    gender = serializers.ChoiceField(choices=["man", "woman", "other"], required=False, allow_null=True)
+    gender = serializers.ChoiceField(choices=["male", "female", "other"], required=False, allow_null=True)
     is_staff = serializers.BooleanField(required=False)
     email_verified = serializers.BooleanField(required=False)
     is_active = serializers.BooleanField(required=False)

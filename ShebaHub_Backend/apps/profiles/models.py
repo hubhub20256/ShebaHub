@@ -26,7 +26,7 @@ class BaseReferenceModel(models.Model):
     id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=255, unique=True)
     name_he = models.CharField(max_length=255, blank=True, help_text="Hebrew name for display")
-    is_active = models.BooleanField(default=True)
+    is_active = models.BooleanField(default=True, db_index=True)
     sort_order = models.PositiveIntegerField(default=0)
     
     class Meta:
@@ -180,7 +180,7 @@ class StudentProfile(models.Model):
     # FE: apprenticeStage - שלב בהכשרה רפואית
     apprenticeStage = models.ForeignKey(
         MedicalTrainingStage,
-        on_delete=models.SET_NULL,
+        on_delete=models.PROTECT,
         null=True,
         blank=True,
         related_name='student_profiles',
@@ -206,7 +206,7 @@ class StudentProfile(models.Model):
     # FE: institution - מוסד לימודים
     institution = models.ForeignKey(
         Institution,
-        on_delete=models.SET_NULL,
+        on_delete=models.PROTECT,
         null=True,
         blank=True,
         related_name='student_profiles'
@@ -222,7 +222,7 @@ class StudentProfile(models.Model):
     # FE: specialtyGroup - קטגוריית התמחות
     specialtyGroup = models.ForeignKey(
         SpecialtyGroup,
-        on_delete=models.SET_NULL,
+        on_delete=models.PROTECT,
         null=True,
         blank=True,
         related_name='student_profiles',
@@ -240,7 +240,7 @@ class StudentProfile(models.Model):
     # FE: specialty - התמחות / תחום מרכזי (legacy FK – kept for data migration)
     specialty = models.ForeignKey(
         Specialty,
-        on_delete=models.SET_NULL,
+        on_delete=models.PROTECT,
         null=True,
         blank=True,
         related_name='student_profiles'
@@ -289,13 +289,11 @@ class StudentProfile(models.Model):
     # Research & Availability (מחקר וזמינות)
     # -------------------------------------------------------------------------
     # FE: workType - סוג העבודה המבוקשת
-    workType = models.ForeignKey(
-        WorkType,
-        on_delete=models.SET_NULL,
-        null=True,
+    workType = models.CharField(
+        max_length=255,
         blank=True,
-        related_name='student_profiles',
-        db_column='work_type_id'
+        db_column='work_type_text',
+        help_text="Type of work sought (free text)"
     )
     
     # FE: compensationPreference - העדפת תגמול (multi-select, stored as JSON list)
@@ -307,7 +305,7 @@ class StudentProfile(models.Model):
     # FE: participationMode - אופן ההשתתפות
     participationMode = models.ForeignKey(
         ParticipationMode,
-        on_delete=models.SET_NULL,
+        on_delete=models.PROTECT,
         null=True,
         blank=True,
         related_name='student_profiles',
@@ -385,6 +383,7 @@ class StudentProfile(models.Model):
 
     class Meta:
         db_table = 'student_profiles'
+        ordering = ['-created_at']
         verbose_name = 'Student Profile'
         verbose_name_plural = 'Student Profiles'
     
@@ -510,14 +509,11 @@ class MentorProfile(models.Model):
     # Research Background (רקע מחקרי ותחומי עניין)
     # -------------------------------------------------------------------------
     # FE: researchInterests - תחומי עניין מחקר
-    researchInterests = models.ForeignKey(
-        ResearchInterest,
-        on_delete=models.PROTECT,
-        null=True,
+    researchInterests = models.CharField(
+        max_length=500,
         blank=True,
-        related_name='mentor_profiles',
-        db_column='research_interests_id',
-        help_text="Research interest area"
+        db_column='research_interests_text',
+        help_text="Research interest area (free text)"
     )
     
     # FE: previousResearchDescription - תיאור מחקרים קודמים
@@ -577,6 +573,7 @@ class MentorProfile(models.Model):
 
     class Meta:
         db_table = 'mentor_profiles'
+        ordering = ['-created_at']
         verbose_name = 'Mentor Profile'
         verbose_name_plural = 'Mentor Profiles'
     

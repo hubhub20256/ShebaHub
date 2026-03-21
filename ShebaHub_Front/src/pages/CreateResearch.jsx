@@ -144,6 +144,7 @@ export default function CreateResearch() {
           estimatedCompletionDate: data?.estimatedCompletionDate || "",
           weeklyHours: data?.weeklyHours != null ? String(data.weeklyHours) : "",
           durationMonths: data?.durationMonths != null ? String(data.durationMonths) : "",
+          academicTracks: Array.isArray(data?.academic_tracks) ? data.academic_tracks : [],
           compensation: Array.isArray(data?.compensation) ? data.compensation : [],
           workMode: data?.workMode || "",
           requirements: data?.requirements || "",

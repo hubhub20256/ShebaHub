@@ -133,7 +133,7 @@ def _validate_avatar(avatar_file):
     },
 )
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def public_user_profiles(request, user_id):
     """
     GET /api/profiles/user/<uuid:user_id>/
@@ -154,7 +154,7 @@ def public_user_profiles(request, user_id):
             StudentProfile.objects
             .select_related(
                 'user', 'apprenticeStage', 'institution',
-                'specialtyGroup', 'specialty', 'workType', 'participationMode',
+                'specialtyGroup', 'specialty', 'participationMode',
             )
             .prefetch_related('degrees', 'specialties', 'specialtyGroups', 'documents', 'recommendations')
             .get(user=target_user)
@@ -170,7 +170,7 @@ def public_user_profiles(request, user_id):
                 'user', 'academicRank', 'specialtyGroup',
                 'specialty', 'institution',
             )
-            .prefetch_related('degrees', 'specialties', 'specialtyGroups', 'researchInterests', 'documents', 'recommendations')
+            .prefetch_related('degrees', 'specialties', 'specialtyGroups', 'documents', 'recommendations')
             .get(user=target_user)
         )
         mentor_data = PublicMentorDetailSerializer(mentor, context={'request': request}).data
@@ -201,8 +201,8 @@ def public_mentor_list(request):
     qs = (
         MentorProfile.objects
         .filter(user__is_staff=False)
-        .select_related('user', 'specialty', 'institution')
-        .prefetch_related('degrees', 'specialties')
+        .select_related('user', 'specialty', 'institution', 'specialtyGroup', 'academicRank')
+        .prefetch_related('degrees', 'specialties', 'specialtyGroups')
         .order_by('-created_at')
     )
     if SiteSetting.load().require_email_verification_to_apply:
@@ -236,7 +236,7 @@ def public_mentor_detail(request, mentor_id):
                 'specialty',
                 'institution',
             )
-            .prefetch_related('degrees', 'specialties', 'specialtyGroups', 'researchInterests', 'documents', 'recommendations')
+            .prefetch_related('degrees', 'specialties', 'specialtyGroups', 'documents', 'recommendations')
             .get(id=mentor_id)
         )
     except MentorProfile.DoesNotExist:
@@ -257,7 +257,8 @@ def public_student_list(request):
     qs = (
         StudentProfile.objects
         .filter(user__is_staff=False)
-        .select_related('user', 'apprenticeStage', 'institution')
+        .select_related('user', 'apprenticeStage', 'institution', 'specialtyGroup', 'specialty', 'participationMode')
+        .prefetch_related('degrees', 'specialties', 'specialtyGroups')
         .order_by('-created_at')
     )
     if SiteSetting.load().require_email_verification_to_apply:
@@ -290,7 +291,6 @@ def public_student_detail(request, student_id):
                 'institution',
                 'specialtyGroup',
                 'specialty',
-                'workType',
                 'participationMode',
             )
             .prefetch_related('degrees', 'specialties', 'specialtyGroups', 'documents', 'recommendations')
@@ -440,7 +440,7 @@ def student_profile_me(request):
                 StudentProfile.objects
                 .select_related(
                     'institution', 'apprenticeStage', 'specialtyGroup',
-                    'specialty', 'workType', 'participationMode',
+                    'specialty', 'participationMode',
                 )
                 .prefetch_related('degrees', 'specialties', 'documents', 'recommendations')
                 .get(user=user)
@@ -473,7 +473,16 @@ def student_profile_me(request):
                 },
                 status=status.HTTP_409_CONFLICT
             )
-        
+
+        # Check if student registration is enabled
+        from apps.admin_panel.models import SiteSetting
+        site = SiteSetting.load()
+        if not site.student_registration_enabled:
+            return Response(
+                {"detail": "הרשמה כסטודנט מושבתת כרגע."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
         serializer = StudentProfileCreateSerializer(
             data=request.data,
             context={'request': request}
@@ -815,7 +824,7 @@ def mentor_profile_me(request):
                 MentorProfile.objects
                 .select_related(
                     'user', 'institution', 'academicRank',
-                    'specialtyGroup', 'specialty', 'researchInterests',
+                    'specialtyGroup', 'specialty',
                 )
                 .prefetch_related('degrees', 'specialties', 'documents', 'recommendations')
                 .get(user=user)
@@ -848,7 +857,16 @@ def mentor_profile_me(request):
                 },
                 status=status.HTTP_409_CONFLICT
             )
-        
+
+        # Check if mentor registration is enabled
+        from apps.admin_panel.models import SiteSetting
+        site = SiteSetting.load()
+        if not site.mentor_registration_enabled:
+            return Response(
+                {"detail": "הרשמה כמנטור מושבתת כרגע."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
         serializer = MentorProfileCreateSerializer(
             data=request.data,
             context={'request': request}

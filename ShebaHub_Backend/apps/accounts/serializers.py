@@ -46,7 +46,7 @@ class SignupSerializer(serializers.ModelSerializer):
         - confirmPassword: Required, must match password
         - firstName: Optional
         - lastName: Optional
-        - gender: Optional (man/woman/other)
+        - gender: Optional (male/female/other)
     """
     password = serializers.CharField(
         write_only=True,

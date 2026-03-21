@@ -279,6 +279,22 @@ class ProfessionalRecommendationSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'created_at']
 
 
+class PublicRecommendationSerializer(serializers.ModelSerializer):
+    """Public-facing recommendation serializer – omits recommender_email."""
+
+    class Meta:
+        model = ProfessionalRecommendation
+        fields = [
+            'id',
+            'recommender_name',
+            'recommender_title',
+            'recommender_institution',
+            'relationship',
+            'created_at',
+        ]
+        read_only_fields = fields
+
+
 # =============================================================================
 # PROFILE DOCUMENT SERIALIZER
 # =============================================================================
@@ -356,7 +372,7 @@ class StudentProfileSerializer(serializers.ModelSerializer):
     specialtyGroup_detail = SpecialtyGroupSerializer(source='specialtyGroup', read_only=True)
     specialtyGroups_detail = SpecialtyGroupSerializer(source='specialtyGroups', many=True, read_only=True)
     specialty_detail = SpecialtySerializer(source='specialty', read_only=True)
-    workType_detail = WorkTypeSerializer(source='workType', read_only=True)
+    workType_detail = serializers.SerializerMethodField()
     participationMode_detail = ParticipationModeSerializer(
         source='participationMode', read_only=True
     )
@@ -392,7 +408,7 @@ class StudentProfileSerializer(serializers.ModelSerializer):
         write_only=True
     )
     specialties_detail = SpecialtySerializer(source='specialties', many=True, read_only=True)
-    workType = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    workType = serializers.CharField(required=False, allow_null=True, allow_blank=True, max_length=255)
     participationMode = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     compensationPreference = serializers.ListField(
         child=serializers.CharField(), required=False, allow_empty=True
@@ -486,7 +502,6 @@ class StudentProfileSerializer(serializers.ModelSerializer):
             'apprenticeStage': MedicalTrainingStage,
             'specialtyGroup': SpecialtyGroup,
             'specialty': Specialty,
-            'workType': WorkType,
             'participationMode': ParticipationMode,
         }
 
@@ -540,6 +555,13 @@ class StudentProfileSerializer(serializers.ModelSerializer):
             return []
         return [{"name": p, "name_he": p} for p in prefs]
 
+    def get_workType_detail(self, obj):
+        """Return backward-compatible dict for free-text workType."""
+        text = obj.workType or ''
+        if not text:
+            return None
+        return {"name": text, "name_he": text}
+
     def validate_startYear(self, value):
         """Validate startYear is in reasonable range."""
         if value is not None:
@@ -549,11 +571,11 @@ class StudentProfileSerializer(serializers.ModelSerializer):
                     value = int(value)
                 except ValueError:
                     raise serializers.ValidationError("startYear must be a number")
-            
+
             current_year = date.today().year
-            if value < 1990 or value > current_year + 1:
+            if value < 1950 or value > current_year + 6:
                 raise serializers.ValidationError(
-                    f"startYear must be between 1990 and {current_year + 1}"
+                    f"startYear must be between 1950 and {current_year + 6}"
                 )
         return value
     
@@ -607,7 +629,7 @@ class StudentProfileSerializer(serializers.ModelSerializer):
 
         # Convert FK IDs to objects
         for fk_field in ['institution', 'apprenticeStage', 'specialtyGroup',
-                         'specialty', 'workType', 'participationMode']:
+                         'specialty', 'participationMode']:
             if fk_field in validated_data and validated_data[fk_field]:
                 fk_id = validated_data[fk_field]
                 model_class = self.Meta.model._meta.get_field(fk_field).related_model
@@ -644,7 +666,7 @@ class StudentProfileSerializer(serializers.ModelSerializer):
 
         # Convert FK IDs to objects
         for fk_field in ['institution', 'apprenticeStage', 'specialtyGroup',
-                         'specialty', 'workType', 'participationMode']:
+                         'specialty', 'participationMode']:
             if fk_field in validated_data:
                 fk_id = validated_data[fk_field]
                 if fk_id:
@@ -679,7 +701,7 @@ class StudentProfileSerializer(serializers.ModelSerializer):
             instance.specialtyGroups.set(sg_objects)
 
         return instance
-    
+
     def get_avatarUrl(self, obj):
         """Return full URL for avatar image."""
         if obj.avatar:
@@ -750,9 +772,7 @@ class MentorProfileSerializer(serializers.ModelSerializer):
         write_only=True
     )
     specialties_detail = SpecialtySerializer(source='specialties', many=True, read_only=True)
-    researchInterests_detail = ResearchInterestSerializer(
-        source='researchInterests', read_only=True
-    )
+    researchInterests_detail = serializers.SerializerMethodField()
     institution_detail = InstitutionSerializer(source='institution', read_only=True)
     degrees_detail = DegreeSerializer(source='degrees', many=True, read_only=True)
     
@@ -770,7 +790,7 @@ class MentorProfileSerializer(serializers.ModelSerializer):
         write_only=True
     )
     specialty = serializers.CharField(required=False, allow_null=True, allow_blank=True)
-    researchInterests = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    researchInterests = serializers.CharField(required=False, allow_null=True, allow_blank=True, max_length=500)
     institution = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     
     # Write-only field for accepting degree names from frontend
@@ -862,7 +882,6 @@ class MentorProfileSerializer(serializers.ModelSerializer):
             'academicRank': AcademicRank,
             'specialtyGroup': SpecialtyGroup,
             'specialty': Specialty,
-            'researchInterests': ResearchInterest,
             'institution': Institution,
         }
 
@@ -879,7 +898,7 @@ class MentorProfileSerializer(serializers.ModelSerializer):
                     data[field_name] = new_inst.id
                 else:
                     data[field_name] = None
-        
+
         # Convert degrees list from text to IDs
         if 'degrees' in data and data['degrees']:
             degree_ids = []
@@ -924,7 +943,7 @@ class MentorProfileSerializer(serializers.ModelSerializer):
         specialty_groups_data = validated_data.pop('specialtyGroups', [])
 
         # Convert FK IDs to objects
-        for fk_field in ['academicRank', 'specialtyGroup', 'specialty', 'researchInterests', 'institution']:
+        for fk_field in ['academicRank', 'specialtyGroup', 'specialty', 'institution']:
             if fk_field in validated_data and validated_data[fk_field]:
                 fk_id = validated_data[fk_field]
                 model_class = self.Meta.model._meta.get_field(fk_field).related_model
@@ -960,7 +979,7 @@ class MentorProfileSerializer(serializers.ModelSerializer):
         specialty_groups_data = validated_data.pop('specialtyGroups', None)
 
         # Convert FK IDs to objects
-        for fk_field in ['academicRank', 'specialtyGroup', 'specialty', 'researchInterests', 'institution']:
+        for fk_field in ['academicRank', 'specialtyGroup', 'specialty', 'institution']:
             if fk_field in validated_data:
                 fk_id = validated_data[fk_field]
                 if fk_id:
@@ -995,7 +1014,7 @@ class MentorProfileSerializer(serializers.ModelSerializer):
             instance.specialtyGroups.set(sg_objects)
 
         return instance
-    
+
     def get_avatarUrl(self, obj):
         """Return full URL for avatar image."""
         if obj.avatar:
@@ -1004,6 +1023,13 @@ class MentorProfileSerializer(serializers.ModelSerializer):
                 return request.build_absolute_uri(obj.avatar.url)
             return obj.avatar.url
         return None
+
+    def get_researchInterests_detail(self, obj):
+        """Return backward-compatible dict for free-text researchInterests."""
+        text = obj.researchInterests or ''
+        if not text:
+            return None
+        return {"name": text, "name_he": text}
 
     def get_activeResearches(self, obj):
         from apps.research.models import Research, ResearchApplication
@@ -1188,6 +1214,7 @@ class PublicStudentDetailSerializer(StudentProfileSerializer):
     userId = serializers.CharField(source='user.id', read_only=True)
     gender = serializers.CharField(source='user.gender', read_only=True)
     genderDisplay = serializers.SerializerMethodField(read_only=True)
+    recommendations = PublicRecommendationSerializer(many=True, read_only=True)
 
     class Meta(StudentProfileSerializer.Meta):
         fields = [
@@ -1220,6 +1247,7 @@ class PublicMentorDetailSerializer(MentorProfileSerializer):
     userId = serializers.CharField(source='user.id', read_only=True)
     gender = serializers.CharField(source='user.gender', read_only=True)
     genderDisplay = serializers.SerializerMethodField(read_only=True)
+    recommendations = PublicRecommendationSerializer(many=True, read_only=True)
 
     class Meta(MentorProfileSerializer.Meta):
         fields = [
