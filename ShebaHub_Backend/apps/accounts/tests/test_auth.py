@@ -29,7 +29,7 @@ class SignupTestCase(APITestCase):
             'confirmPassword': 'StrongPassword123!',
             'firstName': 'John',
             'lastName': 'Doe',
-            'gender': 'man',
+            'gender': 'male',
         }
     
     def test_signup_success(self):

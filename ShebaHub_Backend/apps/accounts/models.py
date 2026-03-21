@@ -54,8 +54,8 @@ class User(AbstractBaseUser, PermissionsMixin):
     """
     
     class Gender(models.TextChoices):
-        MAN = 'man', 'זכר'
-        WOMAN = 'woman', 'נקבה'
+        MALE = 'male', 'זכר'
+        FEMALE = 'female', 'נקבה'
         OTHER = 'other', 'אחר'
     
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)

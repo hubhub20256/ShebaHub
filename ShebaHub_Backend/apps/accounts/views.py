@@ -76,7 +76,7 @@ audit_logger = logging.getLogger('audit')
                 "confirmPassword": "StrongPassword123!",
                 "firstName": "Yonatan",
                 "lastName": "Elman",
-                "gender": "man"
+                "gender": "male"
             },
             request_only=True
         ),
@@ -105,7 +105,7 @@ def signup_view(request):
         "confirmPassword": "StrongPassword123!",
         "firstName": "Yonatan",
         "lastName": "Elman",
-        "gender": "man"  // optional: man/woman/other
+        "gender": "male"  // optional: male/female/other
     }
 
     Response:

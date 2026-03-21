@@ -63,7 +63,7 @@ class TestPasswordMinimumLength:
             'email': 'shortpass@example.com',
             'firstName': 'Test',
             'lastName': 'User',
-            'gender': 'man',
+            'gender': 'male',
             'password': 'Ab1!xy',  # 6 chars
             'confirmPassword': 'Ab1!xy',
         }, format='json')
@@ -76,7 +76,7 @@ class TestPasswordMinimumLength:
             'email': 'goodpass@example.com',
             'firstName': 'Test',
             'lastName': 'User',
-            'gender': 'man',
+            'gender': 'male',
             'password': 'xK9m!pQw',
             'confirmPassword': 'xK9m!pQw',
         }, format='json')

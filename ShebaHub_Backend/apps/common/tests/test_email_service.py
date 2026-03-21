@@ -32,7 +32,7 @@ SIGNUP_PAYLOAD = {
     "confirmPassword": STRONG_PASSWORD,
     "firstName": "New",
     "lastName": "User",
-    "gender": "man",
+    "gender": "male",
 }
 
 

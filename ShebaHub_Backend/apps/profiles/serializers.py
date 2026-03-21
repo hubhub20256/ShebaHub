@@ -1112,9 +1112,9 @@ class PublicMentorSerializer(serializers.ModelSerializer):
 
     def get_genderDisplay(self, obj):
         value = getattr(obj.user, 'gender', None)
-        if value == 'man':
+        if value == 'male':
             return 'זכר'
-        if value == 'woman':
+        if value == 'female':
             return 'נקבה'
         if value == 'other':
             return 'אחר'
@@ -1177,9 +1177,9 @@ class PublicStudentSerializer(serializers.ModelSerializer):
 
     def get_genderDisplay(self, obj):
         value = getattr(obj.user, 'gender', None)
-        if value == 'man':
+        if value == 'male':
             return 'זכר'
-        if value == 'woman':
+        if value == 'female':
             return 'נקבה'
         if value == 'other':
             return 'אחר'
@@ -1231,9 +1231,9 @@ class PublicStudentDetailSerializer(StudentProfileSerializer):
 
     def get_genderDisplay(self, obj):
         value = getattr(obj.user, 'gender', None)
-        if value == 'man':
+        if value == 'male':
             return 'זכר'
-        if value == 'woman':
+        if value == 'female':
             return 'נקבה'
         if value == 'other':
             return 'אחר'
@@ -1264,9 +1264,9 @@ class PublicMentorDetailSerializer(MentorProfileSerializer):
 
     def get_genderDisplay(self, obj):
         value = getattr(obj.user, 'gender', None)
-        if value == 'man':
+        if value == 'male':
             return 'זכר'
-        if value == 'woman':
+        if value == 'female':
             return 'נקבה'
         if value == 'other':
             return 'אחר'
