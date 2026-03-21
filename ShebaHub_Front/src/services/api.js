@@ -376,6 +376,9 @@ const buildResearchFormData = (data, options = {}) => {
   if (Array.isArray(data.compensation) && data.compensation.length > 0) {
     formData.append('compensation', JSON.stringify(data.compensation));
   }
+  if (Array.isArray(data.academicTracks) && data.academicTracks.length > 0) {
+    formData.append('academic_tracks', JSON.stringify(data.academicTracks));
+  }
   appendIfPresent('workMode', data.workMode);
   appendIfPresent('requirements', data.requirements);
   appendIfPresent('skillsAndTools', data.skillsAndTools);

@@ -314,13 +314,18 @@ export default function Research() {
   }, [data]);
 
   const academicTracks = useMemo(() => {
-    const tracks = data?.academicTracks;
+    const tracks = data?.academic_tracks || data?.academicTracks;
     if (!tracks) return [];
+    if (typeof tracks === 'string') {
+      try {
+        const parsed = JSON.parse(tracks);
+        if (Array.isArray(parsed)) return parsed.filter(Boolean);
+      } catch (e) {
+        return tracks.split(",").map((x) => String(x).trim()).filter(Boolean);
+      }
+    }
     if (Array.isArray(tracks)) return tracks.filter(Boolean);
-    return String(tracks)
-      .split(",")
-      .map((x) => x.trim())
-      .filter(Boolean);
+    return [];
   }, [data]);
 
   /**
