@@ -417,6 +417,14 @@ const DesktopNavbar = () => {
                 >
                   מחקרים
                 </Link>
+
+                <Link
+                  to="/tasks"
+                  className="navbar-link"
+                  style={{ color: "var(--text-color)" }}
+                >
+                  ניהול משימות
+                </Link>
               </>
             )}
 
@@ -683,6 +691,15 @@ const MobileNavbar = () => {
                   style={{ color: "var(--text-color)" }}
                 >
                   מחקרים
+                </Link>
+
+                <Link
+                  to="/tasks"
+                  className="navbar-link"
+                  onClick={closeAll}
+                  style={{ color: "var(--text-color)" }}
+                >
+                  ניהול משימות
                 </Link>
               </>
             )}

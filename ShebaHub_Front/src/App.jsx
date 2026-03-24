@@ -24,6 +24,7 @@ import {
   VerifyEmail,
   Notifications,
   AdminDashboard,
+  TaskManager,
 } from "./pages";
 
 import RequireAuth from "./components/RequireAuth.jsx";
@@ -67,6 +68,7 @@ function App() {
         <Route path="/mentors" element={<Mentors />} />
         <Route path="/researches" element={<Researches />} />
         <Route path="/my-researches" element={<RequireProfile><MyResearches /></RequireProfile>} />
+        <Route path="/tasks" element={<RequireAuth><TaskManager /></RequireAuth>} />
         <Route path="/create-profile" element={<RequireAuth><CreateProfile /></RequireAuth>} />
         <Route
           path="/create-research"
