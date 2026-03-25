@@ -10,6 +10,7 @@ import {
 } from "react-icons/fa";
 import { useAuth } from "../context/AuthContext";
 import usePageTitle from "../hooks/usePageTitle";
+import useMediaQuery from "../hooks/useMediaQuery";
 import { researchAPI } from "../services/api";
 import {
   buildMockSeedTasks,
@@ -76,6 +77,7 @@ function createTask({
 export default function TaskManagement() {
   usePageTitle("ניהול משימות");
   const { user } = useAuth();
+  const isMobile = useMediaQuery("(max-width: 768px)");
   const currentUser = getCurrentUserLabel(user);
   const storageKey = useMemo(() => getResearchBoardStorageKey(user), [user]);
 
@@ -85,13 +87,13 @@ export default function TaskManagement() {
   const [selectedResearchId, setSelectedResearchId] = useState("");
   const [boardsByResearch, setBoardsByResearch] = useState({});
 
-    const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
+  const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
 
   const [filterPriority, setFilterPriority] = useState("all");
   const [filterAssignment, setFilterAssignment] = useState("all");
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
 
-    const [form, setForm] = useState({
+  const [form, setForm] = useState({
     title: "",
     assignmentType: "manager_to_apprentice",
     assigneeName: "",
@@ -102,6 +104,8 @@ export default function TaskManagement() {
 
   const [threadDrafts, setThreadDrafts] = useState({});
   const [expandedTaskIds, setExpandedTaskIds] = useState({});
+  const [draggingTaskId, setDraggingTaskId] = useState(null);
+  const [dragOverStatus, setDragOverStatus] = useState("");
 
   useEffect(() => {
     let cancelled = false;
@@ -367,6 +371,43 @@ export default function TaskManagement() {
       ...prev,
       [taskId]: prev[taskId] !== false ? false : true,
     }));
+  };
+
+  const handleTaskDragStart = (e, taskId) => {
+    setDraggingTaskId(taskId);
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", String(taskId));
+  };
+
+  const handleTaskDragEnd = () => {
+    setDraggingTaskId(null);
+    setDragOverStatus("");
+  };
+
+  const handleColumnDragOver = (e, statusKey) => {
+    if (isMobile) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    setDragOverStatus(statusKey);
+  };
+
+  const handleColumnDrop = (e, targetStatus) => {
+    if (isMobile) return;
+    e.preventDefault();
+    const taskId =
+      e.dataTransfer.getData("text/plain") || String(draggingTaskId || "");
+    if (!taskId) return;
+
+    const existsInTarget = tasks.some(
+      (task) =>
+        String(task.id) === String(taskId) && task.status === targetStatus,
+    );
+    if (!existsInTarget) {
+      setTaskStatus(taskId, targetStatus);
+    }
+
+    setDraggingTaskId(null);
+    setDragOverStatus("");
   };
 
   const filteredTasks = useMemo(
@@ -647,9 +688,24 @@ export default function TaskManagement() {
               </label>
             </div>
 
+            {!isMobile && (
+              <p className="task-dnd-hint">
+                גררו משימות בין העמודות כדי לשנות סטטוס.
+              </p>
+            )}
+
             <section className="task-board" aria-label="לוח משימות">
               {Object.entries(columns).map(([statusKey, items]) => (
-                <article key={statusKey} className="task-column">
+                <article
+                  key={statusKey}
+                  className={`task-column ${dragOverStatus === statusKey ? "task-column-drag-over" : ""}`}
+                  onDragOver={(e) => handleColumnDragOver(e, statusKey)}
+                  onDragEnter={(e) => handleColumnDragOver(e, statusKey)}
+                  onDrop={(e) => handleColumnDrop(e, statusKey)}
+                  onDragLeave={() => {
+                    if (dragOverStatus === statusKey) setDragOverStatus("");
+                  }}
+                >
                   <header className="task-column-head">
                     <h3>{STATUS_OPTIONS[statusKey]}</h3>
                     <span>{items.length}</span>
@@ -664,6 +720,9 @@ export default function TaskManagement() {
                       <div
                         className={`task-card priority-${task.priority}`}
                         key={task.id}
+                        draggable={!isMobile}
+                        onDragStart={(e) => handleTaskDragStart(e, task.id)}
+                        onDragEnd={handleTaskDragEnd}
                       >
                         <div className="task-card-head">
                           <div className="task-card-head-main">
@@ -712,34 +771,36 @@ export default function TaskManagement() {
                             </p>
                           )}
 
-                          <div className="task-actions">
-                            <button
-                              type="button"
-                              onClick={() =>
-                                setTaskStatus(task.id, "completed")
-                              }
-                            >
-                              <FaCheckCircle />
-                              הושלמה
-                            </button>
-                            <button
-                              type="button"
-                              className="warning"
-                              onClick={() =>
-                                setTaskStatus(task.id, "needs_help")
-                              }
-                            >
-                              <FaExclamationCircle />
-                              צריך עזרה
-                            </button>
-                            <button
-                              type="button"
-                              className="ghost"
-                              onClick={() => setTaskStatus(task.id, "open")}
-                            >
-                              חזרה לביצוע
-                            </button>
-                          </div>
+                          {isMobile && (
+                            <div className="task-actions">
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setTaskStatus(task.id, "completed")
+                                }
+                              >
+                                <FaCheckCircle />
+                                הושלמה
+                              </button>
+                              <button
+                                type="button"
+                                className="warning"
+                                onClick={() =>
+                                  setTaskStatus(task.id, "needs_help")
+                                }
+                              >
+                                <FaExclamationCircle />
+                                צריך עזרה
+                              </button>
+                              <button
+                                type="button"
+                                className="ghost"
+                                onClick={() => setTaskStatus(task.id, "open")}
+                              >
+                                חזרה לביצוע
+                              </button>
+                            </div>
+                          )}
 
                           <section
                             className="task-thread"
