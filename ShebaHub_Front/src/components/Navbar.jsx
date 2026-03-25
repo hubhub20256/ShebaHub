@@ -129,7 +129,8 @@ const VerificationBanner = () => {
     return () => clearInterval(id);
   }, [cooldownLeft]);
 
-  if (!user || user.email_verified || !user.require_email_verification) return null;
+  if (!user || user.email_verified || !user.require_email_verification)
+    return null;
 
   const handleResend = async () => {
     setSending(true);
@@ -254,35 +255,35 @@ const ProfileMenu = ({ closeParentMenu, onOpen, isOpen }) => {
   // Close dropdown on ESC key
   useEffect(() => {
     const handleEsc = (e) => {
-      if (e.key === 'Escape') {
+      if (e.key === "Escape") {
         if (isControlled) onOpen(false);
         else setLocalIsOpen(false);
       }
     };
     if (showMenu) {
-      document.addEventListener('keydown', handleEsc);
+      document.addEventListener("keydown", handleEsc);
     }
-    return () => document.removeEventListener('keydown', handleEsc);
+    return () => document.removeEventListener("keydown", handleEsc);
   }, [showMenu, isControlled, onOpen]);
 
   // Flip dropdown if it overflows the viewport edges
   useEffect(() => {
     if (showMenu && menuRef.current) {
-      const dropdown = menuRef.current.querySelector('.profile-dropdown');
+      const dropdown = menuRef.current.querySelector(".profile-dropdown");
       if (dropdown) {
         // Reset styles before measuring
-        dropdown.style.right = '';
-        dropdown.style.left = '';
+        dropdown.style.right = "";
+        dropdown.style.left = "";
         const rect = dropdown.getBoundingClientRect();
         // Fix left overflow (common in RTL when icon is near left edge)
         if (rect.left < 0) {
-          dropdown.style.right = 'auto';
-          dropdown.style.left = '0';
+          dropdown.style.right = "auto";
+          dropdown.style.left = "0";
         }
         // Fix right overflow
         if (rect.right > window.innerWidth) {
-          dropdown.style.left = 'auto';
-          dropdown.style.right = '0';
+          dropdown.style.left = "auto";
+          dropdown.style.right = "0";
         }
       }
     }
@@ -327,6 +328,14 @@ const ProfileMenu = ({ closeParentMenu, onOpen, isOpen }) => {
             onClick={closeParentMenu}
           >
             המחקרים שלי
+          </Link>
+
+          <Link
+            to="/task-management"
+            className="navbar-link profile-dropdown-link"
+            onClick={closeParentMenu}
+          >
+            ניהול משימות
           </Link>
 
           {isMentor && (
@@ -376,7 +385,11 @@ const DesktopNavbar = () => {
       >
         <div className="navbar-logo-container">
           <Link to="/">
-            <img src={ShebaNavbarLogo} alt="Logo" className="navbar-logo-image" />
+            <img
+              src={ShebaNavbarLogo}
+              alt="Logo"
+              className="navbar-logo-image"
+            />
           </Link>
         </div>
 
@@ -490,19 +503,19 @@ const MobileNavbar = () => {
   const { user, logout } = useAuth();
 
   // Single state: 'none', 'profile', or 'menu'
-  const [activeMenu, setActiveMenu] = useState('none');
+  const [activeMenu, setActiveMenu] = useState("none");
   const [isMentor, setIsMentor] = useState(false);
 
   const toggleHamburger = () => {
-    setActiveMenu((prev) => (prev === 'menu' ? 'none' : 'menu'));
+    setActiveMenu((prev) => (prev === "menu" ? "none" : "menu"));
   };
 
   const toggleProfile = () => {
-    setActiveMenu((prev) => (prev === 'profile' ? 'none' : 'profile'));
+    setActiveMenu((prev) => (prev === "profile" ? "none" : "profile"));
   };
 
   const closeAll = () => {
-    setActiveMenu('none');
+    setActiveMenu("none");
   };
 
   // Check if user is mentor
@@ -518,230 +531,243 @@ const MobileNavbar = () => {
     /* eslint-enable react-hooks/set-state-in-effect */
   }, [user]);
 
-  const isMenuOpen = activeMenu === 'menu';
-  const isProfileOpen = activeMenu === 'profile';
-  const isAnyOpen = activeMenu !== 'none';
+  const isMenuOpen = activeMenu === "menu";
+  const isProfileOpen = activeMenu === "profile";
+  const isAnyOpen = activeMenu !== "none";
 
   return (
     <>
-    <nav
-      className="navbar mobile-view"
-      style={{
-        backgroundColor: "var(--bg-color)",
-        borderBottom: "1px solid var(--border-color)",
-      }}
-    >
-      <div className="navbar-logo-container">
-        <Link to="/" onClick={closeAll}>
-          <img src={ShebaNavbarLogo} alt="Logo" className="navbar-logo-image" />
-        </Link>
-      </div>
-
-      <div className="mobile-actions">
-        {/* כפתור מצב לילה למובייל */}
-        <ThemeToggle />
-
-        {/* Bell icon for notifications */}
-        {user && <NotificationBell />}
-
-        {/* Profile Icon Button */}
-        {user && (
-          <button
-            className="mobile-profile-btn"
-            onClick={toggleProfile}
-            aria-label="תפריט פרופיל"
-            style={{
-              background: "transparent",
-              border: "none",
-              cursor: "pointer",
-              padding: 0,
-            }}
-          >
-            <img
-              src={UserProfileIcon}
-              alt="User Profile"
-              className="navbar-profile-icon"
-              style={{
-                width: "30px",
-                height: "30px",
-                objectFit: "contain",
-                borderRadius: "50%",
-              }}
-            />
-          </button>
-        )}
-
-        <button
-          className={`hamburger-menu ${isMenuOpen ? "open" : ""}`}
-          onClick={toggleHamburger}
-          aria-label={isMenuOpen ? "סגור תפריט" : "פתח תפריט"}
-          aria-expanded={isMenuOpen}
-          style={{ color: "var(--text-color)" }}
-        >
-          <span
-            className="hamburger-line"
-            style={{ backgroundColor: "var(--text-color)" }}
-          ></span>
-          <span
-            className="hamburger-line"
-            style={{ backgroundColor: "var(--text-color)" }}
-          ></span>
-          <span
-            className="hamburger-line"
-            style={{ backgroundColor: "var(--text-color)" }}
-          ></span>
-        </button>
-      </div>
-
-      {/* Single Dropdown Container - switches content based on activeMenu */}
-      <div
-        className={`mobile-dropdown ${isAnyOpen ? "active" : ""}`}
-        style={{ backgroundColor: "var(--bg-color)" }}
+      <nav
+        className="navbar mobile-view"
+        style={{
+          backgroundColor: "var(--bg-color)",
+          borderBottom: "1px solid var(--border-color)",
+        }}
       >
-        {/* Profile Links */}
-        {isProfileOpen && user && (
-          <>
-            <Link
-              to={`/user/${user.id || "me"}`}
-              className="navbar-link"
-              onClick={closeAll}
-              style={{ color: "var(--text-color)" }}
-            >
-              הפרופיל האישי
-            </Link>
+        <div className="navbar-logo-container">
+          <Link to="/" onClick={closeAll}>
+            <img
+              src={ShebaNavbarLogo}
+              alt="Logo"
+              className="navbar-logo-image"
+            />
+          </Link>
+        </div>
 
-            <Link
-              to="/my-researches"
-              className="navbar-link"
-              onClick={closeAll}
-              style={{ color: "var(--text-color)" }}
-            >
-              המחקרים שלי
-            </Link>
+        <div className="mobile-actions">
+          {/* כפתור מצב לילה למובייל */}
+          <ThemeToggle />
 
-            {isMentor && (
-              <Link
-                to="/create-research"
-                className="navbar-link"
-                onClick={closeAll}
-                style={{ color: "var(--text-color)" }}
-              >
-                ליצירת מחקר
-              </Link>
-            )}
+          {/* Bell icon for notifications */}
+          {user && <NotificationBell />}
 
-            <Link
-              to="/"
-              className="navbar-link profile-logout-link"
-              onClick={(e) => {
-                e.preventDefault();
-                logout();
-                closeAll();
+          {/* Profile Icon Button */}
+          {user && (
+            <button
+              className="mobile-profile-btn"
+              onClick={toggleProfile}
+              aria-label="תפריט פרופיל"
+              style={{
+                background: "transparent",
+                border: "none",
+                cursor: "pointer",
+                padding: 0,
               }}
             >
-              התנתקות
-            </Link>
-          </>
-        )}
+              <img
+                src={UserProfileIcon}
+                alt="User Profile"
+                className="navbar-profile-icon"
+                style={{
+                  width: "30px",
+                  height: "30px",
+                  objectFit: "contain",
+                  borderRadius: "50%",
+                }}
+              />
+            </button>
+          )}
 
-        {/* Navigation Links */}
-        {isMenuOpen && (
-          <>
-            <Link
-              to="/"
-              className="navbar-link"
-              onClick={closeAll}
-              style={{ color: "var(--text-color)" }}
-            >
-              דף בית
-            </Link>
+          <button
+            className={`hamburger-menu ${isMenuOpen ? "open" : ""}`}
+            onClick={toggleHamburger}
+            aria-label={isMenuOpen ? "סגור תפריט" : "פתח תפריט"}
+            aria-expanded={isMenuOpen}
+            style={{ color: "var(--text-color)" }}
+          >
+            <span
+              className="hamburger-line"
+              style={{ backgroundColor: "var(--text-color)" }}
+            ></span>
+            <span
+              className="hamburger-line"
+              style={{ backgroundColor: "var(--text-color)" }}
+            ></span>
+            <span
+              className="hamburger-line"
+              style={{ backgroundColor: "var(--text-color)" }}
+            ></span>
+          </button>
+        </div>
 
-            {user && (
-              <>
-                <Link
-                  to="/mentors"
-                  className="navbar-link"
-                  onClick={closeAll}
-                  style={{ color: "var(--text-color)" }}
-                >
-                  מנחים
-                </Link>
-
-                <Link
-                  to="/apprentices"
-                  className="navbar-link"
-                  onClick={closeAll}
-                  style={{ color: "var(--text-color)" }}
-                >
-                  מתלמדים
-                </Link>
-
-                <Link
-                  to="/researches"
-                  className="navbar-link"
-                  onClick={closeAll}
-                  style={{ color: "var(--text-color)" }}
-                >
-                  מחקרים
-                </Link>
-              </>
-            )}
-
-            <Link
-              to="/about"
-              className="navbar-link"
-              onClick={closeAll}
-              style={{ color: "var(--text-color)" }}
-            >
-              אודותינו
-            </Link>
-
-            {user?.is_staff && (
+        {/* Single Dropdown Container - switches content based on activeMenu */}
+        <div
+          className={`mobile-dropdown ${isAnyOpen ? "active" : ""}`}
+          style={{ backgroundColor: "var(--bg-color)" }}
+        >
+          {/* Profile Links */}
+          {isProfileOpen && user && (
+            <>
               <Link
-                to="/admin"
+                to={`/user/${user.id || "me"}`}
                 className="navbar-link"
                 onClick={closeAll}
                 style={{ color: "var(--text-color)" }}
               >
-                ניהול
+                הפרופיל האישי
               </Link>
-            )}
 
-            {!user && (
-              <>
+              <Link
+                to="/my-researches"
+                className="navbar-link"
+                onClick={closeAll}
+                style={{ color: "var(--text-color)" }}
+              >
+                המחקרים שלי
+              </Link>
+
+              <Link
+                to="/task-management"
+                className="navbar-link"
+                onClick={closeAll}
+                style={{ color: "var(--text-color)" }}
+              >
+                ניהול משימות
+              </Link>
+
+              {isMentor && (
                 <Link
-                  to="/login"
+                  to="/create-research"
                   className="navbar-link"
                   onClick={closeAll}
                   style={{ color: "var(--text-color)" }}
                 >
-                  התחברות
+                  ליצירת מחקר
                 </Link>
+              )}
+
+              <Link
+                to="/"
+                className="navbar-link profile-logout-link"
+                onClick={(e) => {
+                  e.preventDefault();
+                  logout();
+                  closeAll();
+                }}
+              >
+                התנתקות
+              </Link>
+            </>
+          )}
+
+          {/* Navigation Links */}
+          {isMenuOpen && (
+            <>
+              <Link
+                to="/"
+                className="navbar-link"
+                onClick={closeAll}
+                style={{ color: "var(--text-color)" }}
+              >
+                דף בית
+              </Link>
+
+              {user && (
+                <>
+                  <Link
+                    to="/mentors"
+                    className="navbar-link"
+                    onClick={closeAll}
+                    style={{ color: "var(--text-color)" }}
+                  >
+                    מנחים
+                  </Link>
+
+                  <Link
+                    to="/apprentices"
+                    className="navbar-link"
+                    onClick={closeAll}
+                    style={{ color: "var(--text-color)" }}
+                  >
+                    מתלמדים
+                  </Link>
+
+                  <Link
+                    to="/researches"
+                    className="navbar-link"
+                    onClick={closeAll}
+                    style={{ color: "var(--text-color)" }}
+                  >
+                    מחקרים
+                  </Link>
+                </>
+              )}
+
+              <Link
+                to="/about"
+                className="navbar-link"
+                onClick={closeAll}
+                style={{ color: "var(--text-color)" }}
+              >
+                אודותינו
+              </Link>
+
+              {user?.is_staff && (
                 <Link
-                  to="/register"
-                  className="navbar-cta"
+                  to="/admin"
+                  className="navbar-link"
                   onClick={closeAll}
-                  style={{
-                    background: "#1b2a4a",
-                    color: "white",
-                    padding: "8px 20px",
-                    borderRadius: "20px",
-                    fontWeight: 700,
-                    textDecoration: "none",
-                    textAlign: "center",
-                    display: "inline-block",
-                    marginTop: "4px",
-                  }}
+                  style={{ color: "var(--text-color)" }}
                 >
-                  הרשמה
+                  ניהול
                 </Link>
-              </>
-            )}
-          </>
-        )}
-      </div>
-    </nav>
-    <VerificationBanner />
+              )}
+
+              {!user && (
+                <>
+                  <Link
+                    to="/login"
+                    className="navbar-link"
+                    onClick={closeAll}
+                    style={{ color: "var(--text-color)" }}
+                  >
+                    התחברות
+                  </Link>
+                  <Link
+                    to="/register"
+                    className="navbar-cta"
+                    onClick={closeAll}
+                    style={{
+                      background: "#1b2a4a",
+                      color: "white",
+                      padding: "8px 20px",
+                      borderRadius: "20px",
+                      fontWeight: 700,
+                      textDecoration: "none",
+                      textAlign: "center",
+                      display: "inline-block",
+                      marginTop: "4px",
+                    }}
+                  >
+                    הרשמה
+                  </Link>
+                </>
+              )}
+            </>
+          )}
+        </div>
+      </nav>
+      <VerificationBanner />
     </>
   );
 };
@@ -753,6 +779,5 @@ const Navbar = () => {
   const isDesktop = useMediaQuery("(min-width: 769px)");
   return isDesktop ? <DesktopNavbar /> : <MobileNavbar />;
 };
-
 
 export default Navbar;

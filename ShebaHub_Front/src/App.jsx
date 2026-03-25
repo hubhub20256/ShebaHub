@@ -24,6 +24,7 @@ import {
   VerifyEmail,
   Notifications,
   AdminDashboard,
+  TaskManagement,
 } from "./pages";
 
 import RequireAuth from "./components/RequireAuth.jsx";
@@ -54,20 +55,70 @@ function App() {
         {/* Dynamic Routes */}
         <Route path="/user/:id" element={<Profile />} />
         <Route path="/research/:id" element={<Research />} />
-        <Route path="/register" element={<RedirectIfAuth><Register /></RedirectIfAuth>} />
-        <Route path="/login" element={<RedirectIfAuth><Login /></RedirectIfAuth>} />
-        <Route path="/forgot-password" element={<RedirectIfAuth><ForgotPassword /></RedirectIfAuth>} />
+        <Route
+          path="/register"
+          element={
+            <RedirectIfAuth>
+              <Register />
+            </RedirectIfAuth>
+          }
+        />
+        <Route
+          path="/login"
+          element={
+            <RedirectIfAuth>
+              <Login />
+            </RedirectIfAuth>
+          }
+        />
+        <Route
+          path="/forgot-password"
+          element={
+            <RedirectIfAuth>
+              <ForgotPassword />
+            </RedirectIfAuth>
+          }
+        />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/verify-email" element={<VerifyEmail />} />
-        <Route path="/notifications" element={<RequireAuth><Notifications /></RequireAuth>} />
+        <Route
+          path="/notifications"
+          element={
+            <RequireAuth>
+              <Notifications />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/task-management"
+          element={
+            <RequireAuth>
+              <TaskManagement />
+            </RequireAuth>
+          }
+        />
 
         {/* Static Content Pages */}
         <Route path="/about" element={<About />} />
         <Route path="/apprentices" element={<Apprentices />} />
         <Route path="/mentors" element={<Mentors />} />
         <Route path="/researches" element={<Researches />} />
-        <Route path="/my-researches" element={<RequireProfile><MyResearches /></RequireProfile>} />
-        <Route path="/create-profile" element={<RequireAuth><CreateProfile /></RequireAuth>} />
+        <Route
+          path="/my-researches"
+          element={
+            <RequireProfile>
+              <MyResearches />
+            </RequireProfile>
+          }
+        />
+        <Route
+          path="/create-profile"
+          element={
+            <RequireAuth>
+              <CreateProfile />
+            </RequireAuth>
+          }
+        />
         <Route
           path="/create-research"
           element={
@@ -90,7 +141,14 @@ function App() {
         />
 
         {/* Admin panel */}
-        <Route path="/admin" element={<RequireAdmin><AdminDashboard /></RequireAdmin>} />
+        <Route
+          path="/admin"
+          element={
+            <RequireAdmin>
+              <AdminDashboard />
+            </RequireAdmin>
+          }
+        />
 
         {/* 404 catch-all */}
         <Route path="*" element={<NotFound />} />
