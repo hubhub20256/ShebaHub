@@ -35,27 +35,129 @@ export function listMockResearchMemberships(user) {
 
 export function getResearchBoardStorageKey(user) {
   const scope = user?.id ? `u-${user.id}` : "guest";
-  return `shebahub-task-board-by-research-v1:${scope}`;
+  return `shebahub-task-board-by-research-v2:${scope}`;
 }
 
 export function buildMockSeedTasks(research, currentUser) {
   const now = Date.now();
-  return [
-    {
-      id: `${research.id}-seed-1`,
-      title: "איסוף מקורות ראשוני",
-      assignmentType: "manager_to_apprentice",
-      assigneeName: currentUser,
-      priority: "medium",
-      dueDate: new Date(now + 6 * 24 * 60 * 60 * 1000)
+  const seedTemplates = [
+    [
+      "איסוף מקורות ראשוני",
+      "medium",
+      "open",
+      6,
+      "בניית רשימת מאמרים עדכניים וריכוז ממצאים עיקריים.",
+    ],
+    [
+      "מיפוי שאלות מחקר",
+      "high",
+      "open",
+      3,
+      "גיבוש 5 שאלות ליבה ומדדי הצלחה לכל שאלה.",
+    ],
+    [
+      "בניית טבלת נתונים",
+      "medium",
+      "open",
+      8,
+      "הגדרת שדות, פורמט אחיד, וחוקי איכות נתונים.",
+    ],
+    [
+      "תיאום ישיבת סטטוס",
+      "low",
+      "completed",
+      -1,
+      "עדכון התקדמות שבועי מול צוות המחקר.",
+    ],
+    [
+      "טיוטת פרק מבוא",
+      "high",
+      "needs_help",
+      2,
+      "כתיבת פרק מבוא עם 3 מקורות מרכזיים.",
+    ],
+    [
+      "בדיקות עקביות נתונים",
+      "medium",
+      "open",
+      5,
+      "זיהוי חריגות ויישור ערכים חסרים.",
+    ],
+    [
+      "סיכום ממצאים ביניים",
+      "medium",
+      "completed",
+      -2,
+      "סיכום תובנות ביניים עבור המנחה.",
+    ],
+    ["הכנת מצגת לצוות", "low", "open", 9, "מצגת קצרה עם KPI והמלצות להמשך."],
+    [
+      "ולידציית מודל ראשונית",
+      "high",
+      "needs_help",
+      1,
+      "הרצה על מדגם ובדיקת דיוק ראשוני.",
+    ],
+    ["תיעוד תהליך עבודה", "low", "open", 12, "תיעוד שלבי עבודה וכלי עזר."],
+    [
+      "מעקב משימות שבועי",
+      "medium",
+      "open",
+      4,
+      "עדכון סטטוס יומי וסגירת חסמים.",
+    ],
+    [
+      "ניתוח סטטיסטי בסיסי",
+      "high",
+      "completed",
+      -3,
+      "חישוב מדדים בסיסיים וגרפים תומכים.",
+    ],
+    [
+      "סקירת אתיקה ופרטיות",
+      "medium",
+      "open",
+      7,
+      "בדיקת עמידה בהנחיות פרטיות מידע.",
+    ],
+    [
+      "בדיקת איכות נספחים",
+      "low",
+      "open",
+      10,
+      "ווידוא תקינות קבצים ותיוג נכון.",
+    ],
+    ["תכנון ניסוי המשך", "high", "open", 11, "הצעת ניסוי המשך בהתאם לממצאים."],
+  ];
+
+  return seedTemplates.map(
+    ([title, priority, status, daysDelta, description], idx) => ({
+      id: `${research.id}-seed-${idx + 1}`,
+      title,
+      assignmentType:
+        idx % 3 === 0 ? "self_assignment" : "manager_to_apprentice",
+      assigneeName:
+        idx % 3 === 0 ? currentUser : idx % 2 === 0 ? "מתלמד/ת א" : "מתלמד/ת ב",
+      priority,
+      dueDate: new Date(now + Number(daysDelta) * 24 * 60 * 60 * 1000)
         .toISOString()
         .slice(0, 10),
-      description: "בניית רשימת 8-10 מאמרים עדכניים וריכוז ממצאים עיקריים.",
+      description,
       createdBy: "מנהל/ת המחקר",
-      status: "open",
-      thread: [],
+      status,
+      thread:
+        idx % 4 === 0
+          ? [
+              {
+                id: `${research.id}-thread-${idx + 1}`,
+                author: "מנהל/ת המחקר",
+                text: "נא לעדכן סטטוס עד סוף היום.",
+                createdAt: new Date(now - 2 * 60 * 60 * 1000).toISOString(),
+              },
+            ]
+          : [],
       files: [],
-      createdAt: new Date(now).toISOString(),
-    },
-  ];
+      createdAt: new Date(now - idx * 3 * 60 * 60 * 1000).toISOString(),
+    }),
+  );
 }

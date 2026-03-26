@@ -6,6 +6,7 @@ import {
   FaExclamationCircle,
   FaPaperclip,
   FaPlus,
+  FaTrashAlt,
   FaUserTag,
 } from "react-icons/fa";
 import { useAuth } from "../context/AuthContext";
@@ -29,6 +30,8 @@ const STATUS_OPTIONS = {
   completed: "הושלמה",
   needs_help: "צריך עזרה",
 };
+
+const EMPTY_RESEARCH_VALUE = "";
 
 function formatDate(date) {
   if (!date) return "-";
@@ -57,6 +60,7 @@ function createTask({
   dueDate,
   description,
   createdBy,
+  files,
 }) {
   return {
     id: String(Date.now() + Math.floor(Math.random() * 1000)),
@@ -69,7 +73,7 @@ function createTask({
     createdBy,
     status: "open",
     thread: [],
-    files: [],
+    files: Array.isArray(files) ? files : [],
     createdAt: new Date().toISOString(),
   };
 }
@@ -84,14 +88,14 @@ export default function TaskManagement() {
   const [researches, setResearches] = useState([]);
   const [researchesLoading, setResearchesLoading] = useState(false);
   const [researchesError, setResearchesError] = useState("");
-  const [selectedResearchId, setSelectedResearchId] = useState("");
+  const [selectedResearchId, setSelectedResearchId] =
+    useState(EMPTY_RESEARCH_VALUE);
   const [boardsByResearch, setBoardsByResearch] = useState({});
 
   const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
 
   const [filterPriority, setFilterPriority] = useState("all");
   const [filterAssignment, setFilterAssignment] = useState("all");
-  const [isFiltersOpen, setIsFiltersOpen] = useState(false);
 
   const [form, setForm] = useState({
     title: "",
@@ -101,11 +105,18 @@ export default function TaskManagement() {
     dueDate: "",
     description: "",
   });
+  const [createTaskFiles, setCreateTaskFiles] = useState([]);
 
   const [threadDrafts, setThreadDrafts] = useState({});
   const [expandedTaskIds, setExpandedTaskIds] = useState({});
+  const [collapsedColumns, setCollapsedColumns] = useState({
+    open: false,
+    completed: false,
+    needs_help: false,
+  });
   const [draggingTaskId, setDraggingTaskId] = useState(null);
   const [dragOverStatus, setDragOverStatus] = useState("");
+  const [deleteDialogTask, setDeleteDialogTask] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -177,14 +188,14 @@ export default function TaskManagement() {
             prev &&
             merged.some((research) => String(research.id) === String(prev))
           ) {
-            return prev;
+            return String(prev);
           }
-          return merged[0]?.id || "";
+          return merged[0]?.id ? String(merged[0].id) : EMPTY_RESEARCH_VALUE;
         });
       } catch (err) {
         if (cancelled) return;
         setResearches([]);
-        setSelectedResearchId("");
+        setSelectedResearchId(EMPTY_RESEARCH_VALUE);
         setResearchesError(err?.data?.detail || "שגיאה בטעינת מחקרים משויכים");
       } finally {
         if (!cancelled) setResearchesLoading(false);
@@ -233,7 +244,9 @@ export default function TaskManagement() {
 
   const activeResearch = useMemo(
     () =>
-      researches.find((research) => research.id === selectedResearchId) || null,
+      researches.find(
+        (research) => String(research.id) === String(selectedResearchId),
+      ) || null,
     [researches, selectedResearchId],
   );
 
@@ -286,6 +299,18 @@ export default function TaskManagement() {
     setForm((prev) => ({ ...prev, [key]: value }));
   };
 
+  const mapFilesToTaskFiles = (fileList) => {
+    if (!fileList || fileList.length === 0) return [];
+    return Array.from(fileList).map((file) => ({
+      id: String(Date.now() + Math.floor(Math.random() * 1000)),
+      name: file.name,
+      size: file.size,
+      type: file.type || "application/octet-stream",
+      uploadedAt: new Date().toISOString(),
+      uploadedBy: currentUser,
+    }));
+  };
+
   const handleCreateTask = (e) => {
     e.preventDefault();
     if (!form.title.trim() || !form.priority || !form.dueDate) return;
@@ -301,6 +326,7 @@ export default function TaskManagement() {
       dueDate: form.dueDate,
       description: form.description.trim(),
       createdBy: currentUser,
+      files: createTaskFiles,
     });
 
     updateActiveResearchTasks((currentTasks) => [task, ...currentTasks]);
@@ -312,6 +338,8 @@ export default function TaskManagement() {
       dueDate: "",
       description: "",
     });
+    setCreateTaskFiles([]);
+    setIsCreateTaskOpen(false);
   };
 
   const setTaskStatus = (taskId, status) => {
@@ -346,14 +374,7 @@ export default function TaskManagement() {
 
   const addFilesToTask = (taskId, fileList) => {
     if (!fileList || fileList.length === 0) return;
-    const files = Array.from(fileList).map((file) => ({
-      id: String(Date.now() + Math.floor(Math.random() * 100)),
-      name: file.name,
-      size: file.size,
-      type: file.type || "application/octet-stream",
-      uploadedAt: new Date().toISOString(),
-      uploadedBy: currentUser,
-    }));
+    const files = mapFilesToTaskFiles(fileList);
 
     const next = tasks.map((task) =>
       task.id === taskId
@@ -369,7 +390,40 @@ export default function TaskManagement() {
   const toggleTaskExpanded = (taskId) => {
     setExpandedTaskIds((prev) => ({
       ...prev,
-      [taskId]: prev[taskId] !== false ? false : true,
+      [taskId]: prev[taskId] === true ? false : true,
+    }));
+  };
+
+  const askDeleteTask = (task) => {
+    setDeleteDialogTask(task);
+  };
+
+  const confirmDeleteTask = () => {
+    if (!deleteDialogTask?.id) return;
+    const taskId = deleteDialogTask.id;
+    updateActiveResearchTasks((currentTasks) =>
+      currentTasks.filter((task) => task.id !== taskId),
+    );
+
+    setExpandedTaskIds((prev) => {
+      const next = { ...prev };
+      delete next[taskId];
+      return next;
+    });
+
+    setThreadDrafts((prev) => {
+      const next = { ...prev };
+      delete next[taskId];
+      return next;
+    });
+
+    setDeleteDialogTask(null);
+  };
+
+  const toggleColumnCollapsed = (statusKey) => {
+    setCollapsedColumns((prev) => ({
+      ...prev,
+      [statusKey]: !prev[statusKey],
     }));
   };
 
@@ -377,6 +431,18 @@ export default function TaskManagement() {
     setDraggingTaskId(taskId);
     e.dataTransfer.effectAllowed = "move";
     e.dataTransfer.setData("text/plain", String(taskId));
+
+    // Custom single-card drag preview prevents the UI from looking like multiple cards are moving.
+    const sourceEl = e.currentTarget;
+    const preview = sourceEl.cloneNode(true);
+    preview.classList.add("task-drag-preview");
+    preview.style.width = `${sourceEl.offsetWidth}px`;
+    document.body.appendChild(preview);
+    e.dataTransfer.setDragImage(preview, 20, 20);
+
+    requestAnimationFrame(() => {
+      if (preview.parentNode) preview.parentNode.removeChild(preview);
+    });
   };
 
   const handleTaskDragEnd = () => {
@@ -441,6 +507,14 @@ export default function TaskManagement() {
     [tasks],
   );
 
+  const hasActiveFilters =
+    filterPriority !== "all" || filterAssignment !== "all";
+
+  const clearFilters = () => {
+    setFilterPriority("all");
+    setFilterAssignment("all");
+  };
+
   return (
     <div className="task-page" dir="rtl">
       <div className="task-bg-orb task-bg-orb-a" />
@@ -448,11 +522,11 @@ export default function TaskManagement() {
 
       <header className="task-hero">
         <div>
-          <p className="task-hero-kicker">לוח משימות בסגנון Monday</p>
+          <p className="task-hero-kicker">ניהול ממוקד לפי מחקר</p>
           <h1 className="task-hero-title">ניהול משימות מחקר</h1>
           <p className="task-hero-subtitle">
-            הקצאת משימות למתלמדים, משימות עצמאיות, סימון סטטוס מהיר, ושרשור
-            תגובות/קבצים לכל משימה.
+            בחרו מחקר פעיל, סננו במהירות, ונהלו ביצוע/השלמה/בקשת עזרה לכל משימה
+            במקום אחד.
           </p>
         </div>
 
@@ -472,222 +546,92 @@ export default function TaskManagement() {
         </div>
       </header>
 
-      <section
-        className="task-research-switcher"
-        aria-label="בחירת לוח לפי מחקר"
-      >
-        <div className="task-research-switcher-head">
-          <h2>
-            בחירת מחקר פעיל
-            <span className="task-accordion-count">({researches.length})</span>
-          </h2>
-          <p>בחרו את המחקר שברצונכם לעבוד עליו כרגע.</p>
+      <section className="task-filter-panel" aria-label="סינון משימות">
+        <div className="task-filter-head-row">
+          <div className="task-filter-head">
+            <h2>סינון משימות</h2>
+            <p>בחרו מחקר וסינונים כדי למקד את תצוגת הלוח הפעיל.</p>
+          </div>
+
+          <div className="task-filter-actions">
+            <button
+              type="button"
+              className="task-filter-clear-btn"
+              onClick={clearFilters}
+              disabled={!hasActiveFilters}
+            >
+              איפוס סינונים
+            </button>
+          </div>
         </div>
 
-        {researchesLoading && (
-          <p className="task-research-helper">טוען מחקרים משויכים...</p>
-        )}
-
-        {!!researchesError && (
-          <p className="task-research-helper task-research-helper-error">
-            {researchesError}
-          </p>
-        )}
-
-        {!researchesLoading && !researchesError && researches.length > 0 && (
-          <>
-            <div className="task-research-chip-row">
-              {researches.map((research) => (
-                <button
-                  key={research.id}
-                  type="button"
-                  className={`task-research-chip ${String(research.id) === String(selectedResearchId) ? "active" : ""}`}
-                  onClick={() => setSelectedResearchId(research.id)}
-                >
-                  {research.title}
-                </button>
-              ))}
-            </div>
-
-            {activeResearch && (
-              <div className="task-research-meta">
-                <span>
-                  <strong>תפקיד:</strong> {activeResearch.role}
-                </span>
-                <span>
-                  <strong>מנחה:</strong> {activeResearch.mentor}
-                </span>
-                <span>
-                  <strong>מוסד:</strong> {activeResearch.institution}
-                </span>
-              </div>
-            )}
-          </>
-        )}
-
-        {!researchesLoading && !researchesError && researches.length === 0 && (
-          <p className="task-research-helper">
-            אין מחקרים משויכים לחשבון כרגע.
-          </p>
-        )}
-      </section>
-
-      {!activeResearch && (
-        <section className="task-creator-card" aria-label="אין מחקרים">
-          <h2>אין מחקרים להצגה</h2>
-          <p>בחר מחקר פעיל כדי לראות ולנהל לוח משימות ייעודי לאותו מחקר.</p>
-        </section>
-      )}
-
-      {activeResearch && (
-        <section className="task-creator-card" aria-label="יצירת משימה חדשה">
-          <button
-            type="button"
-            className="task-accordion-header"
-            onClick={() => setIsCreateTaskOpen((prev) => !prev)}
-            aria-expanded={isCreateTaskOpen}
-          >
-            <div className="task-accordion-title-wrap">
-              <h2>יצירת משימה חדשה</h2>
-              <p>המשימה תתווסף ללוח של המחקר הנבחר בלבד.</p>
-            </div>
-
-            <FaChevronDown
-              className={`task-accordion-icon ${isCreateTaskOpen ? "open" : ""}`}
-            />
-          </button>
-
-          <div
-            className={`task-accordion-body ${isCreateTaskOpen ? "open" : ""}`}
-          >
-            <form className="task-form" onSubmit={handleCreateTask}>
-              <label>
-                כותרת משימה
-                <input
-                  type="text"
-                  value={form.title}
-                  onChange={(e) => updateForm("title", e.target.value)}
-                  placeholder="למשל: סקירת מאמרים בתחום AI ברפואה"
-                  required
-                />
-              </label>
-
-              <label>
-                אופן הקצאה
-                <select
-                  value={form.assignmentType}
-                  onChange={(e) => updateForm("assignmentType", e.target.value)}
-                >
-                  <option value="manager_to_apprentice">
-                    הקצאה ממנהל/ת למתלמד/ת
-                  </option>
-                  <option value="self_assignment">הקצאה עצמית למתלמד/ת</option>
-                </select>
-              </label>
-
-              {form.assignmentType === "manager_to_apprentice" && (
-                <label>
-                  שם המתלמד/ת
-                  <input
-                    type="text"
-                    value={form.assigneeName}
-                    onChange={(e) => updateForm("assigneeName", e.target.value)}
-                    placeholder="שם מלא"
-                  />
-                </label>
+        <div className="task-filter-row task-filter-row-main">
+          <label className="task-filter-main-research">
+            מחקר פעיל
+            <select
+              className="task-filter-select"
+              value={selectedResearchId}
+              onChange={(e) => setSelectedResearchId(e.target.value)}
+              disabled={
+                researchesLoading ||
+                !!researchesError ||
+                researches.length === 0
+              }
+            >
+              {researchesLoading && <option value="">טוען מחקרים...</option>}
+              {!researchesLoading && researchesError && (
+                <option value="">שגיאה בטעינה</option>
               )}
+              {!researchesLoading &&
+                !researchesError &&
+                researches.length === 0 && <option value="">אין מחקרים</option>}
+              {!researchesLoading &&
+                !researchesError &&
+                researches.map((research) => (
+                  <option key={research.id} value={String(research.id)}>
+                    {research.title}
+                  </option>
+                ))}
+            </select>
+          </label>
 
-              <label>
-                רמת דחיפות
-                <select
-                  value={form.priority}
-                  onChange={(e) => updateForm("priority", e.target.value)}
-                  required
-                >
-                  {PRIORITY_OPTIONS.map((item) => (
-                    <option key={item.value} value={item.value}>
-                      {item.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
+          <label>
+            סינון לפי דחיפות
+            <select
+              className="task-filter-select"
+              value={filterPriority}
+              onChange={(e) => setFilterPriority(e.target.value)}
+            >
+              <option value="all">הכל</option>
+              {PRIORITY_OPTIONS.map((item) => (
+                <option key={item.value} value={item.value}>
+                  {item.label}
+                </option>
+              ))}
+            </select>
+          </label>
 
-              <label>
-                תאריך יעד
-                <input
-                  type="date"
-                  value={form.dueDate}
-                  onChange={(e) => updateForm("dueDate", e.target.value)}
-                  required
-                />
-              </label>
+          <label>
+            סינון לפי סוג הקצאה
+            <select
+              className="task-filter-select"
+              value={filterAssignment}
+              onChange={(e) => setFilterAssignment(e.target.value)}
+            >
+              <option value="all">הכל</option>
+              <option value="manager_to_apprentice">מנהל/ת למתלמד/ת</option>
+              <option value="self_assignment">הקצאה עצמית</option>
+            </select>
+          </label>
+        </div>
 
-              <label className="task-form-wide">
-                תיאור מפורט (אופציונלי)
-                <textarea
-                  rows={3}
-                  value={form.description}
-                  onChange={(e) => updateForm("description", e.target.value)}
-                  placeholder="פירוט חומרים, הנחיות, ציפיות לתוצר..."
-                />
-              </label>
-
-              <button type="submit" className="task-primary-btn">
-                <FaPlus />
-                הוספת משימה
-              </button>
-            </form>
-          </div>
-        </section>
-      )}
-
-      {activeResearch && (
-        <section className="task-filter-panel" aria-label="סינון משימות">
-          <button
-            type="button"
-            className="task-accordion-header"
-            onClick={() => setIsFiltersOpen((prev) => !prev)}
-            aria-expanded={isFiltersOpen}
-          >
-            <div className="task-accordion-title-wrap">
-              <h2>סינון משימות</h2>
-              <p>בחרו איך למקד את התצוגה בלוח הפעיל.</p>
-            </div>
-            <FaChevronDown
-              className={`task-accordion-icon ${isFiltersOpen ? "open" : ""}`}
-            />
-          </button>
-
-          <div className={`task-accordion-body ${isFiltersOpen ? "open" : ""}`}>
-            <div className="task-filter-row">
-              <label>
-                סינון לפי דחיפות
-                <select
-                  value={filterPriority}
-                  onChange={(e) => setFilterPriority(e.target.value)}
-                >
-                  <option value="all">הכל</option>
-                  {PRIORITY_OPTIONS.map((item) => (
-                    <option key={item.value} value={item.value}>
-                      {item.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              <label>
-                סינון לפי סוג הקצאה
-                <select
-                  value={filterAssignment}
-                  onChange={(e) => setFilterAssignment(e.target.value)}
-                >
-                  <option value="all">הכל</option>
-                  <option value="manager_to_apprentice">מנהל/ת למתלמד/ת</option>
-                  <option value="self_assignment">הקצאה עצמית</option>
-                </select>
-              </label>
-            </div>
-
+        {!activeResearch ? (
+          <section className="task-creator-card" aria-label="אין מחקרים">
+            <h2>אין מחקרים להצגה</h2>
+            <p>בחר מחקר פעיל כדי לראות ולנהל לוח משימות ייעודי לאותו מחקר.</p>
+          </section>
+        ) : (
+          <>
             {!isMobile && (
               <p className="task-dnd-hint">
                 גררו משימות בין העמודות כדי לשנות סטטוס.
@@ -695,202 +639,465 @@ export default function TaskManagement() {
             )}
 
             <section className="task-board" aria-label="לוח משימות">
-              {Object.entries(columns).map(([statusKey, items]) => (
-                <article
-                  key={statusKey}
-                  className={`task-column ${dragOverStatus === statusKey ? "task-column-drag-over" : ""}`}
-                  onDragOver={(e) => handleColumnDragOver(e, statusKey)}
-                  onDragEnter={(e) => handleColumnDragOver(e, statusKey)}
-                  onDrop={(e) => handleColumnDrop(e, statusKey)}
-                  onDragLeave={() => {
-                    if (dragOverStatus === statusKey) setDragOverStatus("");
-                  }}
-                >
-                  <header className="task-column-head">
-                    <h3>{STATUS_OPTIONS[statusKey]}</h3>
-                    <span>{items.length}</span>
-                  </header>
-
-                  <div className="task-column-body">
-                    {items.length === 0 && (
-                      <div className="task-empty">אין משימות בסטטוס זה</div>
-                    )}
-
-                    {items.map((task) => (
-                      <div
-                        className={`task-card priority-${task.priority}`}
-                        key={task.id}
-                        draggable={!isMobile}
-                        onDragStart={(e) => handleTaskDragStart(e, task.id)}
-                        onDragEnd={handleTaskDragEnd}
-                      >
-                        <div className="task-card-head">
-                          <div className="task-card-head-main">
-                            <h4>{task.title}</h4>
-                            <span className="task-priority-chip">
-                              {
-                                PRIORITY_OPTIONS.find(
-                                  (p) => p.value === task.priority,
-                                )?.label
-                              }
-                            </span>
-                          </div>
-
-                          <button
-                            type="button"
-                            className="task-card-toggle"
-                            onClick={() => toggleTaskExpanded(task.id)}
-                            aria-expanded={expandedTaskIds[task.id] !== false}
-                          >
-                            <FaChevronDown
-                              className={`task-card-toggle-icon ${expandedTaskIds[task.id] !== false ? "open" : ""}`}
-                            />
-                          </button>
-                        </div>
-
-                        <div className="task-card-meta">
-                          <span>
-                            <FaUserTag /> {task.assigneeName}
-                          </span>
-                          <span>
-                            <FaCalendarAlt /> {formatDate(task.dueDate)}
-                          </span>
-                          <span>
-                            {task.assignmentType === "self_assignment"
-                              ? "הקצאה עצמית"
-                              : 'הוקצה ע"י מנהל/ת'}
-                          </span>
-                        </div>
-
-                        <div
-                          className={`task-card-body ${expandedTaskIds[task.id] !== false ? "open" : ""}`}
+              {Object.entries(columns).map(([statusKey, items]) => {
+                const isCollapsed = collapsedColumns[statusKey] === true;
+                return (
+                  <article
+                    key={statusKey}
+                    className={`task-column ${dragOverStatus === statusKey ? "task-column-drag-over" : ""} ${isCollapsed ? "collapsed" : ""}`}
+                    onDragOver={(e) => handleColumnDragOver(e, statusKey)}
+                    onDragEnter={(e) => handleColumnDragOver(e, statusKey)}
+                    onDrop={(e) => handleColumnDrop(e, statusKey)}
+                    onDragLeave={() => {
+                      if (dragOverStatus === statusKey) setDragOverStatus("");
+                    }}
+                  >
+                    <header className="task-column-head">
+                      <h3>{STATUS_OPTIONS[statusKey]}</h3>
+                      <div className="task-column-head-actions">
+                        <span>{items.length}</span>
+                        <button
+                          type="button"
+                          className="task-column-collapse-btn"
+                          onClick={() => toggleColumnCollapsed(statusKey)}
+                          aria-expanded={!isCollapsed}
+                          aria-label={
+                            isCollapsed ? "הרחבת עמודה" : "כיווץ עמודה"
+                          }
                         >
-                          {task.description && (
-                            <p className="task-description">
-                              {task.description}
-                            </p>
-                          )}
+                          <FaChevronDown
+                            className={`task-column-collapse-icon ${isCollapsed ? "" : "open"}`}
+                          />
+                        </button>
+                      </div>
+                    </header>
 
-                          {isMobile && (
-                            <div className="task-actions">
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  setTaskStatus(task.id, "completed")
-                                }
-                              >
-                                <FaCheckCircle />
-                                הושלמה
-                              </button>
-                              <button
-                                type="button"
-                                className="warning"
-                                onClick={() =>
-                                  setTaskStatus(task.id, "needs_help")
-                                }
-                              >
-                                <FaExclamationCircle />
-                                צריך עזרה
-                              </button>
-                              <button
-                                type="button"
-                                className="ghost"
-                                onClick={() => setTaskStatus(task.id, "open")}
-                              >
-                                חזרה לביצוע
-                              </button>
-                            </div>
-                          )}
+                    <div
+                      className={`task-column-body ${isCollapsed ? "collapsed" : ""}`}
+                    >
+                      {items.length === 0 && (
+                        <div className="task-empty">אין משימות בסטטוס זה</div>
+                      )}
 
-                          <section
-                            className="task-thread"
-                            aria-label="שרשור משימה"
+                      {items.map((task) => {
+                        const isExpanded = expandedTaskIds[task.id] === true;
+                        return (
+                          <div
+                            className={`task-card priority-${task.priority} ${draggingTaskId === task.id ? "is-dragging" : ""}`}
+                            key={task.id}
+                            draggable={!isMobile && !isCollapsed}
+                            onDragStart={(e) => handleTaskDragStart(e, task.id)}
+                            onDragEnd={handleTaskDragEnd}
                           >
-                            <h5>שרשור תגובות וקבצים</h5>
+                            <div className="task-card-head">
+                              <div className="task-card-head-main">
+                                <h4>{task.title}</h4>
+                                <span className="task-priority-chip">
+                                  {
+                                    PRIORITY_OPTIONS.find(
+                                      (p) => p.value === task.priority,
+                                    )?.label
+                                  }
+                                </span>
+                              </div>
 
-                            <div className="task-thread-list">
-                              {Array.isArray(task.thread) &&
-                              task.thread.length > 0 ? (
-                                task.thread.map((entry) => (
-                                  <div
-                                    key={entry.id}
-                                    className="task-thread-item"
+                              <div className="task-card-head-actions">
+                                <button
+                                  type="button"
+                                  className="task-card-delete"
+                                  onClick={() => askDeleteTask(task)}
+                                  aria-label="מחיקת משימה"
+                                >
+                                  <FaTrashAlt />
+                                </button>
+
+                                <button
+                                  type="button"
+                                  className="task-card-toggle"
+                                  onClick={() => toggleTaskExpanded(task.id)}
+                                  aria-expanded={isExpanded}
+                                >
+                                  <FaChevronDown
+                                    className={`task-card-toggle-icon ${isExpanded ? "open" : ""}`}
+                                  />
+                                </button>
+                              </div>
+                            </div>
+
+                            <div className="task-card-meta">
+                              <span>
+                                <FaUserTag /> {task.assigneeName}
+                              </span>
+                              <span>
+                                <FaCalendarAlt /> {formatDate(task.dueDate)}
+                              </span>
+                              <span>
+                                {task.assignmentType === "self_assignment"
+                                  ? "הקצאה עצמית"
+                                  : 'הוקצה ע"י מנהל/ת'}
+                              </span>
+                            </div>
+
+                            <div
+                              className={`task-card-body ${isExpanded ? "open" : ""}`}
+                            >
+                              {task.description && (
+                                <p className="task-description">
+                                  {task.description}
+                                </p>
+                              )}
+
+                              {isMobile && (
+                                <div className="task-actions">
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      setTaskStatus(task.id, "completed")
+                                    }
                                   >
-                                    <strong>{entry.author}</strong>
-                                    <small>{formatDate(entry.createdAt)}</small>
-                                    <p>{entry.text}</p>
-                                  </div>
-                                ))
-                              ) : (
-                                <div className="task-empty-thread">
-                                  אין תגובות עדיין
+                                    <FaCheckCircle />
+                                    הושלמה
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="warning"
+                                    onClick={() =>
+                                      setTaskStatus(task.id, "needs_help")
+                                    }
+                                  >
+                                    <FaExclamationCircle />
+                                    צריך עזרה
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="ghost"
+                                    onClick={() =>
+                                      setTaskStatus(task.id, "open")
+                                    }
+                                  >
+                                    חזרה לביצוע
+                                  </button>
                                 </div>
                               )}
-                            </div>
 
-                            <div className="task-thread-composer">
-                              <textarea
-                                rows={2}
-                                placeholder="כתיבת תגובה..."
-                                value={threadDrafts[task.id] || ""}
-                                onChange={(e) =>
-                                  setThreadDrafts((prev) => ({
-                                    ...prev,
-                                    [task.id]: e.target.value,
-                                  }))
-                                }
-                              />
-                              <button
-                                type="button"
-                                onClick={() => addThreadReply(task.id)}
+                              <section
+                                className="task-thread"
+                                aria-label="שרשור משימה"
                               >
-                                שליחת תגובה
-                              </button>
+                                <h5>שרשור תגובות וקבצים</h5>
+
+                                <div className="task-thread-list">
+                                  {Array.isArray(task.thread) &&
+                                  task.thread.length > 0 ? (
+                                    task.thread.map((entry) => (
+                                      <div
+                                        key={entry.id}
+                                        className="task-thread-item"
+                                      >
+                                        <strong>{entry.author}</strong>
+                                        <small>
+                                          {formatDate(entry.createdAt)}
+                                        </small>
+                                        <p>{entry.text}</p>
+                                      </div>
+                                    ))
+                                  ) : (
+                                    <div className="task-empty-thread">
+                                      אין תגובות עדיין
+                                    </div>
+                                  )}
+                                </div>
+
+                                <div className="task-thread-composer">
+                                  <textarea
+                                    rows={2}
+                                    placeholder="כתיבת תגובה..."
+                                    value={threadDrafts[task.id] || ""}
+                                    onChange={(e) =>
+                                      setThreadDrafts((prev) => ({
+                                        ...prev,
+                                        [task.id]: e.target.value,
+                                      }))
+                                    }
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => addThreadReply(task.id)}
+                                  >
+                                    שליחת תגובה
+                                  </button>
+                                </div>
+
+                                <label className="task-file-upload">
+                                  <FaPaperclip />
+                                  הוספת קבצים למשימה
+                                  <input
+                                    type="file"
+                                    multiple
+                                    onChange={(e) => {
+                                      addFilesToTask(task.id, e.target.files);
+                                      e.target.value = "";
+                                    }}
+                                  />
+                                </label>
+
+                                {Array.isArray(task.files) &&
+                                  task.files.length > 0 && (
+                                    <ul
+                                      className="task-file-list"
+                                      aria-label="קבצים שצורפו"
+                                    >
+                                      {task.files.map((file) => (
+                                        <li key={file.id}>
+                                          <span>{file.name}</span>
+                                          <small>
+                                            {Math.max(
+                                              1,
+                                              Math.round(file.size / 1024),
+                                            )}
+                                            KB
+                                          </small>
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  )}
+                              </section>
                             </div>
-
-                            <label className="task-file-upload">
-                              <FaPaperclip />
-                              הוספת קבצים למשימה
-                              <input
-                                type="file"
-                                multiple
-                                onChange={(e) => {
-                                  addFilesToTask(task.id, e.target.files);
-                                  e.target.value = "";
-                                }}
-                              />
-                            </label>
-
-                            {Array.isArray(task.files) &&
-                              task.files.length > 0 && (
-                                <ul
-                                  className="task-file-list"
-                                  aria-label="קבצים שצורפו"
-                                >
-                                  {task.files.map((file) => (
-                                    <li key={file.id}>
-                                      <span>{file.name}</span>
-                                      <small>
-                                        {Math.max(
-                                          1,
-                                          Math.round(file.size / 1024),
-                                        )}
-                                        KB
-                                      </small>
-                                    </li>
-                                  ))}
-                                </ul>
-                              )}
-                          </section>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </article>
-              ))}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </article>
+                );
+              })}
             </section>
+          </>
+        )}
+      </section>
+
+      {activeResearch && (
+        <>
+          <div className="task-create-footer">
+            <button
+              type="button"
+              className="task-primary-btn task-primary-btn-fixed"
+              onClick={() => {
+                setCreateTaskFiles([]);
+                setIsCreateTaskOpen(true);
+              }}
+            >
+              <FaPlus />
+              הוספת משימה
+            </button>
           </div>
-        </section>
+
+          {isCreateTaskOpen && (
+            <section
+              className="task-modal-backdrop"
+              aria-label="יצירת משימה חדשה"
+              onClick={() => setIsCreateTaskOpen(false)}
+            >
+              <div className="task-modal" onClick={(e) => e.stopPropagation()}>
+                <div className="task-modal-head">
+                  <h2>יצירת משימה חדשה</h2>
+                  <button
+                    type="button"
+                    className="task-modal-close"
+                    onClick={() => setIsCreateTaskOpen(false)}
+                    aria-label="סגירת חלון"
+                  >
+                    ×
+                  </button>
+                </div>
+
+                <p className="task-modal-subtitle">
+                  המשימה תתווסף ללוח של המחקר הפעיל בלבד.
+                </p>
+
+                <form className="task-form" onSubmit={handleCreateTask}>
+                  <label>
+                    כותרת משימה
+                    <input
+                      type="text"
+                      value={form.title}
+                      onChange={(e) => updateForm("title", e.target.value)}
+                      placeholder="למשל: סקירת מאמרים בתחום AI ברפואה"
+                      required
+                    />
+                  </label>
+
+                  <label>
+                    אופן הקצאה
+                    <select
+                      value={form.assignmentType}
+                      onChange={(e) =>
+                        updateForm("assignmentType", e.target.value)
+                      }
+                    >
+                      <option value="manager_to_apprentice">
+                        הקצאה ממנהל/ת למתלמד/ת
+                      </option>
+                      <option value="self_assignment">
+                        הקצאה עצמית למתלמד/ת
+                      </option>
+                    </select>
+                  </label>
+
+                  {form.assignmentType === "manager_to_apprentice" && (
+                    <label>
+                      שם המתלמד/ת
+                      <input
+                        type="text"
+                        value={form.assigneeName}
+                        onChange={(e) =>
+                          updateForm("assigneeName", e.target.value)
+                        }
+                        placeholder="שם מלא"
+                      />
+                    </label>
+                  )}
+
+                  <label>
+                    רמת דחיפות
+                    <select
+                      value={form.priority}
+                      onChange={(e) => updateForm("priority", e.target.value)}
+                      required
+                    >
+                      {PRIORITY_OPTIONS.map((item) => (
+                        <option key={item.value} value={item.value}>
+                          {item.label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label>
+                    תאריך יעד
+                    <input
+                      type="date"
+                      value={form.dueDate}
+                      onChange={(e) => updateForm("dueDate", e.target.value)}
+                      required
+                    />
+                  </label>
+
+                  <label className="task-form-wide">
+                    תיאור מפורט (אופציונלי)
+                    <textarea
+                      rows={3}
+                      value={form.description}
+                      onChange={(e) =>
+                        updateForm("description", e.target.value)
+                      }
+                      placeholder="פירוט חומרים, הנחיות, ציפיות לתוצר..."
+                    />
+                  </label>
+
+                  <div className="task-form-wide">
+                    <label className="task-file-upload task-file-upload-create">
+                      <FaPaperclip />
+                      צירוף קבצים למשימה (אופציונלי)
+                      <input
+                        type="file"
+                        multiple
+                        onChange={(e) => {
+                          const nextFiles = mapFilesToTaskFiles(e.target.files);
+                          if (nextFiles.length > 0) {
+                            setCreateTaskFiles((prev) => [
+                              ...prev,
+                              ...nextFiles,
+                            ]);
+                          }
+                          e.target.value = "";
+                        }}
+                      />
+                    </label>
+
+                    {createTaskFiles.length > 0 && (
+                      <ul
+                        className="task-file-list"
+                        aria-label="קבצים ליצירת משימה"
+                      >
+                        {createTaskFiles.map((file) => (
+                          <li key={file.id}>
+                            <span>{file.name}</span>
+                            <small>
+                              {Math.max(1, Math.round(file.size / 1024))}
+                              KB
+                            </small>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+
+                  <div className="task-modal-actions task-form-wide">
+                    <button
+                      type="button"
+                      className="task-secondary-btn"
+                      onClick={() => setIsCreateTaskOpen(false)}
+                    >
+                      ביטול
+                    </button>
+                    <button type="submit" className="task-primary-btn">
+                      <FaPlus />
+                      הוספת משימה
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </section>
+          )}
+
+          {deleteDialogTask && (
+            <section
+              className="task-modal-backdrop"
+              aria-label="אישור מחיקת משימה"
+              onClick={() => setDeleteDialogTask(null)}
+            >
+              <div
+                className="task-modal task-confirm-modal"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="task-modal-head">
+                  <h2>מחיקת משימה</h2>
+                  <button
+                    type="button"
+                    className="task-modal-close"
+                    onClick={() => setDeleteDialogTask(null)}
+                    aria-label="סגירת חלון"
+                  >
+                    ×
+                  </button>
+                </div>
+
+                <p className="task-modal-subtitle task-confirm-warning">
+                  האם למחוק את המשימה "{deleteDialogTask.title}"?
+                  <br />
+                  פעולה זו בלתי הפיכה ולא ניתן לשחזר את המשימה לאחר מכן.
+                </p>
+
+                <div className="task-modal-actions">
+                  <button
+                    type="button"
+                    className="task-secondary-btn"
+                    onClick={() => setDeleteDialogTask(null)}
+                  >
+                    ביטול
+                  </button>
+                  <button
+                    type="button"
+                    className="task-danger-btn"
+                    onClick={confirmDeleteTask}
+                  >
+                    מחיקה סופית
+                  </button>
+                </div>
+              </div>
+            </section>
+          )}
+        </>
       )}
     </div>
   );
