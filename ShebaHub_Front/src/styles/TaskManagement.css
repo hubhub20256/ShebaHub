@@ -8,6 +8,8 @@
   --task-accent-main: #1f9d8b;
   --task-accent-alt: #2256d9;
   --task-danger: #cb3a58;
+  --task-collapse-duration: 0.72s;
+  --task-collapse-ease: cubic-bezier(0.4, 0, 0.2, 1);
 
   position: relative;
   max-width: 1320px;
@@ -415,9 +417,11 @@
 }
 
 .task-board {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  display: flex;
+  align-items: stretch;
   gap: 14px;
+  overflow-x: auto;
+  padding-bottom: 2px;
   animation: task-fade-up 0.75s ease both;
   animation-delay: 0.2s;
 }
@@ -427,12 +431,18 @@
   border-radius: 14px;
   background: color-mix(in srgb, var(--card-bg, #fff) 92%, #edf3ff 8%);
   min-height: 300px;
+  min-width: 0;
+  flex: 1 1 0;
   display: flex;
   flex-direction: column;
   overflow: hidden;
   transition:
     border-color 0.2s ease,
-    box-shadow 0.2s ease;
+    box-shadow 0.2s ease,
+    flex-basis var(--task-collapse-duration) var(--task-collapse-ease),
+    width var(--task-collapse-duration) var(--task-collapse-ease),
+    min-width var(--task-collapse-duration) var(--task-collapse-ease),
+    min-height var(--task-collapse-duration) var(--task-collapse-ease);
 }
 
 .task-column.task-column-drag-over {
@@ -451,36 +461,65 @@
     rgba(34, 86, 217, 0.05),
     rgba(31, 157, 139, 0.08)
   );
+  transition:
+    padding var(--task-collapse-duration) var(--task-collapse-ease),
+    gap var(--task-collapse-duration) var(--task-collapse-ease),
+    border-color var(--task-collapse-duration) var(--task-collapse-ease);
 }
 
 .task-column-head-actions {
   display: inline-flex;
   align-items: center;
   gap: 8px;
+  transition: gap var(--task-collapse-duration) var(--task-collapse-ease);
 }
 
-.task-column-collapse-btn {
-  border: 1px solid var(--task-border);
+.task-column-side-collapse-btn {
+  border: 1px solid color-mix(in srgb, var(--task-border) 66%, #7b8fcf 34%);
   width: 26px;
   height: 26px;
   border-radius: 8px;
-  background: color-mix(in srgb, var(--card-bg, #fff) 90%, #eaf0ff 10%);
-  color: #5a647e;
+  background: linear-gradient(
+    150deg,
+    color-mix(in srgb, var(--card-bg, #fff) 90%, #eff5ff 10%),
+    color-mix(in srgb, var(--card-bg, #fff) 84%, #e7f0ff 16%)
+  );
+  color: #4d5c86;
   display: grid;
   place-items: center;
   cursor: pointer;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    color 0.2s ease,
+    transform 0.22s ease,
+    background 0.2s ease;
 }
 
-.task-column-collapse-icon {
-  transition: transform 0.25s ease;
+.task-column-side-collapse-btn:hover {
+  border-color: rgba(34, 86, 217, 0.36);
+  color: #2a4fc0;
+  box-shadow: 0 4px 10px rgba(34, 86, 217, 0.18);
 }
 
-.task-column-collapse-icon.open {
-  transform: rotate(180deg);
+.task-column-side-collapse-btn.active {
+  border-color: rgba(34, 86, 217, 0.44);
+  color: #1e41a9;
+  box-shadow: 0 6px 13px rgba(34, 86, 217, 0.2);
+  background: linear-gradient(
+    150deg,
+    color-mix(in srgb, var(--card-bg, #fff) 84%, #e6eeff 16%),
+    color-mix(in srgb, var(--card-bg, #fff) 76%, #dce9ff 24%)
+  );
 }
+
 .task-column-head h3 {
   margin: 0;
   font-size: 0.97rem;
+  transition:
+    transform var(--task-collapse-duration) var(--task-collapse-ease),
+    opacity var(--task-collapse-duration) var(--task-collapse-ease),
+    letter-spacing var(--task-collapse-duration) var(--task-collapse-ease);
 }
 
 .task-column-head span {
@@ -501,11 +540,13 @@
   gap: 10px;
   max-height: 2200px;
   opacity: 1;
+  transform: translateY(0);
   overflow: hidden;
   transition:
-    max-height 0.55s cubic-bezier(0.22, 1, 0.36, 1),
-    opacity 0.42s ease,
-    padding 0.42s ease;
+    max-height var(--task-collapse-duration) var(--task-collapse-ease),
+    opacity var(--task-collapse-duration) var(--task-collapse-ease),
+    padding var(--task-collapse-duration) var(--task-collapse-ease),
+    transform var(--task-collapse-duration) var(--task-collapse-ease);
 }
 
 .task-column-body.collapsed {
@@ -513,7 +554,54 @@
   opacity: 0;
   padding-top: 0;
   padding-bottom: 0;
+  transform: translateY(8px);
   pointer-events: none;
+}
+
+.task-column.task-column-side-collapsed {
+  min-height: 0;
+}
+
+@media (min-width: 769px) {
+  .task-column.task-column-side-collapsed {
+    flex: 0 0 104px;
+    min-width: 104px;
+    max-width: 104px;
+    min-height: 220px;
+  }
+
+  .task-column.task-column-side-collapsed .task-column-head {
+    flex: 1;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 8px;
+    padding: 10px 6px;
+    border-bottom: none;
+  }
+
+  .task-column.task-column-side-collapsed .task-column-head h3 {
+    writing-mode: horizontal-tb;
+    transform: none;
+    text-align: center;
+    font-size: 0.82rem;
+    line-height: 1.1;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 100%;
+    opacity: 0.95;
+  }
+
+  .task-column.task-column-side-collapsed .task-column-head-actions {
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .task-column.task-column-side-collapsed .task-column-body {
+    display: none;
+  }
 }
 
 .task-danger-btn {
@@ -957,10 +1045,6 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .task-board {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
   .task-stat-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -1019,7 +1103,13 @@
   .task-form,
   .task-filter-row,
   .task-board {
+    display: grid;
     grid-template-columns: 1fr;
+  }
+
+  .task-board {
+    overflow-x: visible;
+    padding-bottom: 0;
   }
 
   .task-filter-row.task-filter-row-main {
@@ -1042,6 +1132,10 @@
   .task-creator-card,
   .task-column {
     border-radius: 12px;
+  }
+
+  .task-column.task-column-side-collapsed {
+    min-height: 52px;
   }
 
   .task-actions button,

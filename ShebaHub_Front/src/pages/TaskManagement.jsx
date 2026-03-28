@@ -3,6 +3,8 @@ import {
   FaCalendarAlt,
   FaCheckCircle,
   FaChevronDown,
+  FaCompress,
+  FaExpand,
   FaExclamationCircle,
   FaPaperclip,
   FaPlus,
@@ -644,7 +646,7 @@ export default function TaskManagement() {
                 return (
                   <article
                     key={statusKey}
-                    className={`task-column ${dragOverStatus === statusKey ? "task-column-drag-over" : ""} ${isCollapsed ? "collapsed" : ""}`}
+                    className={`task-column ${dragOverStatus === statusKey ? "task-column-drag-over" : ""} ${isCollapsed ? "task-column-side-collapsed" : ""}`}
                     onDragOver={(e) => handleColumnDragOver(e, statusKey)}
                     onDragEnter={(e) => handleColumnDragOver(e, statusKey)}
                     onDrop={(e) => handleColumnDrop(e, statusKey)}
@@ -658,16 +660,29 @@ export default function TaskManagement() {
                         <span>{items.length}</span>
                         <button
                           type="button"
-                          className="task-column-collapse-btn"
+                          className={`task-column-side-collapse-btn ${isCollapsed ? "active" : ""}`}
                           onClick={() => toggleColumnCollapsed(statusKey)}
-                          aria-expanded={!isCollapsed}
+                          aria-pressed={isCollapsed}
                           aria-label={
-                            isCollapsed ? "הרחבת עמודה" : "כיווץ עמודה"
+                            isCollapsed
+                              ? isMobile
+                                ? "הרחבת תוכן עמודה"
+                                : "הרחבת עמודה לרוחב מלא"
+                              : isMobile
+                                ? "כיווץ תוכן עמודה"
+                                : "כיווץ עמודה לרוחב צר"
+                          }
+                          title={
+                            isCollapsed
+                              ? isMobile
+                                ? "הרחבת תוכן"
+                                : "הרחבת עמודה"
+                              : isMobile
+                                ? "כיווץ תוכן"
+                                : "כיווץ עמודה לצד"
                           }
                         >
-                          <FaChevronDown
-                            className={`task-column-collapse-icon ${isCollapsed ? "" : "open"}`}
-                          />
+                          {isCollapsed ? <FaExpand /> : <FaCompress />}
                         </button>
                       </div>
                     </header>
