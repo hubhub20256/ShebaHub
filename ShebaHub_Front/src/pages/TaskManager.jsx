@@ -69,7 +69,7 @@ const TaskManager = () => {
   const statusLabels = {
     todo: "לביצוע",
     in_progress: "בביצוע",
-    needs_help: "צריכה עזרה",
+    needs_help: "מחכה לעזרה",
     completed: "הושלמה",
   };
 
@@ -240,7 +240,7 @@ const TaskManager = () => {
           <option value="all">סנן לפי סטטוס</option>
           <option value="todo">לביצוע</option>
           <option value="in_progress">בביצוע</option>
-          <option value="needs_help">צריכה עזרה</option>
+          <option value="needs_help">מחכה לעזרה</option>
           <option value="completed">הושלמה</option>
         </select>
 
@@ -483,7 +483,7 @@ const AddTaskModal = ({
               >
                 <option value="todo">לביצוע</option>
                 <option value="in_progress">בביצוע</option>
-                <option value="needs_help">צריכה עזרה</option>
+                <option value="needs_help">מחכה לעזרה</option>
                 <option value="completed">הושלמה</option>
               </select>
             </div>
