@@ -45,6 +45,9 @@ export default function MyResearches() {
   const [createdResearches, setCreatedResearches] = useState([]);
   const [createdLoading, setCreatedLoading] = useState(false);
 
+  const [joinedResearches, setJoinedResearches] = useState([]);
+  const [joinedLoading, setJoinedLoading] = useState(false);
+
   // Invitations state
   const [invitations, setInvitations] = useState([]);
   const [invitationsLoading, setInvitationsLoading] = useState(true);
@@ -77,6 +80,18 @@ export default function MyResearches() {
     }
   }, [isMentor]);
 
+  const loadJoinedResearches = useCallback(async () => {
+    setJoinedLoading(true);
+    try {
+      const data = await researchAPI.listJoinedResearches();
+      setJoinedResearches(Array.isArray(data) ? data : []);
+    } catch {
+      // Silently fail
+    } finally {
+      setJoinedLoading(false);
+    }
+  }, []);
+
   // Load user's applications
   useEffect(() => {
     loadApplications();
@@ -87,6 +102,11 @@ export default function MyResearches() {
     loadCreatedResearches();
   }, [loadCreatedResearches]);
 
+  // Load user's joined researches
+  useEffect(() => {
+    loadJoinedResearches();
+  }, [loadJoinedResearches]);
+
   // Re-fetch data when page regains focus (throttled to once per 30s)
   const lastFocusRef = useRef(0);
   useEffect(() => {
@@ -96,11 +116,12 @@ export default function MyResearches() {
       lastFocusRef.current = now;
       loadApplications();
       loadCreatedResearches();
+      loadJoinedResearches();
       loadInvitations();
     };
     window.addEventListener("focus", onFocus);
     return () => window.removeEventListener("focus", onFocus);
-  }, [loadApplications, loadCreatedResearches]);
+  }, [loadApplications, loadCreatedResearches, loadJoinedResearches]);
 
   // Load invitations
   const loadInvitations = async () => {
@@ -160,11 +181,11 @@ export default function MyResearches() {
           <h2 className="my-researches-section-title">מחקרים שיצרתי</h2>
           {createdLoading ? (
             <p className="my-researches-loading">טוען...</p>
-          ) : createdResearches.length === 0 ? (
+          ) : createdResearches.filter(r => r.ownerId == user?.id).length === 0 ? (
             <p className="my-researches-empty">עדיין לא יצרת מחקרים.</p>
           ) : (
             <div className="my-researches-grid">
-              {createdResearches.map((r) => (
+              {createdResearches.filter(r => r.ownerId == user?.id).map((r) => (
                 <div
                   key={r.id}
                   className="my-research-card my-research-card--created"
@@ -188,6 +209,39 @@ export default function MyResearches() {
           )}
         </div>
       )}
+
+      {/* Joined Researches Section */}
+      <div className="my-researches-section">
+        <h2 className="my-researches-section-title">מחקרים שהצטרפתי</h2>
+        {joinedLoading ? (
+          <p className="my-researches-loading">טוען...</p>
+        ) : joinedResearches.filter(r => r.ownerId != user?.id).length === 0 ? (
+          <p className="my-researches-empty">עדיין לא הצטרפת למחקרים.</p>
+        ) : (
+          <div className="my-researches-grid">
+            {joinedResearches.filter(r => r.ownerId != user?.id).map((r) => (
+              <div
+                key={r.id}
+                className="my-research-card my-research-card--created"
+                onClick={() => navigate(`/research/${r.id}`)}
+              >
+                <div className="my-research-card-name">{r.researchName}</div>
+                {r.researchArea && (
+                  <div className="my-research-card-area">{r.researchArea}</div>
+                )}
+                <div className="my-research-card-meta">
+                  <span
+                    className="my-research-status-badge"
+                    style={{ backgroundColor: r.status === "open" ? "#10b981" : "#6b7280" }}
+                  >
+                    {r.status === "open" ? "פעיל" : r.status}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
       {/* Invitations Section */}
       <div className="my-researches-section">
