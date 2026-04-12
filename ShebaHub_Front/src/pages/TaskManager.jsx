@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import useMediaQuery from "../hooks/useMediaQuery";
 import { taskAPI } from "../services/mockTasksAPI";
+import FormSelect from "../components/forms/FormSelect";
 import "../styles/TaskManager.css";
 import {
   FaCommentAlt,
@@ -219,41 +220,43 @@ const TaskManager = () => {
       </div>
 
       <div className="task-filters">
-        <select
-          className="filter-select"
+        <FormSelect
+          name="researchFilter"
           value={researchFilter}
           onChange={(e) => setResearchFilter(e.target.value)}
-        >
-          <option value="all">כל המחקרים</option>
-          {researches.map((r) => (
-            <option key={r} value={r}>
-              {r}
-            </option>
-          ))}
-        </select>
+          options={[
+            { value: "all", label: "כל המחקרים" },
+            ...researches.map((r) => ({ value: r, label: r })),
+          ]}
+          placeholder="כל המחקרים"
+        />
 
-        <select
-          className="filter-select"
+        <FormSelect
+          name="statusFilter"
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
-        >
-          <option value="all">סנן לפי סטטוס</option>
-          <option value="todo">לביצוע</option>
-          <option value="in_progress">בביצוע</option>
-          <option value="needs_help">מחכה לעזרה</option>
-          <option value="completed">הושלמה</option>
-        </select>
+          options={[
+            { value: "all", label: "סנן לפי סטטוס" },
+            { value: "todo", label: "לביצוע" },
+            { value: "in_progress", label: "בביצוע" },
+            { value: "needs_help", label: "מחכה לעזרה" },
+            { value: "completed", label: "הושלמה" },
+          ]}
+          placeholder="סנן לפי סטטוס"
+        />
 
-        <select
-          className="filter-select"
+        <FormSelect
+          name="urgencyFilter"
           value={urgencyFilter}
           onChange={(e) => setUrgencyFilter(e.target.value)}
-        >
-          <option value="all">מיין לפי דחיפות</option>
-          <option value="high">גדולה</option>
-          <option value="medium">בינונית</option>
-          <option value="low">קטנה</option>
-        </select>
+          options={[
+            { value: "all", label: "מיין לפי דחיפות" },
+            { value: "high", label: "גדולה" },
+            { value: "medium", label: "בינונית" },
+            { value: "low", label: "קטנה" },
+          ]}
+          placeholder="מיין לפי דחיפות"
+        />
       </div>
 
       <div className="task-board-content">
@@ -460,51 +463,50 @@ const AddTaskModal = ({
 
           <div className="add-task-grid">
             <div className="add-task-field">
-              <label htmlFor="new-task-urgency">דחיפות</label>
-              <select
-                id="new-task-urgency"
-                className="add-task-select"
+              <FormSelect
+                label="דחיפות"
+                name="new-task-urgency"
                 value={form.urgency}
                 onChange={(e) => onChange("urgency", e.target.value)}
-              >
-                <option value="high">גדולה</option>
-                <option value="medium">בינונית</option>
-                <option value="low">קטנה</option>
-              </select>
+                options={[
+                  { value: "high", label: "גדולה" },
+                  { value: "medium", label: "בינונית" },
+                  { value: "low", label: "קטנה" },
+                ]}
+                placeholder="בחר דחיפות"
+              />
             </div>
 
             <div className="add-task-field">
-              <label htmlFor="new-task-status">סטטוס</label>
-              <select
-                id="new-task-status"
-                className="add-task-select"
+              <FormSelect
+                label="סטטוס"
+                name="new-task-status"
                 value={form.status}
                 onChange={(e) => onChange("status", e.target.value)}
-              >
-                <option value="todo">לביצוע</option>
-                <option value="in_progress">בביצוע</option>
-                <option value="needs_help">מחכה לעזרה</option>
-                <option value="completed">הושלמה</option>
-              </select>
+                options={[
+                  { value: "todo", label: "לביצוע" },
+                  { value: "in_progress", label: "בביצוע" },
+                  { value: "needs_help", label: "מחכה לעזרה" },
+                  { value: "completed", label: "הושלמה" },
+                ]}
+                placeholder="בחר סטטוס"
+              />
             </div>
           </div>
 
           <div className="add-task-field">
-            <label htmlFor="new-task-research">מחקר</label>
-            <select
-              id="new-task-research"
-              className="add-task-select"
+            <FormSelect
+              label="מחקר"
+              name="new-task-research"
               value={form.researchName}
               onChange={(e) => onChange("researchName", e.target.value)}
-              required
-            >
-              <option value="">בחר מחקר</option>
-              {researches.map((researchName) => (
-                <option key={researchName} value={researchName}>
-                  {researchName}
-                </option>
-              ))}
-            </select>
+              options={researches.map((researchName) => ({
+                value: researchName,
+                label: researchName,
+              }))}
+              placeholder="בחר מחקר"
+              error={error && !form.researchName ? "יש לבחור מחקר." : ""}
+            />
           </div>
 
           <div className="add-task-field">
