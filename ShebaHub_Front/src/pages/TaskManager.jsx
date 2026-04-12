@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useAuth } from "../context/AuthContext";
 import useMediaQuery from "../hooks/useMediaQuery";
 import { taskAPI } from "../services/mockTasksAPI";
@@ -11,7 +11,158 @@ import {
   FaPaperclip,
   FaFileAlt,
   FaDownload,
+  FaTrashAlt,
 } from "react-icons/fa";
+
+const TaskFilterSelect = ({ name, value, onChange, options, placeholder }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const rootRef = useRef(null);
+
+  const selectedOption = options.find((opt) => opt.value === value);
+  const selectedLabel = selectedOption?.label || placeholder;
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (rootRef.current && !rootRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  const handleSelect = (nextValue) => {
+    onChange(nextValue);
+    setIsOpen(false);
+  };
+
+  return (
+    <div
+      className={`task-filter-select ${isOpen ? "is-open" : ""}`}
+      ref={rootRef}
+    >
+      <button
+        type="button"
+        className="task-filter-trigger"
+        onClick={() => setIsOpen((prev) => !prev)}
+        aria-haspopup="listbox"
+        aria-expanded={isOpen}
+        aria-controls={`${name}-menu`}
+      >
+        <span className="task-filter-trigger-text">{selectedLabel}</span>
+        <span className="task-filter-trigger-icon" aria-hidden="true">
+          ▾
+        </span>
+      </button>
+
+      {isOpen ? (
+        <ul
+          id={`${name}-menu`}
+          className="task-filter-menu"
+          role="listbox"
+          aria-label={placeholder}
+        >
+          {options.map((opt) => (
+            <li
+              key={opt.value}
+              role="option"
+              aria-selected={opt.value === value}
+            >
+              <button
+                type="button"
+                className={`task-filter-option ${opt.value === value ? "is-active" : ""}`}
+                onClick={() => handleSelect(opt.value)}
+                title={opt.label}
+              >
+                {opt.label}
+              </button>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </div>
+  );
+};
+
+const TaskPillSelect = ({
+  name,
+  value,
+  onChange,
+  options,
+  ariaLabel,
+  title,
+}) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const rootRef = useRef(null);
+
+  const selectedOption = options.find((opt) => opt.value === value);
+  const selectedLabel = selectedOption?.label || "";
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (rootRef.current && !rootRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  const handleSelect = (nextValue) => {
+    onChange(nextValue);
+    setIsOpen(false);
+  };
+
+  return (
+    <div
+      className={`task-pill-select ${isOpen ? "is-open" : ""}`}
+      ref={rootRef}
+      onClick={(e) => e.stopPropagation()}
+    >
+      <button
+        type="button"
+        className={`task-pill-trigger is-${value}`}
+        onClick={() => setIsOpen((prev) => !prev)}
+        aria-haspopup="listbox"
+        aria-expanded={isOpen}
+        aria-controls={`${name}-menu`}
+        aria-label={ariaLabel}
+        title={title}
+      >
+        <span className="task-pill-trigger-text">{selectedLabel}</span>
+        <span className="task-pill-trigger-icon" aria-hidden="true">
+          ▾
+        </span>
+      </button>
+
+      {isOpen ? (
+        <ul id={`${name}-menu`} className="task-pill-menu" role="listbox">
+          {options.map((opt) => (
+            <li
+              key={opt.value}
+              role="option"
+              aria-selected={opt.value === value}
+            >
+              <button
+                type="button"
+                className={`task-pill-option ${opt.value === value ? "is-active" : ""}`}
+                onClick={() => handleSelect(opt.value)}
+              >
+                {opt.label}
+              </button>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </div>
+  );
+};
 
 const TaskManager = () => {
   const { user } = useAuth();
@@ -28,6 +179,8 @@ const TaskManager = () => {
   const [selectedTask, setSelectedTask] = useState(null);
   const [selectedTaskId, setSelectedTaskId] = useState(null);
   const [detailsTask, setDetailsTask] = useState(null);
+  const [pendingIrreversibleAction, setPendingIrreversibleAction] =
+    useState(null);
   const [isAddTaskModalOpen, setIsAddTaskModalOpen] = useState(false);
   const [addTaskError, setAddTaskError] = useState("");
   const [addTaskFiles, setAddTaskFiles] = useState([]);
@@ -42,6 +195,38 @@ const TaskManager = () => {
   useEffect(() => {
     fetchTasks();
   }, []);
+
+  useEffect(() => {
+    if (!selectedTask) {
+      return;
+    }
+
+    const freshTask = tasks.find((task) => task.id === selectedTask.id);
+    if (!freshTask) {
+      setSelectedTask(null);
+      return;
+    }
+
+    if (freshTask !== selectedTask) {
+      setSelectedTask(freshTask);
+    }
+  }, [tasks, selectedTask]);
+
+  useEffect(() => {
+    if (!detailsTask) {
+      return;
+    }
+
+    const freshTask = tasks.find((task) => task.id === detailsTask.id);
+    if (!freshTask) {
+      setDetailsTask(null);
+      return;
+    }
+
+    if (freshTask !== detailsTask) {
+      setDetailsTask(freshTask);
+    }
+  }, [tasks, detailsTask]);
 
   const fetchTasks = async () => {
     setLoading(true);
@@ -210,6 +395,83 @@ const TaskManager = () => {
     closeAddTaskModal();
   };
 
+  const handleQuickTaskFieldChange = (taskId, field, nextValue) => {
+    setTasks((prev) =>
+      prev.map((task) =>
+        task.id === taskId ? { ...task, [field]: nextValue } : task,
+      ),
+    );
+  };
+
+  const saveTaskDescription = (taskId, nextDescription) => {
+    setTasks((prev) =>
+      prev.map((task) =>
+        task.id === taskId ? { ...task, description: nextDescription } : task,
+      ),
+    );
+  };
+
+  const requestDeleteTask = (task) => {
+    setPendingIrreversibleAction({
+      type: "delete-task",
+      taskId: task.id,
+      title: "מחיקת משימה",
+      message: `אתה עומד למחוק את המשימה: ${task.title}`,
+      warning: "פעולה זו קבועה ולא ניתנת לשחזור. האם אתה בטוח שברצונך להמשיך?",
+      confirmLabel: "כן, מחק לצמיתות",
+    });
+  };
+
+  const requestDeleteAttachment = (task, attachment) => {
+    setPendingIrreversibleAction({
+      type: "delete-attachment",
+      taskId: task.id,
+      attachmentId: attachment.id,
+      title: "מחיקת קובץ מצורף",
+      message: `אתה עומד למחוק את הקובץ: ${attachment.name}`,
+      warning: "מחיקת הקובץ היא סופית ולא ניתנת לשחזור. האם להמשיך?",
+      confirmLabel: "כן, מחק קובץ",
+    });
+  };
+
+  const closeIrreversibleConfirmModal = () => {
+    setPendingIrreversibleAction(null);
+  };
+
+  const confirmIrreversibleAction = () => {
+    if (!pendingIrreversibleAction) {
+      return;
+    }
+
+    if (pendingIrreversibleAction.type === "delete-task") {
+      const taskIdToDelete = pendingIrreversibleAction.taskId;
+
+      setTasks((prev) => prev.filter((task) => task.id !== taskIdToDelete));
+
+      if (selectedTaskId === taskIdToDelete) {
+        setSelectedTaskId(null);
+      }
+    }
+
+    if (pendingIrreversibleAction.type === "delete-attachment") {
+      const { taskId, attachmentId } = pendingIrreversibleAction;
+      setTasks((prev) =>
+        prev.map((task) =>
+          task.id === taskId
+            ? {
+                ...task,
+                attachments: (task.attachments || []).filter(
+                  (attachment) => attachment.id !== attachmentId,
+                ),
+              }
+            : task,
+        ),
+      );
+    }
+
+    setPendingIrreversibleAction(null);
+  };
+
   return (
     <div className="task-manager-container">
       <div className="task-manager-header">
@@ -220,10 +482,10 @@ const TaskManager = () => {
       </div>
 
       <div className="task-filters">
-        <FormSelect
+        <TaskFilterSelect
           name="researchFilter"
           value={researchFilter}
-          onChange={(e) => setResearchFilter(e.target.value)}
+          onChange={setResearchFilter}
           options={[
             { value: "all", label: "כל המחקרים" },
             ...researches.map((r) => ({ value: r, label: r })),
@@ -231,10 +493,10 @@ const TaskManager = () => {
           placeholder="כל המחקרים"
         />
 
-        <FormSelect
+        <TaskFilterSelect
           name="statusFilter"
           value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
+          onChange={setStatusFilter}
           options={[
             { value: "all", label: "סנן לפי סטטוס" },
             { value: "todo", label: "לביצוע" },
@@ -245,10 +507,10 @@ const TaskManager = () => {
           placeholder="סנן לפי סטטוס"
         />
 
-        <FormSelect
+        <TaskFilterSelect
           name="urgencyFilter"
           value={urgencyFilter}
-          onChange={(e) => setUrgencyFilter(e.target.value)}
+          onChange={setUrgencyFilter}
           options={[
             { value: "all", label: "מיין לפי דחיפות" },
             { value: "high", label: "גדולה" },
@@ -305,9 +567,20 @@ const TaskManager = () => {
                 </div>
 
                 <div className="task-urgency">
-                  <span className={`badge badge-urgency-${task.urgency}`}>
-                    {urgencyLabels[task.urgency]}
-                  </span>
+                  <TaskPillSelect
+                    name={`task-${task.id}-urgency`}
+                    value={task.urgency}
+                    onChange={(nextValue) =>
+                      handleQuickTaskFieldChange(task.id, "urgency", nextValue)
+                    }
+                    options={[
+                      { value: "high", label: urgencyLabels.high },
+                      { value: "medium", label: urgencyLabels.medium },
+                      { value: "low", label: urgencyLabels.low },
+                    ]}
+                    ariaLabel={`עדכון דחיפות עבור ${task.title}`}
+                    title="עדכון דחיפות"
+                  />
                 </div>
 
                 <div className="task-date">
@@ -315,9 +588,21 @@ const TaskManager = () => {
                 </div>
 
                 <div className="task-status">
-                  <span className={`badge badge-status-${task.status}`}>
-                    {statusLabels[task.status]}
-                  </span>
+                  <TaskPillSelect
+                    name={`task-${task.id}-status`}
+                    value={task.status}
+                    onChange={(nextValue) =>
+                      handleQuickTaskFieldChange(task.id, "status", nextValue)
+                    }
+                    options={[
+                      { value: "todo", label: statusLabels.todo },
+                      { value: "in_progress", label: statusLabels.in_progress },
+                      { value: "needs_help", label: statusLabels.needs_help },
+                      { value: "completed", label: statusLabels.completed },
+                    ]}
+                    ariaLabel={`עדכון סטטוס עבור ${task.title}`}
+                    title="עדכון סטטוס"
+                  />
                 </div>
 
                 <div className="task-comments">
@@ -344,6 +629,18 @@ const TaskManager = () => {
                 </div>
 
                 <div className="more-options">
+                  <button
+                    className="delete-task-btn"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      requestDeleteTask(task);
+                    }}
+                    title="מחיקת משימה"
+                    aria-label={`מחיקת משימה ${task.title}`}
+                  >
+                    <FaTrashAlt /> מחק
+                  </button>
+
                   <button
                     className="view-details-btn"
                     onClick={(e) => {
@@ -386,6 +683,8 @@ const TaskManager = () => {
       {detailsTask && (
         <TaskDetailsModal
           task={detailsTask}
+          onSaveDescription={saveTaskDescription}
+          onRequestDeleteAttachment={requestDeleteAttachment}
           onClose={() => setDetailsTask(null)}
         />
       )}
@@ -401,6 +700,17 @@ const TaskManager = () => {
           onRemoveFile={handleRemoveAddTaskFile}
           onSubmit={handleAddTaskSubmit}
           onClose={closeAddTaskModal}
+        />
+      )}
+
+      {pendingIrreversibleAction && (
+        <IrreversibleConfirmModal
+          title={pendingIrreversibleAction.title}
+          message={pendingIrreversibleAction.message}
+          warning={pendingIrreversibleAction.warning}
+          confirmLabel={pendingIrreversibleAction.confirmLabel}
+          onConfirm={confirmIrreversibleAction}
+          onClose={closeIrreversibleConfirmModal}
         />
       )}
     </div>
@@ -419,7 +729,7 @@ const AddTaskModal = ({
   onClose,
 }) => {
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div className="modal-overlay add-task-overlay" onClick={onClose}>
       <div
         className="modal-content add-task-modal"
         onClick={(e) => e.stopPropagation()}
@@ -671,7 +981,27 @@ const TaskChatPanel = ({ task, user, onClose, isMobile }) => {
 };
 
 // Subcomponent for the Details Modal
-const TaskDetailsModal = ({ task, onClose }) => {
+const TaskDetailsModal = ({
+  task,
+  onSaveDescription,
+  onRequestDeleteAttachment,
+  onClose,
+}) => {
+  const [isEditingDescription, setIsEditingDescription] = useState(false);
+  const [descriptionDraft, setDescriptionDraft] = useState(
+    task.description || "",
+  );
+
+  useEffect(() => {
+    setDescriptionDraft(task.description || "");
+    setIsEditingDescription(false);
+  }, [task.id, task.description]);
+
+  const handleSaveDescription = () => {
+    onSaveDescription(task.id, descriptionDraft.trim());
+    setIsEditingDescription(false);
+  };
+
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
@@ -688,9 +1018,48 @@ const TaskDetailsModal = ({ task, onClose }) => {
 
         <div className="modal-body">
           <div className="modal-section">
-            <h3>תיאור המשימה המלא</h3>
+            <div className="details-section-header">
+              <h3>תיאור המשימה המלא</h3>
+              {isEditingDescription ? (
+                <div className="details-section-actions">
+                  <button
+                    type="button"
+                    className="details-inline-btn"
+                    onClick={() => {
+                      setDescriptionDraft(task.description || "");
+                      setIsEditingDescription(false);
+                    }}
+                  >
+                    ביטול
+                  </button>
+                  <button
+                    type="button"
+                    className="details-inline-btn details-inline-btn-primary"
+                    onClick={handleSaveDescription}
+                  >
+                    שמירה
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  className="details-inline-btn"
+                  onClick={() => setIsEditingDescription(true)}
+                >
+                  עריכת טקסט
+                </button>
+              )}
+            </div>
             <div className="task-description-box">
-              {task.description ? (
+              {isEditingDescription ? (
+                <textarea
+                  className="task-description-editor"
+                  rows={6}
+                  value={descriptionDraft}
+                  onChange={(e) => setDescriptionDraft(e.target.value)}
+                  placeholder="הוסף תיאור למשימה"
+                />
+              ) : task.description ? (
                 <p>{task.description}</p>
               ) : (
                 <p className="empty-text">אין תיאור מפורט למשימה זו.</p>
@@ -711,9 +1080,20 @@ const TaskDetailsModal = ({ task, onClose }) => {
                         <span className="attachment-size">{att.size}</span>
                       </div>
                     </div>
-                    <button className="download-btn" title="הורד קובץ">
-                      <FaDownload />
-                    </button>
+
+                    <div className="attachment-actions">
+                      <button className="download-btn" title="הורד קובץ">
+                        <FaDownload />
+                      </button>
+                      <button
+                        type="button"
+                        className="attachment-delete-btn"
+                        title="מחיקת קובץ"
+                        onClick={() => onRequestDeleteAttachment(task, att)}
+                      >
+                        <FaTrashAlt />
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -722,6 +1102,53 @@ const TaskDetailsModal = ({ task, onClose }) => {
             )}
             <button className="upload-file-btn">
               <FaPaperclip /> העלה קובץ חדש
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const IrreversibleConfirmModal = ({
+  title,
+  message,
+  warning,
+  confirmLabel,
+  onConfirm,
+  onClose,
+}) => {
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div
+        className="modal-content delete-confirm-modal"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="modal-header">
+          <h2>{title}</h2>
+          <button
+            className="close-modal-btn"
+            onClick={onClose}
+            aria-label="סגור"
+          >
+            <FaTimes />
+          </button>
+        </div>
+
+        <div className="modal-body delete-confirm-body">
+          <p className="delete-confirm-text">{message}</p>
+          <p className="delete-confirm-warning">{warning}</p>
+
+          <div className="delete-confirm-actions">
+            <button type="button" className="add-task-cancel" onClick={onClose}>
+              ביטול
+            </button>
+            <button
+              type="button"
+              className="delete-confirm-btn"
+              onClick={onConfirm}
+            >
+              {confirmLabel}
             </button>
           </div>
         </div>
