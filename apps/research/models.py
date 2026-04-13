@@ -225,6 +225,162 @@ class ResearchChatSettings(models.Model):
         return f"ChatSettings for Research #{self.research_id}"
 
 
+def research_task_attachment_upload_path(instance, filename):
+    ext = filename.split(".")[-1] if "." in filename else ""
+    ext = f".{ext.lower()}" if ext else ""
+    return f"research_tasks/{instance.task.research_id}/{instance.task_id}/{uuid.uuid4()}{ext}"
+
+
+class ResearchTask(models.Model):
+    """A task inside a research project (Task Manager board)."""
+
+    class Status(models.TextChoices):
+        TODO = "todo", "To Do"
+        IN_PROGRESS = "in_progress", "In Progress"
+        NEEDS_HELP = "needs_help", "Needs Help"
+        COMPLETED = "completed", "Completed"
+
+    class Urgency(models.TextChoices):
+        LOW = "low", "Low"
+        MEDIUM = "medium", "Medium"
+        HIGH = "high", "High"
+
+    id = models.AutoField(primary_key=True)
+    research = models.ForeignKey(
+        Research,
+        on_delete=models.CASCADE,
+        related_name="tasks",
+    )
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="created_research_tasks",
+    )
+
+    title = models.CharField(max_length=255)
+    description = models.TextField(blank=True)
+
+    urgency = models.CharField(
+        max_length=20,
+        choices=Urgency.choices,
+        default=Urgency.MEDIUM,
+        db_index=True,
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.TODO,
+        db_index=True,
+    )
+    due_date = models.DateField(null=True, blank=True)
+
+    assignees = models.ManyToManyField(
+        settings.AUTH_USER_MODEL,
+        through="ResearchTaskAssignee",
+        related_name="assigned_research_tasks",
+        blank=True,
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "research_tasks"
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["research", "status"]),
+            models.Index(fields=["research", "urgency"]),
+        ]
+
+    def __str__(self):
+        return f"Task #{self.id}: {self.title} (research={self.research_id})"
+
+
+class ResearchTaskAssignee(models.Model):
+    """Assignee membership for a research task (with display role)."""
+
+    task = models.ForeignKey(
+        ResearchTask,
+        on_delete=models.CASCADE,
+        related_name="task_assignees",
+    )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="research_task_assignments",
+    )
+    role = models.CharField(
+        max_length=100,
+        blank=True,
+        default="",
+        help_text="Free-form display role (e.g. 'manager', 'student', 'owner').",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "research_task_assignees"
+        constraints = [
+            models.UniqueConstraint(fields=["task", "user"], name="uniq_task_user"),
+        ]
+
+    def __str__(self):
+        return f"Assignee task={self.task_id} user={self.user_id}"
+
+
+class ResearchTaskAttachment(models.Model):
+    """A file attached to a research task."""
+
+    task = models.ForeignKey(
+        ResearchTask,
+        on_delete=models.CASCADE,
+        related_name="attachments",
+    )
+    file = models.FileField(upload_to=research_task_attachment_upload_path)
+    file_name = models.CharField(max_length=255)
+    size = models.PositiveBigIntegerField(default=0)
+    uploaded_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="uploaded_task_attachments",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "research_task_attachments"
+        ordering = ["created_at"]
+
+    def __str__(self):
+        return f"Attachment #{self.id} task={self.task_id} {self.file_name}"
+
+
+class ResearchTaskComment(models.Model):
+    """A comment on a research task (task chat)."""
+
+    task = models.ForeignKey(
+        ResearchTask,
+        on_delete=models.CASCADE,
+        related_name="comments",
+    )
+    author = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="research_task_comments",
+    )
+    body = models.TextField(max_length=2000)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "research_task_comments"
+        ordering = ["created_at"]
+
+    def __str__(self):
+        return f"Comment #{self.id} task={self.task_id} by user={self.author_id}"
+
+
 class ResearchChatMessage(models.Model):
     research = models.ForeignKey(
         Research,

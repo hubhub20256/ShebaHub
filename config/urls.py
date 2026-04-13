@@ -1,10 +1,11 @@
 from django.contrib import admin
 from django.contrib.admin import AdminSite
-from django.urls import path, include
+from django.urls import path, include, re_path
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from django.views.generic import RedirectView
+from django.views.static import serve
 
 
 # Restrict /admin/ to superusers only (staff admins cannot access it)
@@ -55,7 +56,18 @@ urlpatterns = [
     path("api/redoc/", DocsRedocView.as_view(url_name="schema"), name="redoc"),
 ]
 
-# Serve media and static files in development only
+# Serve media files (user uploads like avatars) in all environments.
+# Django's static() only works when DEBUG=True, so we use re_path directly
+# to ensure avatars are accessible in production too.
+# For high-traffic production, consider using nginx to serve /media/ instead.
+urlpatterns += [
+    re_path(
+        r'^media/(?P<path>.*)$',
+        serve,
+        {'document_root': settings.MEDIA_ROOT},
+    ),
+]
+
+# Serve static files in development only
 if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
     urlpatterns += staticfiles_urlpatterns()

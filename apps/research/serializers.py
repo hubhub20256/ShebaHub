@@ -7,7 +7,17 @@ from apps.profiles.models import StudentProfile, MentorProfile
 from apps.profiles.file_security import validate_upload
 from apps.common.utils import sanitize_text
 
-from .models import Research, ResearchApplication, ContactMessage, ResearchChatSettings, ResearchChatMessage
+from .models import (
+    Research,
+    ResearchApplication,
+    ContactMessage,
+    ResearchChatSettings,
+    ResearchChatMessage,
+    ResearchTask,
+    ResearchTaskAssignee,
+    ResearchTaskAttachment,
+    ResearchTaskComment,
+)
 
 
 class ResearchSerializer(serializers.ModelSerializer):
@@ -155,11 +165,15 @@ class ResearchCreateSerializer(serializers.ModelSerializer):
             "accepting_applications",
         ]
         extra_kwargs = {
-            "researchName": {"required": True, "min_length": 3},
+            "researchName": {"required": True, "min_length": 3, "max_length": 255},
             "description": {"required": True, "max_length": 5000, "min_length": 10},
+            "researchArea": {"max_length": 255},
+            "mentors": {"max_length": 255},
             "requirements": {"max_length": 5000},
             "skillsAndTools": {"max_length": 5000},
             "output": {"max_length": 5000},
+            "location": {"max_length": 255},
+            "helsinkiApproval": {"max_length": 100},
             "accepting_applications": {"default": True, "required": False},
         }
 
@@ -608,3 +622,197 @@ class ResearchChatMessageSerializer(serializers.ModelSerializer):
             return obj.pinned_by.get_full_name()
         except Exception:
             return None
+
+
+# =============================================================================
+# RESEARCH TASK MANAGER SERIALIZERS
+# =============================================================================
+
+def _user_avatar_url(user, request):
+    """Return the best-guess avatar URL for a user (mentor or student profile)."""
+    if user is None:
+        return None
+    profile = None
+    try:
+        profile = MentorProfile.objects.only("avatar").get(user=user)
+    except MentorProfile.DoesNotExist:
+        try:
+            profile = StudentProfile.objects.only("avatar").get(user=user)
+        except StudentProfile.DoesNotExist:
+            profile = None
+    if not profile or not profile.avatar:
+        return None
+    url = profile.avatar.url
+    return request.build_absolute_uri(url) if request else url
+
+
+class ResearchTaskAssigneeSerializer(serializers.ModelSerializer):
+    id = serializers.SerializerMethodField()
+    name = serializers.SerializerMethodField()
+    avatar = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ResearchTaskAssignee
+        fields = ["id", "name", "role", "avatar"]
+        read_only_fields = fields
+
+    def get_id(self, obj):
+        return str(obj.user_id)
+
+    def get_name(self, obj):
+        try:
+            return obj.user.get_full_name() or obj.user.email
+        except Exception:
+            return None
+
+    def get_avatar(self, obj):
+        return _user_avatar_url(obj.user, self.context.get("request"))
+
+
+class ResearchTaskAttachmentSerializer(serializers.ModelSerializer):
+    name = serializers.CharField(source="file_name", read_only=True)
+    url = serializers.SerializerMethodField(read_only=True)
+    size = serializers.SerializerMethodField(read_only=True)
+
+    class Meta:
+        model = ResearchTaskAttachment
+        fields = ["id", "name", "size", "url", "created_at"]
+        read_only_fields = fields
+
+    def get_url(self, obj):
+        if not obj.file:
+            return None
+        request = self.context.get("request")
+        try:
+            url = obj.file.url
+        except Exception:
+            return None
+        return request.build_absolute_uri(url) if request else url
+
+    def get_size(self, obj):
+        """Return a human-readable size string (matches frontend expectation)."""
+        bytes_ = obj.size or 0
+        if bytes_ <= 0:
+            return "0 B"
+        units = ["B", "KB", "MB", "GB"]
+        idx = 0
+        val = float(bytes_)
+        while val >= 1024 and idx < len(units) - 1:
+            val /= 1024
+            idx += 1
+        if idx == 0:
+            return f"{int(val)} {units[idx]}"
+        return f"{val:.1f} {units[idx]}"
+
+
+class ResearchTaskCommentSerializer(serializers.ModelSerializer):
+    author = serializers.SerializerMethodField(read_only=True)
+    createdAt = serializers.DateTimeField(source="created_at", read_only=True)
+    timeString = serializers.SerializerMethodField(read_only=True)
+    body = serializers.CharField(max_length=2000)
+
+    class Meta:
+        model = ResearchTaskComment
+        fields = ["id", "author", "body", "createdAt", "timeString"]
+        read_only_fields = ["id", "author", "createdAt", "timeString"]
+
+    def get_author(self, obj):
+        try:
+            name = obj.author.get_full_name() or obj.author.email
+        except Exception:
+            name = None
+        return {
+            "id": str(obj.author_id),
+            "name": name,
+            "avatar": _user_avatar_url(obj.author, self.context.get("request")),
+        }
+
+    def get_timeString(self, obj):
+        try:
+            return obj.created_at.strftime("%H:%M")
+        except Exception:
+            return None
+
+    def validate_body(self, value):
+        cleaned = sanitize_text(value or "").strip()
+        if not cleaned:
+            raise serializers.ValidationError("Comment body cannot be empty.")
+        return cleaned
+
+
+class ResearchTaskSerializer(serializers.ModelSerializer):
+    """Full task representation matching the frontend Task Manager data shape."""
+
+    researchId = serializers.SerializerMethodField(read_only=True)
+    researchName = serializers.CharField(source="research.researchName", read_only=True)
+    dueDate = serializers.DateField(source="due_date", allow_null=True, required=False)
+    assignees = serializers.SerializerMethodField(read_only=True)
+    attachments = ResearchTaskAttachmentSerializer(many=True, read_only=True)
+    commentsCount = serializers.SerializerMethodField(read_only=True)
+    createdBy = serializers.SerializerMethodField(read_only=True)
+
+    class Meta:
+        model = ResearchTask
+        fields = [
+            "id",
+            "title",
+            "description",
+            "urgency",
+            "status",
+            "dueDate",
+            "researchId",
+            "researchName",
+            "assignees",
+            "attachments",
+            "commentsCount",
+            "createdBy",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = [
+            "id", "researchId", "researchName", "assignees",
+            "attachments", "commentsCount", "createdBy",
+            "created_at", "updated_at",
+        ]
+        extra_kwargs = {
+            "title": {"required": True, "min_length": 1, "max_length": 255},
+            "description": {"required": False, "allow_blank": True, "max_length": 5000},
+        }
+
+    def get_researchId(self, obj):
+        return str(obj.research_id)
+
+    def get_assignees(self, obj):
+        qs = obj.task_assignees.select_related("user").all()
+        return ResearchTaskAssigneeSerializer(qs, many=True, context=self.context).data
+
+    def get_commentsCount(self, obj):
+        # Prefer prefetched annotation if present.
+        if hasattr(obj, "_comments_count"):
+            return obj._comments_count
+        return obj.comments.count()
+
+    def get_createdBy(self, obj):
+        if not obj.created_by_id:
+            return None
+        try:
+            return {
+                "id": str(obj.created_by_id),
+                "name": obj.created_by.get_full_name() or obj.created_by.email,
+            }
+        except Exception:
+            return {"id": str(obj.created_by_id), "name": None}
+
+    def to_internal_value(self, data):
+        ret = super().to_internal_value(data)
+        if "title" in ret and isinstance(ret["title"], str):
+            ret["title"] = sanitize_text(ret["title"])
+        if "description" in ret and isinstance(ret["description"], str):
+            ret["description"] = sanitize_text(ret["description"])
+        return ret
+
+    def validate_title(self, value):
+        value = (value or "").strip()
+        if not value:
+            raise serializers.ValidationError("Title is required.")
+        return value
