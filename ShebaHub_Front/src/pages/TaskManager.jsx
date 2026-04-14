@@ -1,4 +1,10 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useLocation } from "react-router-dom";
 import toast from "react-hot-toast";
 import { useAuth } from "../context/AuthContext";
@@ -18,6 +24,18 @@ import {
   FaEdit,
   FaTrash,
 } from "react-icons/fa";
+
+/**
+ * Task manager board for research-scoped and global task workflows.
+ *
+ * The page coordinates task fetching, optimistic inline updates, task
+ * creation and editing, attachment handling, and comment management. When the
+ * route includes a research identifier, the board is scoped to that research
+ * and the same data model is reused for the modal and chat surfaces.
+ */
+
+// Shared labels, option sets, and normalization helpers keep the board logic
+// consistent across list rows, modal forms, and API payloads.
 
 const STATUS_LABELS = {
   todo: "לביצוע",
@@ -55,11 +73,17 @@ const URGENCY_VALUE_OPTIONS = URGENCY_FILTER_OPTIONS.filter(
   (opt) => opt.value !== "all",
 );
 
+/**
+ * Normalizes mixed identifier types so board state can compare ids reliably.
+ */
 const toComparableId = (value) => {
   if (value === null || value === undefined) return "";
   return String(value);
 };
 
+/**
+ * Derives initials for avatar fallbacks when a profile image is unavailable.
+ */
 const getInitials = (name) => {
   const safeName = String(name || "").trim();
   if (!safeName) return "?";
@@ -72,6 +96,9 @@ const getInitials = (name) => {
   return (parts[0].slice(0, 2) || "?").toUpperCase();
 };
 
+/**
+ * Resolves the most likely avatar URL from the data shapes used by the API.
+ */
 const resolveAvatar = (source) => {
   if (!source) return "";
   if (typeof source === "string") return source;
@@ -94,6 +121,9 @@ const resolveAvatar = (source) => {
 const getUrgencyOptionClass = (value) => `tm-option-urgency-${value}`;
 const getStatusOptionClass = (value) => `tm-option-status-${value}`;
 
+/**
+ * Renders an avatar image with an initials fallback when loading fails.
+ */
 const AvatarCircle = ({ src, name, className }) => {
   const [failed, setFailed] = useState(false);
   const normalizedSrc = typeof src === "string" ? src.trim() : "";
@@ -116,6 +146,9 @@ const AvatarCircle = ({ src, name, className }) => {
   );
 };
 
+/**
+ * Formats task dates for display in the board and detail surfaces.
+ */
 const formatTaskDate = (value) => {
   if (!value) return "-";
   const parsed = new Date(value);
@@ -123,6 +156,9 @@ const formatTaskDate = (value) => {
   return parsed.toLocaleDateString("en-GB");
 };
 
+/**
+ * Extracts the first validation message for a group of possible field keys.
+ */
 const firstValidationMessage = (details, keys = []) => {
   if (!details || typeof details !== "object") return "";
 
@@ -139,6 +175,9 @@ const firstValidationMessage = (details, keys = []) => {
   return "";
 };
 
+/**
+ * Converts API error payloads into a user-facing message with a safe fallback.
+ */
 const getErrorMessage = (error, fallback) => {
   if (error?.data?.code === "VALIDATION_ERROR") {
     const details = error?.data?.details;
@@ -158,6 +197,9 @@ const getErrorMessage = (error, fallback) => {
   return error?.data?.detail || error?.data?.message || fallback;
 };
 
+/**
+ * Lightweight dropdown used by the task board and modal forms.
+ */
 const TaskManagerDropdown = ({
   value,
   options,
@@ -229,11 +271,20 @@ const TaskManagerDropdown = ({
   );
 };
 
+// Page state, derived collections, and action handlers live in a single scope
+// because the board, chat panel, and modals all coordinate through the same task
+// identifiers.
+
+/**
+ * Renders the task board, applies filters, and orchestrates all task actions.
+ */
 const TaskManager = () => {
   const { user } = useAuth();
   const location = useLocation();
   const isMobile = useMediaQuery("(max-width: 768px)");
 
+  // Board state and UI state are kept together so filters, selection, and
+  // overlays stay in sync as tasks are created, updated, or removed.
   const [tasks, setTasks] = useState([]);
   const [memberResearches, setMemberResearches] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -267,6 +318,7 @@ const TaskManager = () => {
     researchId: "",
   });
 
+  // Scope the board to a research id when the route carries that context.
   const scopedResearchId = useMemo(() => {
     const searchParams = new URLSearchParams(location.search);
     return toComparableId(
@@ -276,6 +328,8 @@ const TaskManager = () => {
 
   const isScopedBoard = Boolean(scopedResearchId);
 
+  // Load the user-visible research list once so filters and modal defaults can
+  // stay aligned with the user’s memberships and owned researches.
   useEffect(() => {
     let cancelled = false;
 
@@ -331,6 +385,8 @@ const TaskManager = () => {
     };
   }, []);
 
+  // Build the derived research options from memberships plus any research ids
+  // already present on loaded tasks.
   const researchOptions = useMemo(() => {
     const map = new Map();
 
@@ -409,6 +465,7 @@ const TaskManager = () => {
     }
   }, [isScopedBoard, researchFilter, researchOptions]);
 
+  // Fetch the task board for the active scope/filter combination.
   const fetchTasks = useCallback(async () => {
     setLoading(true);
     try {
@@ -434,6 +491,8 @@ const TaskManager = () => {
     fetchTasks();
   }, [fetchTasks]);
 
+  // If the active task disappears from the current task list, close any
+  // overlays that still point to it so the UI never references stale ids.
   useEffect(() => {
     if (
       selectedTaskId &&
@@ -496,6 +555,7 @@ const TaskManager = () => {
     [tasks, editTaskId],
   );
 
+  // Apply the visible filters without mutating the underlying task order.
   const filteredTasks = useMemo(() => {
     return tasks.filter((task) => {
       if (!isScopedBoard && researchFilter !== "all") {
@@ -587,6 +647,8 @@ const TaskManager = () => {
     [quickUpdateMap],
   );
 
+  // Optimistic update helpers keep row-level interactions responsive while the
+  // network call completes, and roll back when the request fails.
   const handleQuickTaskFieldChange = useCallback(
     async (task, field, value) => {
       if (!task || task[field] === value) return;
@@ -632,6 +694,8 @@ const TaskManager = () => {
     [handleTaskInaccessible, setQuickUpdateState, upsertTaskInBoard],
   );
 
+  // Modal and destructive action handlers are centralized so the row actions,
+  // detail modal, and delete confirmation share one state model.
   const handleDeleteTaskFromRow = useCallback((task) => {
     if (!task) return;
 
@@ -1084,6 +1148,9 @@ const TaskManager = () => {
   );
 };
 
+/**
+ * Add-task modal that collects the task payload, validation state, and files.
+ */
 const AddTaskModal = ({
   form,
   files,
@@ -1280,6 +1347,9 @@ const AddTaskModal = ({
   );
 };
 
+/**
+ * Task-level chat panel for comments, including mobile sheet presentation.
+ */
 const TaskChatPanel = ({
   task,
   onClose,
@@ -1476,6 +1546,9 @@ const TaskChatPanel = ({
   );
 };
 
+/**
+ * Edit modal for task metadata and assignee management.
+ */
 const TaskEditModal = ({
   task,
   onClose,
@@ -1527,11 +1600,17 @@ const TaskEditModal = ({
     let cancelled = false;
 
     const normalizeMemberOption = (member) => {
-      const id = toComparableId(member?.user_id ?? member?.id ?? member?.userId);
+      const id = toComparableId(
+        member?.user_id ?? member?.id ?? member?.userId,
+      );
       if (!id) return null;
 
       const label =
-        member?.display || member?.name || member?.full_name || member?.fullName || id;
+        member?.display ||
+        member?.name ||
+        member?.full_name ||
+        member?.fullName ||
+        id;
 
       return {
         value: id,
@@ -1582,12 +1661,16 @@ const TaskEditModal = ({
   }, [task.id, task.researchId]);
 
   const assigneeIds = useMemo(
-    () => new Set((assignees || []).map((assignee) => toComparableId(assignee.id))),
+    () =>
+      new Set((assignees || []).map((assignee) => toComparableId(assignee.id))),
     [assignees],
   );
 
   const availableAssigneeOptions = useMemo(
-    () => memberOptions.filter((option) => !assigneeIds.has(toComparableId(option.value))),
+    () =>
+      memberOptions.filter(
+        (option) => !assigneeIds.has(toComparableId(option.value)),
+      ),
     [memberOptions, assigneeIds],
   );
 
@@ -1612,7 +1695,11 @@ const TaskEditModal = ({
     setAssigneeError("");
 
     try {
-      const addedAssignee = await tasksAPI.assignUser(task.id, selectedAssigneeId, "");
+      const addedAssignee = await tasksAPI.assignUser(
+        task.id,
+        selectedAssigneeId,
+        "",
+      );
 
       const nextAssignees = [...assignees];
       const existingIndex = nextAssignees.findIndex(
@@ -1763,224 +1850,239 @@ const TaskEditModal = ({
   };
 
   return (
-          <>
-            <div className="modal-overlay" onClick={onClose}>
-              <div
-                className="modal-content add-task-modal"
-                onClick={(event) => event.stopPropagation()}
-              >
-        <div className="modal-header">
-          <h2>עריכת משימה</h2>
-          <button
-            className="close-modal-btn"
-            onClick={onClose}
-            aria-label="סגור"
-            disabled={saving}
-          >
-            <FaTimes />
-          </button>
-        </div>
-
-        <form className="modal-body add-task-form" onSubmit={handleSubmit}>
-          <div className="add-task-field">
-            <label htmlFor={`task-edit-title-${task.id}`}>כותרת משימה</label>
-            <input
-              id={`task-edit-title-${task.id}`}
-              className="add-task-input"
-              type="text"
-              value={form.title}
-              onChange={(event) =>
-                setForm((prev) => ({ ...prev, title: event.target.value }))
-              }
-              disabled={saving}
-              required
-            />
-            {firstValidationMessage(fieldErrors, ["title"]) ? (
-              <p className="add-task-error">
-                {firstValidationMessage(fieldErrors, ["title"])}
-              </p>
-            ) : null}
-          </div>
-
-          <div className="add-task-field">
-            <label htmlFor={`task-edit-description-${task.id}`}>תיאור</label>
-            <textarea
-              id={`task-edit-description-${task.id}`}
-              className="add-task-textarea"
-              rows={4}
-              value={form.description}
-              onChange={(event) =>
-                setForm((prev) => ({
-                  ...prev,
-                  description: event.target.value,
-                }))
-              }
-              disabled={saving}
-            />
-            {firstValidationMessage(fieldErrors, ["description"]) ? (
-              <p className="add-task-error">
-                {firstValidationMessage(fieldErrors, ["description"])}
-              </p>
-            ) : null}
-          </div>
-
-          <div className="add-task-grid">
-            <div className="add-task-field">
-              <label>דחיפות</label>
-              <TaskManagerDropdown
-                value={form.urgency}
-                onChange={(value) =>
-                  setForm((prev) => ({ ...prev, urgency: value }))
-                }
-                options={URGENCY_VALUE_OPTIONS}
-                className="add-task-select"
-                disabled={saving}
-              />
-            </div>
-
-            <div className="add-task-field">
-              <label>סטטוס</label>
-              <TaskManagerDropdown
-                value={form.status}
-                onChange={(value) =>
-                  setForm((prev) => ({ ...prev, status: value }))
-                }
-                options={STATUS_VALUE_OPTIONS}
-                className="add-task-select"
-                disabled={saving}
-              />
-            </div>
-          </div>
-
-          <div className="add-task-field">
-            <label htmlFor={`task-edit-due-date-${task.id}`}>תאריך יעד</label>
-            <CalendarDatePicker
-              value={form.dueDate || ""}
-              onChange={(nextDate) =>
-                setForm((prev) => ({ ...prev, dueDate: nextDate }))
-              }
-              placeholder="בחר תאריך יעד"
-              disabled={saving}
-            />
-            {firstValidationMessage(fieldErrors, ["dueDate", "due_date"]) ? (
-              <p className="add-task-error">
-                {firstValidationMessage(fieldErrors, ["dueDate", "due_date"])}
-              </p>
-            ) : null}
-          </div>
-
-          <div className="add-task-field">
-            <label>אחראים</label>
-
-            {assignees.length > 0 ? (
-              <div className="task-assignees-list">
-                {assignees.map((assignee) => {
-                  const assigneeId = toComparableId(assignee.id);
-                  return (
-                    <div key={assigneeId} className="task-assignee-row">
-                      <div className="task-assignee-info">
-                        <AvatarCircle
-                          src={resolveAvatar(assignee)}
-                          name={assignee.name || ""}
-                          className="assignee-avatar"
-                        />
-                        <div>
-                          <div className="assignee-name">{assignee.name || "-"}</div>
-                          <div className="assignee-role">{assignee.role || "-"}</div>
-                        </div>
-                      </div>
-
-                      <button
-                        type="button"
-                        className="task-assignee-remove"
-                        onClick={() => openRemoveAssigneeConfirm(assignee)}
-                        disabled={
-                          saving ||
-                          assigneeActionPendingId === assigneeId ||
-                          loadingMembers
-                        }
-                        title="הסר אחראי"
-                      >
-                        <FaTrash />
-                      </button>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <p className="empty-text">אין אחראים משויכים למשימה.</p>
-            )}
-
-            <div className="task-assignee-add-row">
-              <TaskManagerDropdown
-                value={selectedAssigneeId}
-                onChange={setSelectedAssigneeId}
-                options={availableAssigneeOptions}
-                className="add-task-select"
-                placeholder={
-                  loadingMembers
-                    ? "טוען חברי מחקר..."
-                    : availableAssigneeOptions.length
-                      ? "בחר אחראי להוספה"
-                      : "אין אחראים זמינים להוספה"
-                }
-                disabled={saving || loadingMembers || !availableAssigneeOptions.length}
-              />
-
-              <button
-                type="button"
-                className="add-task-submit task-assignee-add-btn"
-                onClick={handleAddAssignee}
-                disabled={
-                  saving ||
-                  loadingMembers ||
-                  !selectedAssigneeId ||
-                  Boolean(assigneeActionPendingId)
-                }
-              >
-                הוסף אחראי
-              </button>
-            </div>
-
-            {assigneeError ? <p className="add-task-error">{assigneeError}</p> : null}
-          </div>
-
-          {error ? <p className="add-task-error">{error}</p> : null}
-
-          <div className="add-task-actions">
+    <>
+      <div className="modal-overlay" onClick={onClose}>
+        <div
+          className="modal-content add-task-modal"
+          onClick={(event) => event.stopPropagation()}
+        >
+          <div className="modal-header">
+            <h2>עריכת משימה</h2>
             <button
-              type="button"
-              className="add-task-cancel"
+              className="close-modal-btn"
               onClick={onClose}
+              aria-label="סגור"
               disabled={saving}
             >
-              ביטול
-            </button>
-            <button type="submit" className="add-task-submit" disabled={saving}>
-              {saving ? "שומר..." : "שמור שינויים"}
+              <FaTimes />
             </button>
           </div>
-        </form>
+
+          <form className="modal-body add-task-form" onSubmit={handleSubmit}>
+            <div className="add-task-field">
+              <label htmlFor={`task-edit-title-${task.id}`}>כותרת משימה</label>
+              <input
+                id={`task-edit-title-${task.id}`}
+                className="add-task-input"
+                type="text"
+                value={form.title}
+                onChange={(event) =>
+                  setForm((prev) => ({ ...prev, title: event.target.value }))
+                }
+                disabled={saving}
+                required
+              />
+              {firstValidationMessage(fieldErrors, ["title"]) ? (
+                <p className="add-task-error">
+                  {firstValidationMessage(fieldErrors, ["title"])}
+                </p>
+              ) : null}
+            </div>
+
+            <div className="add-task-field">
+              <label htmlFor={`task-edit-description-${task.id}`}>תיאור</label>
+              <textarea
+                id={`task-edit-description-${task.id}`}
+                className="add-task-textarea"
+                rows={4}
+                value={form.description}
+                onChange={(event) =>
+                  setForm((prev) => ({
+                    ...prev,
+                    description: event.target.value,
+                  }))
+                }
+                disabled={saving}
+              />
+              {firstValidationMessage(fieldErrors, ["description"]) ? (
+                <p className="add-task-error">
+                  {firstValidationMessage(fieldErrors, ["description"])}
+                </p>
+              ) : null}
+            </div>
+
+            <div className="add-task-grid">
+              <div className="add-task-field">
+                <label>דחיפות</label>
+                <TaskManagerDropdown
+                  value={form.urgency}
+                  onChange={(value) =>
+                    setForm((prev) => ({ ...prev, urgency: value }))
+                  }
+                  options={URGENCY_VALUE_OPTIONS}
+                  className="add-task-select"
+                  disabled={saving}
+                />
+              </div>
+
+              <div className="add-task-field">
+                <label>סטטוס</label>
+                <TaskManagerDropdown
+                  value={form.status}
+                  onChange={(value) =>
+                    setForm((prev) => ({ ...prev, status: value }))
+                  }
+                  options={STATUS_VALUE_OPTIONS}
+                  className="add-task-select"
+                  disabled={saving}
+                />
               </div>
             </div>
 
-            <ConfirmDialog
-              isOpen={Boolean(assigneeDeleteConfirm)}
-              title="הסרת אחראי מהמשימה"
-              message={`האם להסיר את ${assigneeDeleteConfirm?.name || "האחראי"} ממשימה זו?`}
-              onConfirm={() => {
-                if (assigneeDeleteConfirm?.id) {
-                  handleRemoveAssignee(assigneeDeleteConfirm.id);
+            <div className="add-task-field">
+              <label htmlFor={`task-edit-due-date-${task.id}`}>תאריך יעד</label>
+              <CalendarDatePicker
+                value={form.dueDate || ""}
+                onChange={(nextDate) =>
+                  setForm((prev) => ({ ...prev, dueDate: nextDate }))
                 }
-              }}
-              onCancel={closeRemoveAssigneeConfirm}
-              confirmText={assigneeActionPendingId ? "מסיר..." : "הסר"}
-              cancelText="ביטול"
-            />
-          </>
-        );
+                placeholder="בחר תאריך יעד"
+                disabled={saving}
+              />
+              {firstValidationMessage(fieldErrors, ["dueDate", "due_date"]) ? (
+                <p className="add-task-error">
+                  {firstValidationMessage(fieldErrors, ["dueDate", "due_date"])}
+                </p>
+              ) : null}
+            </div>
+
+            <div className="add-task-field">
+              <label>אחראים</label>
+
+              {assignees.length > 0 ? (
+                <div className="task-assignees-list">
+                  {assignees.map((assignee) => {
+                    const assigneeId = toComparableId(assignee.id);
+                    return (
+                      <div key={assigneeId} className="task-assignee-row">
+                        <div className="task-assignee-info">
+                          <AvatarCircle
+                            src={resolveAvatar(assignee)}
+                            name={assignee.name || ""}
+                            className="assignee-avatar"
+                          />
+                          <div>
+                            <div className="assignee-name">
+                              {assignee.name || "-"}
+                            </div>
+                            <div className="assignee-role">
+                              {assignee.role || "-"}
+                            </div>
+                          </div>
+                        </div>
+
+                        <button
+                          type="button"
+                          className="task-assignee-remove"
+                          onClick={() => openRemoveAssigneeConfirm(assignee)}
+                          disabled={
+                            saving ||
+                            assigneeActionPendingId === assigneeId ||
+                            loadingMembers
+                          }
+                          title="הסר אחראי"
+                        >
+                          <FaTrash />
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="empty-text">אין אחראים משויכים למשימה.</p>
+              )}
+
+              <div className="task-assignee-add-row">
+                <TaskManagerDropdown
+                  value={selectedAssigneeId}
+                  onChange={setSelectedAssigneeId}
+                  options={availableAssigneeOptions}
+                  className="add-task-select"
+                  placeholder={
+                    loadingMembers
+                      ? "טוען חברי מחקר..."
+                      : availableAssigneeOptions.length
+                        ? "בחר אחראי להוספה"
+                        : "אין אחראים זמינים להוספה"
+                  }
+                  disabled={
+                    saving || loadingMembers || !availableAssigneeOptions.length
+                  }
+                />
+
+                <button
+                  type="button"
+                  className="add-task-submit task-assignee-add-btn"
+                  onClick={handleAddAssignee}
+                  disabled={
+                    saving ||
+                    loadingMembers ||
+                    !selectedAssigneeId ||
+                    Boolean(assigneeActionPendingId)
+                  }
+                >
+                  הוסף אחראי
+                </button>
+              </div>
+
+              {assigneeError ? (
+                <p className="add-task-error">{assigneeError}</p>
+              ) : null}
+            </div>
+
+            {error ? <p className="add-task-error">{error}</p> : null}
+
+            <div className="add-task-actions">
+              <button
+                type="button"
+                className="add-task-cancel"
+                onClick={onClose}
+                disabled={saving}
+              >
+                ביטול
+              </button>
+              <button
+                type="submit"
+                className="add-task-submit"
+                disabled={saving}
+              >
+                {saving ? "שומר..." : "שמור שינויים"}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <ConfirmDialog
+        isOpen={Boolean(assigneeDeleteConfirm)}
+        title="הסרת אחראי מהמשימה"
+        message={`האם להסיר את ${assigneeDeleteConfirm?.name || "האחראי"} ממשימה זו?`}
+        onConfirm={() => {
+          if (assigneeDeleteConfirm?.id) {
+            handleRemoveAssignee(assigneeDeleteConfirm.id);
+          }
+        }}
+        onCancel={closeRemoveAssigneeConfirm}
+        confirmText={assigneeActionPendingId ? "מסיר..." : "הסר"}
+        cancelText="ביטול"
+      />
+    </>
+  );
 };
 
+/**
+ * Detail modal for task description, metadata, assignees, and attachments.
+ */
 const TaskDetailsModal = ({
   task,
   onClose,

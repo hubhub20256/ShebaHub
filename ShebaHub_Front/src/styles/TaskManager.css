@@ -1,3 +1,18 @@
+/*
+  TaskManager visual system.
+
+  - The --tm-* tokens define the page palette, surfaces, shadows, motion, and
+    spacing behavior used across the board, modals, and chat surfaces.
+  - Urgency states map to red, amber, and green accents; task status states map
+    to blue, blue, yellow, and green to keep row-level semantics consistent.
+  - z-index tiers intentionally separate the filters, dropdown menus, board
+    rows, sticky chat panel, and modal overlays so layered surfaces remain
+    predictable.
+  - The page stays visually lightweight and responsive: the app shell owns the
+    backdrop, while this file controls board layout, mobile stacking, and the
+    task chat sheet presentation.
+*/
+
 .task-manager-container {
   --tm-ink: #1e2a57;
   --tm-soft-ink: #5f6d94;
