@@ -882,6 +882,83 @@ const TaskManager = () => {
     }
   };
 
+  const handleQuickTaskFieldChange = (taskId, field, nextValue) => {
+    setTasks((prev) =>
+      prev.map((task) =>
+        task.id === taskId ? { ...task, [field]: nextValue } : task,
+      ),
+    );
+  };
+
+  const saveTaskDescription = (taskId, nextDescription) => {
+    setTasks((prev) =>
+      prev.map((task) =>
+        task.id === taskId ? { ...task, description: nextDescription } : task,
+      ),
+    );
+  };
+
+  const requestDeleteTask = (task) => {
+    setPendingIrreversibleAction({
+      type: "delete-task",
+      taskId: task.id,
+      title: "מחיקת משימה",
+      message: `אתה עומד למחוק את המשימה: ${task.title}`,
+      warning: "פעולה זו קבועה ולא ניתנת לשחזור. האם אתה בטוח שברצונך להמשיך?",
+      confirmLabel: "כן, מחק לצמיתות",
+    });
+  };
+
+  const requestDeleteAttachment = (task, attachment) => {
+    setPendingIrreversibleAction({
+      type: "delete-attachment",
+      taskId: task.id,
+      attachmentId: attachment.id,
+      title: "מחיקת קובץ מצורף",
+      message: `אתה עומד למחוק את הקובץ: ${attachment.name}`,
+      warning: "מחיקת הקובץ היא סופית ולא ניתנת לשחזור. האם להמשיך?",
+      confirmLabel: "כן, מחק קובץ",
+    });
+  };
+
+  const closeIrreversibleConfirmModal = () => {
+    setPendingIrreversibleAction(null);
+  };
+
+  const confirmIrreversibleAction = () => {
+    if (!pendingIrreversibleAction) {
+      return;
+    }
+
+    if (pendingIrreversibleAction.type === "delete-task") {
+      const taskIdToDelete = pendingIrreversibleAction.taskId;
+
+      setTasks((prev) => prev.filter((task) => task.id !== taskIdToDelete));
+
+      if (selectedTaskId === taskIdToDelete) {
+        setSelectedTaskId(null);
+      }
+    }
+
+    if (pendingIrreversibleAction.type === "delete-attachment") {
+      const { taskId, attachmentId } = pendingIrreversibleAction;
+      setTasks((prev) =>
+        prev.map((task) =>
+          task.id === taskId
+            ? {
+                ...task,
+                attachments: (task.attachments || []).filter(
+                  (attachment) => attachment.id !== attachmentId,
+                ),
+              }
+            : task,
+        ),
+      );
+    }
+
+    setPendingIrreversibleAction(null);
+  };
+
   return (
     <div className="task-manager-container">
       <div className="task-manager-header">
@@ -1166,7 +1243,7 @@ const AddTaskModal = ({
   onClose,
 }) => {
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div className="modal-overlay add-task-overlay" onClick={onClose}>
       <div
         className="modal-content add-task-modal"
         onClick={(e) => e.stopPropagation()}
@@ -2200,9 +2277,48 @@ const TaskDetailsModal = ({
 
         <div className="modal-body">
           <div className="modal-section">
-            <h3>תיאור המשימה המלא</h3>
+            <div className="details-section-header">
+              <h3>תיאור המשימה המלא</h3>
+              {isEditingDescription ? (
+                <div className="details-section-actions">
+                  <button
+                    type="button"
+                    className="details-inline-btn"
+                    onClick={() => {
+                      setDescriptionDraft(task.description || "");
+                      setIsEditingDescription(false);
+                    }}
+                  >
+                    ביטול
+                  </button>
+                  <button
+                    type="button"
+                    className="details-inline-btn details-inline-btn-primary"
+                    onClick={handleSaveDescription}
+                  >
+                    שמירה
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  className="details-inline-btn"
+                  onClick={() => setIsEditingDescription(true)}
+                >
+                  עריכת טקסט
+                </button>
+              )}
+            </div>
             <div className="task-description-box">
-              {task.description ? (
+              {isEditingDescription ? (
+                <textarea
+                  className="task-description-editor"
+                  rows={6}
+                  value={descriptionDraft}
+                  onChange={(e) => setDescriptionDraft(e.target.value)}
+                  placeholder="הוסף תיאור למשימה"
+                />
+              ) : task.description ? (
                 <p>{task.description}</p>
               ) : (
                 <p className="empty-text">אין תיאור מפורט למשימה זו.</p>
@@ -2353,6 +2469,53 @@ const TaskDetailsModal = ({
         confirmText={deletingAttachmentId ? "מוחק..." : "מחק לצמיתות"}
         cancelText="ביטול"
       />
+    </div>
+  );
+};
+
+const IrreversibleConfirmModal = ({
+  title,
+  message,
+  warning,
+  confirmLabel,
+  onConfirm,
+  onClose,
+}) => {
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div
+        className="modal-content delete-confirm-modal"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="modal-header">
+          <h2>{title}</h2>
+          <button
+            className="close-modal-btn"
+            onClick={onClose}
+            aria-label="סגור"
+          >
+            <FaTimes />
+          </button>
+        </div>
+
+        <div className="modal-body delete-confirm-body">
+          <p className="delete-confirm-text">{message}</p>
+          <p className="delete-confirm-warning">{warning}</p>
+
+          <div className="delete-confirm-actions">
+            <button type="button" className="add-task-cancel" onClick={onClose}>
+              ביטול
+            </button>
+            <button
+              type="button"
+              className="delete-confirm-btn"
+              onClick={onConfirm}
+            >
+              {confirmLabel}
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
