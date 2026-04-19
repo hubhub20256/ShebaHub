@@ -6,8 +6,15 @@ from django.http import HttpResponse
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+
+
+class AdminPagination(PageNumberPagination):
+    page_size = 50
+    page_size_query_param = 'page_size'
+    max_page_size = 200
 
 from apps.common.email_service import EmailService
 from apps.common.permissions import IsAdminUser
@@ -93,8 +100,10 @@ def list_researches(request):
     if search:
         qs = qs.filter(researchName__icontains=search)
 
-    serializer = AdminResearchSerializer(qs[:200], many=True)
-    return Response(serializer.data)
+    paginator = AdminPagination()
+    page = paginator.paginate_queryset(qs, request)
+    serializer = AdminResearchSerializer(page, many=True)
+    return paginator.get_paginated_response(serializer.data)
 
 
 def _get_research_or_404(pk):
@@ -327,8 +336,10 @@ def list_users(request):
     if is_active is not None:
         qs = qs.filter(is_active=is_active.lower() == "true")
 
-    serializer = AdminUserSerializer(qs[:200], many=True)
-    return Response(serializer.data)
+    paginator = AdminPagination()
+    page = paginator.paginate_queryset(qs, request)
+    serializer = AdminUserSerializer(page, many=True)
+    return paginator.get_paginated_response(serializer.data)
 
 
 @api_view(["GET"])
@@ -514,8 +525,10 @@ def list_logs(request):
     if action_type:
         qs = qs.filter(action_type=action_type)
 
-    serializer = AdminActionLogSerializer(qs[:200], many=True)
-    return Response(serializer.data)
+    paginator = AdminPagination()
+    page = paginator.paginate_queryset(qs, request)
+    serializer = AdminActionLogSerializer(page, many=True)
+    return paginator.get_paginated_response(serializer.data)
 
 
 # ===================== Site Settings =====================
@@ -690,8 +703,10 @@ def list_applications(request):
             | Q(applicant__lastName__icontains=search)
         )
 
-    serializer = AdminApplicationSerializer(qs[:200], many=True)
-    return Response(serializer.data)
+    paginator = AdminPagination()
+    page = paginator.paginate_queryset(qs, request)
+    serializer = AdminApplicationSerializer(page, many=True)
+    return paginator.get_paginated_response(serializer.data)
 
 
 @api_view(["POST"])

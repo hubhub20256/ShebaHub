@@ -70,6 +70,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'apps.common.middleware.RequestIPLoggingMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
@@ -187,8 +188,17 @@ EMAIL_HOST_USER = env('EMAIL_HOST_USER', default='')
 EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD', default='')
 DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL', default='noreply@shebahub.hitheal.org.il')
 
+# AWS SES settings (used when EMAIL_BACKEND = 'django_ses.SESBackend')
+AWS_SES_ACCESS_KEY_ID = env('AWS_SES_ACCESS_KEY_ID', default='')
+AWS_SES_SECRET_ACCESS_KEY = env('AWS_SES_SECRET_ACCESS_KEY', default='')
+AWS_SES_REGION_NAME = env('AWS_SES_REGION_NAME', default='il-central-1')
+AWS_SES_REGION_ENDPOINT = env('AWS_SES_REGION_ENDPOINT', default='')
+
 # Frontend URL for password reset links
-FRONTEND_URL = env('FRONTEND_URL', default='http://localhost:5173')
+FRONTEND_URL = env(
+    'FRONTEND_URL',
+    default='https://shebahub.hitheal.org.il:8444'
+)
 if IS_PRODUCTION and FRONTEND_URL.startswith('http://'):
     raise ValueError('FRONTEND_URL must use HTTPS in production!')
 
@@ -242,6 +252,9 @@ SPECTACULAR_SETTINGS = {
     'COMPONENT_SPLIT_REQUEST': True,
     'SCHEMA_PATH_PREFIX': '/api/v1',
 }
+
+# Password reset tokens expire after 30 minutes (default is 1 day)
+PASSWORD_RESET_TIMEOUT = 1800
 
 # Simple JWT settings
 from datetime import timedelta

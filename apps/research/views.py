@@ -28,8 +28,29 @@ def _approved_non_mentor_count(research):
     ).exclude(
         applicant__in=MentorProfile.objects.values_list("user_id", flat=True)
     ).count()
-from .models import Research, ResearchApplication, ContactMessage, ResearchChatSettings, ResearchChatMessage
-from .serializers import ResearchSerializer, ResearchCreateSerializer, ResearchApplicationSerializer, ContactMessageSerializer, ResearchChatSettingsSerializer, ResearchChatMessageSerializer
+from .models import (
+    Research,
+    ResearchApplication,
+    ContactMessage,
+    ResearchChatSettings,
+    ResearchChatMessage,
+    ResearchTask,
+    ResearchTaskAssignee,
+    ResearchTaskAttachment,
+    ResearchTaskComment,
+)
+from .serializers import (
+    ResearchSerializer,
+    ResearchCreateSerializer,
+    ResearchApplicationSerializer,
+    ContactMessageSerializer,
+    ResearchChatSettingsSerializer,
+    ResearchChatMessageSerializer,
+    ResearchTaskSerializer,
+    ResearchTaskCommentSerializer,
+    ResearchTaskAttachmentSerializer,
+    ResearchTaskAssigneeSerializer,
+)
 from .permissions import require_mentor, check_research_permission, check_research_any_permission
 
 
@@ -1402,13 +1423,14 @@ def research_chat_settings(request, research_id: int):
 
 @api_view(["GET", "POST"])
 @permission_classes([IsAuthenticated, IsEmailVerified])
+@throttle_classes([ChatMessageRateThrottle])
 @parser_classes([JSONParser, MultiPartParser, FormParser])
 def research_chat(request, research_id: int):
     """
     GET  /api/research/me/<id>/chat/?before=<msg_id>&limit=50 — list messages
     POST /api/research/me/<id>/chat/ — send message
     """
-    from apps.profiles.file_security import validate_upload
+    from apps.profiles.file_security import validate_upload, generate_secure_filename
 
     research, err = _check_chat_access(request, research_id)
     if err:
@@ -1472,12 +1494,12 @@ def research_chat(request, research_id: int):
         is_valid, error_message = validate_upload(file_obj)
         if not is_valid:
             return Response({"detail": error_message}, status=status.HTTP_400_BAD_REQUEST)
-        file_name = file_obj.name
+        file_name = generate_secure_filename(file_obj.name)
 
     msg = ResearchChatMessage.objects.create(
         research=research,
         sender=request.user,
-        body=body,
+        body=sanitize_text(body) if body else "",
         file=file_obj,
         file_name=file_name,
     )
@@ -1724,3 +1746,550 @@ def research_chat_members(request, research_id: int):
         })
 
     return Response(members)
+
+
+# =============================================================================
+# RESEARCH TASK MANAGER
+# =============================================================================
+
+def _user_research_ids(user):
+    """IDs of researches the user has access to (owner OR approved applicant)."""
+    owned = set(
+        Research.objects.filter(owner=user).values_list("id", flat=True)
+    )
+    member = set(
+        ResearchApplication.objects.filter(
+            applicant=user,
+            status=ResearchApplication.Status.APPROVED,
+        ).values_list("research_id", flat=True)
+    )
+    return owned | member
+
+
+def _research_member_user_ids(research):
+    """IDs of all users with access to the research (owner + approved members)."""
+    ids = {research.owner_id}
+    ids.update(
+        ResearchApplication.objects.filter(
+            research=research,
+            status=ResearchApplication.Status.APPROVED,
+        ).values_list("applicant_id", flat=True)
+    )
+    return ids
+
+
+def _check_task_access(request, task_id, *, for_write=False):
+    """
+    Return (task, None) on success, or (None, Response) on failure.
+
+    Read: research owner, approved member, or the task creator.
+    Write (edit/delete task): task creator, research owner, or approved
+    mentor with can_edit permission on the research.
+    """
+    try:
+        task = (
+            ResearchTask.objects
+            .select_related("research", "research__owner", "created_by")
+            .get(id=task_id)
+        )
+    except ResearchTask.DoesNotExist:
+        return None, Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
+
+    research = task.research
+    user = request.user
+    is_owner = research.owner_id == user.id
+    is_member = ResearchApplication.objects.filter(
+        research=research,
+        applicant=user,
+        status=ResearchApplication.Status.APPROVED,
+    ).exists()
+    is_creator = task.created_by_id == user.id
+
+    if not (is_owner or is_member or is_creator):
+        return None, Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
+
+    if for_write and not (is_owner or is_creator):
+        has_edit_perm = ResearchApplication.objects.filter(
+            research=research,
+            applicant=user,
+            status=ResearchApplication.Status.APPROVED,
+            can_edit=True,
+        ).exists()
+        if not has_edit_perm:
+            return None, Response(
+                {"detail": "אין לך הרשאה לפעולה זו."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+    return task, None
+
+
+def _tasks_base_queryset(user):
+    """Visible tasks for a user with comment count annotation and prefetches."""
+    from django.db.models import Count
+
+    research_ids = _user_research_ids(user)
+    return (
+        ResearchTask.objects.filter(research_id__in=research_ids)
+        .select_related("research", "created_by")
+        .prefetch_related("task_assignees__user", "attachments")
+        .annotate(_comments_count=Count("comments", distinct=True))
+    )
+
+
+@extend_schema(
+    methods=["GET"],
+    summary="List research tasks",
+    description=(
+        "List all tasks across researches the current user has access to "
+        "(as owner or approved member). "
+        "Supports query params: research_id, status, urgency, q."
+    ),
+    responses={200: ResearchTaskSerializer(many=True)},
+)
+@extend_schema(
+    methods=["POST"],
+    summary="Create a research task",
+    description=(
+        "Create a task inside a research. The user must be a research owner "
+        "or an approved member. Supports multipart/form-data with a `files` "
+        "multi-value field for attachments. Optional `assignees` field (JSON "
+        "array of user ids) — if omitted, the current user is the sole assignee."
+    ),
+    request=ResearchTaskSerializer,
+    responses={
+        201: ResearchTaskSerializer,
+        400: OpenApiResponse(description="Validation error"),
+        403: OpenApiResponse(description="Permission denied"),
+        404: OpenApiResponse(description="Not found"),
+    },
+)
+@api_view(["GET", "POST"])
+@permission_classes([IsAuthenticated, IsEmailVerified])
+@parser_classes([JSONParser, MultiPartParser, FormParser])
+def research_tasks(request):
+    """
+    GET  /api/research/tasks/ — list current user's visible tasks
+    POST /api/research/tasks/ — create task (multipart for attachments)
+    """
+    if request.method == "GET":
+        qs = _tasks_base_queryset(request.user)
+
+        research_id = request.query_params.get("research_id")
+        if research_id:
+            try:
+                qs = qs.filter(research_id=int(research_id))
+            except (TypeError, ValueError):
+                return Response({"detail": "Invalid research_id."}, status=status.HTTP_400_BAD_REQUEST)
+
+        task_status = request.query_params.get("status")
+        if task_status:
+            if task_status not in ResearchTask.Status.values:
+                return Response({"detail": "Invalid status."}, status=status.HTTP_400_BAD_REQUEST)
+            qs = qs.filter(status=task_status)
+
+        urgency = request.query_params.get("urgency")
+        if urgency:
+            if urgency not in ResearchTask.Urgency.values:
+                return Response({"detail": "Invalid urgency."}, status=status.HTTP_400_BAD_REQUEST)
+            qs = qs.filter(urgency=urgency)
+
+        q = (request.query_params.get("q") or "").strip()
+        if q:
+            qs = qs.filter(title__icontains=q)
+
+        qs = qs.order_by("-created_at")
+        return Response(ResearchTaskSerializer(qs, many=True, context={"request": request}).data)
+
+    # POST — create
+    research_id = request.data.get("research_id") or request.data.get("researchId")
+    if not research_id:
+        return Response({"detail": "research_id is required."}, status=status.HTTP_400_BAD_REQUEST)
+    try:
+        research = Research.objects.get(id=int(research_id))
+    except (Research.DoesNotExist, TypeError, ValueError):
+        return Response({"detail": "Research not found."}, status=status.HTTP_404_NOT_FOUND)
+
+    if research.id not in _user_research_ids(request.user):
+        return Response(
+            {"detail": "אין לך הרשאה ליצור משימה במחקר זה."},
+            status=status.HTTP_403_FORBIDDEN,
+        )
+
+    data = {}
+    for key in ("title", "description", "urgency", "status", "due_date", "dueDate"):
+        if key in request.data:
+            data[key] = request.data.get(key)
+    if "dueDate" in data and "due_date" not in data:
+        data["due_date"] = data.pop("dueDate")
+
+    serializer = ResearchTaskSerializer(data=data, context={"request": request})
+    if not serializer.is_valid():
+        return Response(
+            {"code": "VALIDATION_ERROR", "message": "Validation failed.", "details": serializer.errors},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    from apps.profiles.file_security import validate_upload, generate_secure_filename
+    import json as _json
+
+    with transaction.atomic():
+        task = ResearchTask.objects.create(
+            research=research,
+            created_by=request.user,
+            **serializer.validated_data,
+        )
+
+        # Explicit assignees list, or fallback to current user as owner.
+        raw_assignees = request.data.get("assignees")
+        parsed_assignees = []
+        if raw_assignees:
+            parsed = raw_assignees
+            if isinstance(parsed, str):
+                try:
+                    parsed = _json.loads(parsed)
+                except (ValueError, TypeError):
+                    parsed = None
+            if isinstance(parsed, list):
+                for item in parsed:
+                    try:
+                        if isinstance(item, dict):
+                            uid = int(item.get("id") or item.get("user_id"))
+                            role = str(item.get("role") or "")[:100]
+                        else:
+                            uid = int(item)
+                            role = ""
+                        parsed_assignees.append((uid, role))
+                    except (TypeError, ValueError):
+                        continue
+
+        if not parsed_assignees:
+            ResearchTaskAssignee.objects.create(task=task, user=request.user, role="owner")
+        else:
+            valid_user_ids = _research_member_user_ids(research)
+            for uid, role in parsed_assignees:
+                if uid in valid_user_ids:
+                    ResearchTaskAssignee.objects.get_or_create(
+                        task=task, user_id=uid, defaults={"role": role},
+                    )
+
+        files = []
+        if hasattr(request, "FILES"):
+            files = request.FILES.getlist("files") or request.FILES.getlist("file")
+        for f in files:
+            ok, err = validate_upload(f)
+            if not ok:
+                return Response({"detail": err}, status=status.HTTP_400_BAD_REQUEST)
+            ResearchTaskAttachment.objects.create(
+                task=task,
+                file=f,
+                file_name=generate_secure_filename(f.name),
+                size=getattr(f, "size", 0) or 0,
+                uploaded_by=request.user,
+            )
+
+    task = _tasks_base_queryset(request.user).get(id=task.id)
+    return Response(
+        ResearchTaskSerializer(task, context={"request": request}).data,
+        status=status.HTTP_201_CREATED,
+    )
+
+
+@extend_schema(
+    methods=["GET"],
+    summary="Get a research task",
+    responses={200: ResearchTaskSerializer, 404: OpenApiResponse(description="Not found")},
+)
+@extend_schema(
+    methods=["PATCH"],
+    summary="Update a research task",
+    request=ResearchTaskSerializer,
+    responses={
+        200: ResearchTaskSerializer,
+        400: OpenApiResponse(description="Validation error"),
+        403: OpenApiResponse(description="Permission denied"),
+        404: OpenApiResponse(description="Not found"),
+    },
+)
+@extend_schema(
+    methods=["DELETE"],
+    summary="Delete a research task",
+    responses={
+        204: OpenApiResponse(description="Deleted"),
+        403: OpenApiResponse(description="Permission denied"),
+        404: OpenApiResponse(description="Not found"),
+    },
+)
+@api_view(["GET", "PATCH", "DELETE"])
+@permission_classes([IsAuthenticated, IsEmailVerified])
+@parser_classes([JSONParser, MultiPartParser, FormParser])
+def research_task_detail(request, task_id: int):
+    if request.method == "GET":
+        task, err = _check_task_access(request, task_id, for_write=False)
+        if err:
+            return err
+        try:
+            task = _tasks_base_queryset(request.user).get(id=task.id)
+        except ResearchTask.DoesNotExist:
+            return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
+        return Response(ResearchTaskSerializer(task, context={"request": request}).data)
+
+    if request.method == "PATCH":
+        task, err = _check_task_access(request, task_id, for_write=True)
+        if err:
+            return err
+
+        data = {}
+        for key in ("title", "description", "urgency", "status", "due_date", "dueDate"):
+            if key in request.data:
+                data[key] = request.data.get(key)
+        if "dueDate" in data and "due_date" not in data:
+            data["due_date"] = data.pop("dueDate")
+
+        serializer = ResearchTaskSerializer(
+            task, data=data, partial=True, context={"request": request}
+        )
+        if not serializer.is_valid():
+            return Response(
+                {"code": "VALIDATION_ERROR", "message": "Validation failed.", "details": serializer.errors},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        serializer.save()
+
+        task = _tasks_base_queryset(request.user).get(id=task.id)
+        return Response(ResearchTaskSerializer(task, context={"request": request}).data)
+
+    # DELETE
+    task, err = _check_task_access(request, task_id, for_write=True)
+    if err:
+        return err
+
+    for att in task.attachments.all():
+        try:
+            if att.file:
+                att.file.delete(save=False)
+        except Exception:
+            pass
+
+    task.delete()
+    return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@extend_schema(
+    methods=["POST"],
+    summary="Assign a user to a task",
+    description="Add a research member as a task assignee. Body: user_id, optional role.",
+    request=None,
+    responses={
+        201: ResearchTaskAssigneeSerializer,
+        400: OpenApiResponse(description="Bad request"),
+        403: OpenApiResponse(description="Permission denied"),
+        404: OpenApiResponse(description="Not found"),
+    },
+)
+@api_view(["POST"])
+@permission_classes([IsAuthenticated, IsEmailVerified])
+def research_task_assign(request, task_id: int):
+    """POST /api/research/tasks/<task_id>/assignees/"""
+    task, err = _check_task_access(request, task_id, for_write=True)
+    if err:
+        return err
+
+    user_id = request.data.get("user_id") or request.data.get("id")
+    if not user_id:
+        return Response({"detail": "user_id is required."}, status=status.HTTP_400_BAD_REQUEST)
+    try:
+        user_id = int(user_id)
+    except (TypeError, ValueError):
+        return Response({"detail": "Invalid user_id."}, status=status.HTTP_400_BAD_REQUEST)
+
+    if user_id not in _research_member_user_ids(task.research):
+        return Response(
+            {"detail": "המשתמש אינו חבר במחקר זה."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    role = (request.data.get("role") or "").strip()[:100]
+    assignee, created = ResearchTaskAssignee.objects.get_or_create(
+        task=task, user_id=user_id, defaults={"role": role},
+    )
+    if not created and role and assignee.role != role:
+        assignee.role = role
+        assignee.save(update_fields=["role"])
+
+    return Response(
+        ResearchTaskAssigneeSerializer(assignee, context={"request": request}).data,
+        status=status.HTTP_201_CREATED if created else status.HTTP_200_OK,
+    )
+
+
+@extend_schema(
+    methods=["DELETE"],
+    summary="Unassign a user from a task",
+    responses={
+        204: OpenApiResponse(description="Unassigned"),
+        403: OpenApiResponse(description="Permission denied"),
+        404: OpenApiResponse(description="Not found"),
+    },
+)
+@api_view(["DELETE"])
+@permission_classes([IsAuthenticated, IsEmailVerified])
+def research_task_unassign(request, task_id: int, user_id: int):
+    """DELETE /api/research/tasks/<task_id>/assignees/<user_id>/"""
+    task, err = _check_task_access(request, task_id, for_write=True)
+    if err:
+        return err
+
+    deleted, _ = ResearchTaskAssignee.objects.filter(task=task, user_id=user_id).delete()
+    if not deleted:
+        return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
+    return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@extend_schema(
+    methods=["GET"],
+    summary="List task comments",
+    responses={200: ResearchTaskCommentSerializer(many=True)},
+)
+@extend_schema(
+    methods=["POST"],
+    summary="Add a task comment",
+    request=ResearchTaskCommentSerializer,
+    responses={
+        201: ResearchTaskCommentSerializer,
+        400: OpenApiResponse(description="Validation error"),
+    },
+)
+@api_view(["GET", "POST"])
+@permission_classes([IsAuthenticated, IsEmailVerified])
+def research_task_comments(request, task_id: int):
+    """GET/POST /api/research/tasks/<task_id>/comments/"""
+    task, err = _check_task_access(request, task_id, for_write=False)
+    if err:
+        return err
+
+    if request.method == "GET":
+        qs = task.comments.select_related("author").all()
+        return Response(
+            ResearchTaskCommentSerializer(qs, many=True, context={"request": request}).data
+        )
+
+    serializer = ResearchTaskCommentSerializer(data=request.data, context={"request": request})
+    if not serializer.is_valid():
+        return Response(
+            {"code": "VALIDATION_ERROR", "message": "Validation failed.", "details": serializer.errors},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    comment = ResearchTaskComment.objects.create(
+        task=task,
+        author=request.user,
+        body=serializer.validated_data["body"],
+    )
+    return Response(
+        ResearchTaskCommentSerializer(comment, context={"request": request}).data,
+        status=status.HTTP_201_CREATED,
+    )
+
+
+@extend_schema(
+    methods=["DELETE"],
+    summary="Delete a task comment",
+    description="Comment author, task creator, or research owner can delete.",
+    responses={204: OpenApiResponse(description="Deleted")},
+)
+@api_view(["DELETE"])
+@permission_classes([IsAuthenticated, IsEmailVerified])
+def research_task_comment_delete(request, task_id: int, comment_id: int):
+    """DELETE /api/research/tasks/<task_id>/comments/<comment_id>/"""
+    task, err = _check_task_access(request, task_id, for_write=False)
+    if err:
+        return err
+
+    try:
+        comment = ResearchTaskComment.objects.get(id=comment_id, task=task)
+    except ResearchTaskComment.DoesNotExist:
+        return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
+
+    is_author = comment.author_id == request.user.id
+    is_owner = task.research.owner_id == request.user.id
+    is_task_creator = task.created_by_id == request.user.id
+    if not (is_author or is_owner or is_task_creator):
+        return Response(
+            {"detail": "ניתן למחוק רק הערות שלך."},
+            status=status.HTTP_403_FORBIDDEN,
+        )
+
+    comment.delete()
+    return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@extend_schema(
+    methods=["POST"],
+    summary="Upload task attachments",
+    description="Upload one or more files to a task via multipart `files` field.",
+    request=None,
+    responses={
+        201: ResearchTaskAttachmentSerializer(many=True),
+        400: OpenApiResponse(description="Bad request"),
+    },
+)
+@api_view(["POST"])
+@permission_classes([IsAuthenticated, IsEmailVerified])
+@parser_classes([MultiPartParser, FormParser])
+def research_task_attachments_upload(request, task_id: int):
+    """POST /api/research/tasks/<task_id>/attachments/"""
+    from apps.profiles.file_security import validate_upload, generate_secure_filename
+
+    task, err = _check_task_access(request, task_id, for_write=True)
+    if err:
+        return err
+
+    files = request.FILES.getlist("files") or request.FILES.getlist("file")
+    if not files:
+        return Response({"detail": "יש לצרף לפחות קובץ אחד."}, status=status.HTTP_400_BAD_REQUEST)
+
+    created = []
+    for f in files:
+        ok, msg = validate_upload(f)
+        if not ok:
+            return Response({"detail": msg}, status=status.HTTP_400_BAD_REQUEST)
+        att = ResearchTaskAttachment.objects.create(
+            task=task,
+            file=f,
+            file_name=generate_secure_filename(f.name),
+            size=getattr(f, "size", 0) or 0,
+            uploaded_by=request.user,
+        )
+        created.append(att)
+
+    return Response(
+        ResearchTaskAttachmentSerializer(created, many=True, context={"request": request}).data,
+        status=status.HTTP_201_CREATED,
+    )
+
+
+@extend_schema(
+    methods=["DELETE"],
+    summary="Delete a task attachment",
+    responses={204: OpenApiResponse(description="Deleted")},
+)
+@api_view(["DELETE"])
+@permission_classes([IsAuthenticated, IsEmailVerified])
+def research_task_attachment_delete(request, task_id: int, attachment_id: int):
+    """DELETE /api/research/tasks/<task_id>/attachments/<attachment_id>/"""
+    task, err = _check_task_access(request, task_id, for_write=True)
+    if err:
+        return err
+
+    try:
+        att = ResearchTaskAttachment.objects.get(id=attachment_id, task=task)
+    except ResearchTaskAttachment.DoesNotExist:
+        return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
+
+    try:
+        if att.file:
+            att.file.delete(save=False)
+    except Exception:
+        pass
+    att.delete()
+    return Response(status=status.HTTP_204_NO_CONTENT)

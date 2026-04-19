@@ -33,6 +33,14 @@ from .views import (
     research_chat_delete,
     research_chat_mark_seen,
     research_chat_members,
+    research_tasks,
+    research_task_detail,
+    research_task_assign,
+    research_task_unassign,
+    research_task_comments,
+    research_task_comment_delete,
+    research_task_attachments_upload,
+    research_task_attachment_delete,
 )
 
 urlpatterns = [
@@ -88,4 +96,30 @@ urlpatterns = [
     path("messages/<int:message_id>/read/", mark_read, name="messages-mark-read"),
     path("messages/mark-all-read/", mark_all_read, name="messages-mark-all-read"),
     path("messages/contact-user/", contact_user, name="messages-contact-user"),
+
+    # Task Manager
+    path("tasks/", research_tasks, name="research-tasks"),
+    path("tasks/<int:task_id>/", research_task_detail, name="research-task-detail"),
+    path("tasks/<int:task_id>/assignees/", research_task_assign, name="research-task-assign"),
+    path(
+        "tasks/<int:task_id>/assignees/<int:user_id>/",
+        research_task_unassign,
+        name="research-task-unassign",
+    ),
+    path("tasks/<int:task_id>/comments/", research_task_comments, name="research-task-comments"),
+    path(
+        "tasks/<int:task_id>/comments/<int:comment_id>/",
+        research_task_comment_delete,
+        name="research-task-comment-delete",
+    ),
+    path(
+        "tasks/<int:task_id>/attachments/",
+        research_task_attachments_upload,
+        name="research-task-attachments-upload",
+    ),
+    path(
+        "tasks/<int:task_id>/attachments/<int:attachment_id>/",
+        research_task_attachment_delete,
+        name="research-task-attachment-delete",
+    ),
 ]

@@ -9,6 +9,7 @@ This module provides API endpoints for:
 import logging
 
 from django.conf import settings
+from apps.common.email_service import EmailService
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes, throttle_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
@@ -504,7 +505,11 @@ def student_profile_me(request):
             f"Student profile created: {user.email}",
             extra={'user_id': str(user.id), 'profile_id': str(profile.id)}
         )
-        
+
+        # Send verification email if user hasn't verified yet
+        if not user.email_verified:
+            EmailService.send_verification_email(user)
+
         # Return full profile data
         response_serializer = StudentProfileSerializer(profile, context={'request': request})
         return Response(response_serializer.data, status=status.HTTP_201_CREATED)
@@ -888,7 +893,11 @@ def mentor_profile_me(request):
             f"Mentor profile created: {user.email}",
             extra={'user_id': str(user.id), 'profile_id': str(profile.id)}
         )
-        
+
+        # Send verification email if user hasn't verified yet
+        if not user.email_verified:
+            EmailService.send_verification_email(user)
+
         # Return full profile data
         response_serializer = MentorProfileSerializer(profile, context={'request': request})
         return Response(response_serializer.data, status=status.HTTP_201_CREATED)
