@@ -1166,7 +1166,7 @@ const AddTaskModal = ({
   onClose,
 }) => {
   return (
-    <div className="modal-overlay add-task-overlay" onClick={onClose}>
+    <div className="modal-overlay" onClick={onClose}>
       <div
         className="modal-content add-task-modal"
         onClick={(e) => e.stopPropagation()}
@@ -2200,48 +2200,9 @@ const TaskDetailsModal = ({
 
         <div className="modal-body">
           <div className="modal-section">
-            <div className="details-section-header">
-              <h3>תיאור המשימה המלא</h3>
-              {isEditingDescription ? (
-                <div className="details-section-actions">
-                  <button
-                    type="button"
-                    className="details-inline-btn"
-                    onClick={() => {
-                      setDescriptionDraft(task.description || "");
-                      setIsEditingDescription(false);
-                    }}
-                  >
-                    ביטול
-                  </button>
-                  <button
-                    type="button"
-                    className="details-inline-btn details-inline-btn-primary"
-                    onClick={handleSaveDescription}
-                  >
-                    שמירה
-                  </button>
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  className="details-inline-btn"
-                  onClick={() => setIsEditingDescription(true)}
-                >
-                  עריכת טקסט
-                </button>
-              )}
-            </div>
+            <h3>תיאור המשימה המלא</h3>
             <div className="task-description-box">
-              {isEditingDescription ? (
-                <textarea
-                  className="task-description-editor"
-                  rows={6}
-                  value={descriptionDraft}
-                  onChange={(e) => setDescriptionDraft(e.target.value)}
-                  placeholder="הוסף תיאור למשימה"
-                />
-              ) : task.description ? (
+              {task.description ? (
                 <p>{task.description}</p>
               ) : (
                 <p className="empty-text">אין תיאור מפורט למשימה זו.</p>
