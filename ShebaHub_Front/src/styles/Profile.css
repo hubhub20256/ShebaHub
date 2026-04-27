@@ -105,6 +105,54 @@
   font-size: 0.9rem;
 }
 
+.profile-header-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  align-items: stretch;
+}
+
+.profile-qr-btn {
+  background: var(--profile-theme-color);
+  border: 1px solid var(--profile-theme-color);
+  color: white;
+  padding: 0.5rem 1.25rem;
+  border-radius: 1.25rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.2s;
+  font-size: 0.9rem;
+}
+
+.profile-qr-btn:hover {
+  opacity: 0.92;
+}
+
+.profile-qr-btn {
+  font-size: 0;
+}
+
+.profile-qr-btn::after {
+  content: "QR";
+  font-size: 0.9rem;
+  line-height: 1;
+}
+
+.profile-qr-modal-title,
+.profile-qr-modal-description {
+  display: none;
+}
+
+.profile-qr-close-btn {
+  font-size: 0;
+}
+
+.profile-qr-close-btn::after {
+  content: "בחזרה לפרופיל";
+  font-size: 0.9rem;
+  line-height: 1;
+}
+
 /* 2. WIDE CARD */
 .profile-wide-card {
   background: var(--card-bg);
@@ -416,9 +464,14 @@
   }
 
   /* Position Edit button relatively to avoid overlap */
-  .profile-edit-btn {
-    position: static;
+  .profile-header-actions {
+    width: 100%;
     margin-top: 1rem;
+  }
+
+  .profile-edit-btn,
+  .profile-qr-btn {
+    position: static;
     width: 100%;
     text-align: center;
   }
@@ -445,6 +498,7 @@
 [data-theme="dark"] .profile-bio-text { color: #b0b0b0 !important; }
 [data-theme="dark"] .profile-info-badge { background: #2a2a3d !important; color: #aaa !important; }
 [data-theme="dark"] .profile-edit-btn { background: var(--card-bg) !important; color: var(--text-color) !important; }
+[data-theme="dark"] .profile-qr-btn { background: #3a3a5f !important; border-color: #3a3a5f !important; color: #f5f5ff !important; }
 [data-theme="dark"] .profile-file-placeholder { background: #2a2a3d !important; color: var(--text-color) !important; }
 [data-theme="dark"] .profile-download-link { color: #6cd5bf !important; }
 [data-theme="dark"] .profile-research-item { background: #2a2a3d !important; border-color: var(--border-color) !important; }

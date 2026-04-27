@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate, useParams, Link } from "react-router-dom";
+import { useNavigate, useParams, Link, useLocation } from "react-router-dom";
 import toast from "react-hot-toast";
+import { QRCodeSVG } from "qrcode.react";
 import { useAuth } from "../context/AuthContext";
 import { profilesAPI, API_BASE_URL } from "../services/api";
 import usePageTitle from "../hooks/usePageTitle";
@@ -295,6 +296,36 @@ function getHebrewName(obj, field) {
 const THEME_COLOR = "#2C2C6C";
 const ACCENT_PINK = "#ef67a0";
 const ACCENT_TEAL = "#6CD5BF";
+const QR_MODAL_THEME = "#1f2f63";
+
+const qrModalOverlayStyle = {
+  position: "fixed",
+  top: 0,
+  left: 0,
+  right: 0,
+  bottom: 0,
+  background:
+    "radial-gradient(circle at 50% 18%, rgba(56, 86, 163, 0.24), rgba(11, 19, 43, 0.72))",
+  backdropFilter: "blur(4px)",
+  display: "flex",
+  justifyContent: "center",
+  alignItems: "center",
+  zIndex: 2000,
+  padding: "16px",
+};
+
+const qrModalCardStyle = {
+  background:
+    "linear-gradient(160deg, rgba(255, 255, 255, 0.99), rgba(244, 248, 255, 0.98))",
+  padding: "28px 30px",
+  borderRadius: "18px",
+  border: "1px solid rgba(90, 116, 178, 0.2)",
+  maxWidth: "440px",
+  width: "90%",
+  boxShadow: "0 26px 64px rgba(14, 24, 56, 0.36)",
+  direction: "rtl",
+  textAlign: "center",
+};
 
 const styles = {
   modalOverlay: {
@@ -678,6 +709,7 @@ function Profile() {
   usePageTitle("פרופיל");
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, refreshUser } = useAuth();
   const [mentorProfile, setMentorProfile] = useState(null);
   const [apprenticeProfile, setApprenticeProfile] = useState(null);
@@ -685,6 +717,7 @@ function Profile() {
   const [userData, setUserData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isFullEditing, setIsFullEditing] = useState(false);
+  const [isQrDialogOpen, setIsQrDialogOpen] = useState(false);
   const [draft, setDraft] = useState(INITIAL_DRAFT);
   const [avatarFile, setAvatarFile] = useState(null);
   const [avatarInitialUrl, setAvatarInitialUrl] = useState("");
@@ -703,7 +736,11 @@ function Profile() {
   const avatarObjectUrlRef = useRef(null);
 
   const isMeAlias = id === "me";
-  const isOwnProfile = !!user && (isMeAlias || id === user.id);
+  const forcePublicView = useMemo(() => {
+    const params = new URLSearchParams(location.search);
+    return params.get("view") === "public";
+  }, [location.search]);
+  const isOwnProfile = !!user && (isMeAlias || id === user.id) && !forcePublicView;
 
   // If token/user is gone (logout / expired), redirect to login
   useEffect(() => {
@@ -791,6 +828,27 @@ function Profile() {
   const isMentor = activeRole === "mentor";
   const isApprentice = activeRole === "apprentice";
   const hasProfile = isMentor || isApprentice;
+  const qrProfileUrl = useMemo(() => {
+    const profileUserId = user?.id || userData?.userId;
+    if (!profileUserId) return "";
+    if (typeof window === "undefined") return `/user/${profileUserId}?view=public`;
+    return `${window.location.origin}/user/${profileUserId}?view=public`;
+  }, [user?.id, userData?.userId]);
+
+  useEffect(() => {
+    if (!isQrDialogOpen) return;
+
+    const handleEscape = (e) => {
+      if (e.key === "Escape") {
+        setIsQrDialogOpen(false);
+      }
+    };
+
+    document.addEventListener("keydown", handleEscape);
+    return () => {
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [isQrDialogOpen]);
 
   const showApprenticeSpecialty = useMemo(() => {
     if (!userData || !isApprentice) return false;
@@ -1290,9 +1348,20 @@ function Profile() {
             )}
           </div>
         </div>
-        <button className="profile-edit-btn" onClick={openFullEdit}>
+        <div className="profile-header-actions">
+          <button className="profile-edit-btn" onClick={openFullEdit}>
           עריכת פרופיל
-        </button>
+          </button>
+          {hasProfile && qrProfileUrl && (
+            <button
+              type="button"
+              className="profile-qr-btn"
+              onClick={() => setIsQrDialogOpen(true)}
+            >
+              ׳§׳•׳“ QR ׳׳™׳©׳™
+            </button>
+          )}
+        </div>
       </div>
 
       {!hasProfile && (
@@ -1628,6 +1697,85 @@ function Profile() {
                 </p>
               </SectionCard>
             )}
+          </div>
+        </div>
+      )}
+
+      {isQrDialogOpen && (
+        <div style={qrModalOverlayStyle} onClick={() => setIsQrDialogOpen(false)}>
+          <div style={qrModalCardStyle} onClick={(e) => e.stopPropagation()}>
+            <h3
+              className="profile-qr-modal-title"
+              style={{
+                fontSize: "1.2rem",
+                fontWeight: 800,
+                color: QR_MODAL_THEME,
+                marginBottom: "10px",
+              }}
+            >
+              ׳§׳•׳“ QR ׳׳™׳©׳™
+            </h3>
+            <p
+              className="profile-qr-modal-description"
+              style={{
+                fontSize: "0.95rem",
+                color: "#46557f",
+                marginBottom: "18px",
+                lineHeight: 1.6,
+              }}
+            >
+              ׳¡׳¨׳™׳§׳” ׳©׳ ׳”׳§׳•׳“ ׳×׳¢׳‘׳™׳¨ ׳™׳©׳™׳¨׳•׳× ׳׳₪׳¨׳•׳₪׳™׳ ׳©׳׳š ׳‘׳׳×׳¨.
+            </p>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "center",
+                marginBottom: "16px",
+              }}
+            >
+              <div
+                style={{
+                  background: "#fff",
+                  padding: "12px",
+                  borderRadius: "12px",
+                  border: "1px solid rgba(90, 116, 178, 0.2)",
+                }}
+              >
+                <QRCodeSVG
+                  value={qrProfileUrl}
+                  size={210}
+                  bgColor="#ffffff"
+                  fgColor={QR_MODAL_THEME}
+                  level="M"
+                  includeMargin
+                />
+              </div>
+            </div>
+            <a
+              href={qrProfileUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: "inline-block",
+                maxWidth: "100%",
+                marginBottom: "20px",
+                color: QR_MODAL_THEME,
+                fontSize: "0.84rem",
+                wordBreak: "break-all",
+                textDecoration: "none",
+              }}
+            >
+              {qrProfileUrl}
+            </a>
+            <div>
+              <button
+                type="button"
+                className="profile-edit-btn profile-qr-close-btn"
+                onClick={() => setIsQrDialogOpen(false)}
+              >
+                ׳¡׳’׳™׳¨׳”
+              </button>
+            </div>
           </div>
         </div>
       )}
