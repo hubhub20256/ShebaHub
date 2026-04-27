@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate, useParams, Link, useLocation } from "react-router-dom";
+import { useNavigate, useParams, Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import { QRCodeSVG } from "qrcode.react";
 import { useAuth } from "../context/AuthContext";
@@ -709,7 +709,6 @@ function Profile() {
   usePageTitle("פרופיל");
   const { id } = useParams();
   const navigate = useNavigate();
-  const location = useLocation();
   const { user, refreshUser } = useAuth();
   const [mentorProfile, setMentorProfile] = useState(null);
   const [apprenticeProfile, setApprenticeProfile] = useState(null);
@@ -718,6 +717,10 @@ function Profile() {
   const [isLoading, setIsLoading] = useState(true);
   const [isFullEditing, setIsFullEditing] = useState(false);
   const [isQrDialogOpen, setIsQrDialogOpen] = useState(false);
+  const [publicRoleProfileIds, setPublicRoleProfileIds] = useState({
+    mentor: "",
+    apprentice: "",
+  });
   const [draft, setDraft] = useState(INITIAL_DRAFT);
   const [avatarFile, setAvatarFile] = useState(null);
   const [avatarInitialUrl, setAvatarInitialUrl] = useState("");
@@ -736,11 +739,7 @@ function Profile() {
   const avatarObjectUrlRef = useRef(null);
 
   const isMeAlias = id === "me";
-  const forcePublicView = useMemo(() => {
-    const params = new URLSearchParams(location.search);
-    return params.get("view") === "public";
-  }, [location.search]);
-  const isOwnProfile = !!user && (isMeAlias || id === user.id) && !forcePublicView;
+  const isOwnProfile = !!user && (isMeAlias || id === user.id);
 
   // If token/user is gone (logout / expired), redirect to login
   useEffect(() => {
@@ -828,12 +827,73 @@ function Profile() {
   const isMentor = activeRole === "mentor";
   const isApprentice = activeRole === "apprentice";
   const hasProfile = isMentor || isApprentice;
+
+  const sanitizePublicProfileId = useMemo(() => {
+    const currentUserId = String(user?.id || "");
+    return (value) => {
+      const normalized = value == null ? "" : String(value).trim();
+      if (!normalized || normalized === "me") return "";
+      if (currentUserId && normalized === currentUserId) return "";
+      return normalized;
+    };
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (!isOwnProfile || !user?.id) return;
+
+    let cancelled = false;
+    async function loadPublicRoleIds() {
+      try {
+        const data = await profilesAPI.getPublicProfilesByUserId(user.id);
+        if (cancelled) return;
+        setPublicRoleProfileIds({
+          mentor: sanitizePublicProfileId(data?.mentor?.id),
+          apprentice: sanitizePublicProfileId(data?.student?.id),
+        });
+      } catch (err) {
+        if (!cancelled) {
+          console.error("Failed loading public profile ids", err);
+          setPublicRoleProfileIds({ mentor: "", apprentice: "" });
+        }
+      }
+    }
+
+    loadPublicRoleIds();
+    return () => {
+      cancelled = true;
+    };
+  }, [isOwnProfile, user?.id, sanitizePublicProfileId]);
+
   const qrProfileUrl = useMemo(() => {
-    const profileUserId = user?.id || userData?.userId;
-    if (!profileUserId) return "";
-    if (typeof window === "undefined") return `/user/${profileUserId}?view=public`;
-    return `${window.location.origin}/user/${profileUserId}?view=public`;
-  }, [user?.id, userData?.userId]);
+    const activeRolePublicId =
+      activeRole === "mentor"
+        ? publicRoleProfileIds.mentor
+        : publicRoleProfileIds.apprentice;
+
+    const activeRoleLocalId = sanitizePublicProfileId(
+      activeRole === "mentor" ? mentorProfile?.id : apprenticeProfile?.id,
+    );
+    const fallbackLocalId =
+      sanitizePublicProfileId(userData?.id) ||
+      sanitizePublicProfileId(mentorProfile?.id) ||
+      sanitizePublicProfileId(apprenticeProfile?.id) ||
+      sanitizePublicProfileId(!isMeAlias ? id : "");
+
+    const profileId = activeRolePublicId || activeRoleLocalId || fallbackLocalId;
+    if (!profileId) return "";
+    if (typeof window === "undefined") return `/user/${profileId}`;
+    return `${window.location.origin}/user/${profileId}`;
+  }, [
+    activeRole,
+    publicRoleProfileIds.mentor,
+    publicRoleProfileIds.apprentice,
+    mentorProfile?.id,
+    apprenticeProfile?.id,
+    userData?.id,
+    isMeAlias,
+    id,
+    sanitizePublicProfileId,
+  ]);
 
   useEffect(() => {
     if (!isQrDialogOpen) return;

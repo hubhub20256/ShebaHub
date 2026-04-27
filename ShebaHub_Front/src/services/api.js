@@ -379,6 +379,10 @@ export const profilesAPI = {
 
   // Get specific student by ID (public)
   getStudent: (id) => apiRequest(`/profiles/students/${id}/`, { auth: true }),
+
+  // Get both public profiles by user ID (student/mentor)
+  getPublicProfilesByUserId: (userId) =>
+    apiRequest(`/profiles/user/${userId}/`, { auth: true }),
 };
 
 // ============== RESEARCH API ==============
