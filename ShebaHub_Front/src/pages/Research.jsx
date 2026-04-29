@@ -355,12 +355,15 @@ export default function Research() {
   const academicTracks = useMemo(() => {
     const tracks = data?.academic_tracks || data?.academicTracks;
     if (!tracks) return [];
-    if (typeof tracks === 'string') {
+    if (typeof tracks === "string") {
       try {
         const parsed = JSON.parse(tracks);
         if (Array.isArray(parsed)) return parsed.filter(Boolean);
       } catch (e) {
-        return tracks.split(",").map((x) => String(x).trim()).filter(Boolean);
+        return tracks
+          .split(",")
+          .map((x) => String(x).trim())
+          .filter(Boolean);
       }
     }
     if (Array.isArray(tracks)) return tracks.filter(Boolean);
