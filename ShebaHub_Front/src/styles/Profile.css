@@ -47,7 +47,11 @@
   width: 5rem; /* 80px */
   height: 5rem;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--profile-accent-teal), var(--profile-theme-color));
+  background: linear-gradient(
+    135deg,
+    var(--profile-accent-teal),
+    var(--profile-theme-color)
+  );
   color: white;
   display: flex;
   align-items: center;
@@ -138,21 +142,6 @@
   line-height: 1;
 }
 
-.profile-qr-modal-title,
-.profile-qr-modal-description {
-  display: none;
-}
-
-.profile-qr-close-btn {
-  font-size: 0;
-}
-
-.profile-qr-close-btn::after {
-  content: "בחזרה לפרופיל";
-  font-size: 0.9rem;
-  line-height: 1;
-}
-
 /* 2. WIDE CARD */
 .profile-wide-card {
   background: var(--card-bg);
@@ -165,7 +154,10 @@
 
 .profile-grid-content {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(15.625rem, 1fr)); /* min 250px */
+  grid-template-columns: repeat(
+    auto-fill,
+    minmax(15.625rem, 1fr)
+  ); /* min 250px */
   column-gap: 2.5rem; /* 40px */
   row-gap: 0;
 }
@@ -173,7 +165,10 @@
 /* 3. BOTTOM GRID */
 .profile-bottom-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(21.875rem, 1fr)); /* min 350px */
+  grid-template-columns: repeat(
+    auto-fit,
+    minmax(21.875rem, 1fr)
+  ); /* min 350px */
   gap: 1.5rem;
   align-items: start;
 }
@@ -280,7 +275,9 @@
   border: 1px solid rgba(0, 0, 0, 0.06);
   text-decoration: none;
   color: inherit;
-  transition: background 0.2s, border-color 0.2s;
+  transition:
+    background 0.2s,
+    border-color 0.2s;
   cursor: pointer;
 }
 
@@ -428,8 +425,14 @@
 }
 
 @keyframes toast-slide-in {
-  from { opacity: 0; transform: translateY(-8px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* --- RESPONSIVE / MOBILE --- */
@@ -487,35 +490,111 @@
 }
 
 /* ===== DARK MODE ===== */
-[data-theme="dark"] .profile-page { color: var(--text-color); }
+[data-theme="dark"] .profile-page {
+  color: var(--text-color);
+}
 [data-theme="dark"] .profile-header-card,
 [data-theme="dark"] .profile-wide-card,
-[data-theme="dark"] .profile-card { background: var(--card-bg) !important; border-color: var(--border-color) !important; }
-[data-theme="dark"] .profile-section-title { color: var(--text-color) !important; }
-[data-theme="dark"] .profile-info-label { color: #ccc !important; }
-[data-theme="dark"] .profile-info-value { color: #aaa !important; }
-[data-theme="dark"] .profile-info-row { border-bottom-color: var(--border-color) !important; }
-[data-theme="dark"] .profile-bio-text { color: #b0b0b0 !important; }
-[data-theme="dark"] .profile-info-badge { background: #2a2a3d !important; color: #aaa !important; }
-[data-theme="dark"] .profile-edit-btn { background: var(--card-bg) !important; color: var(--text-color) !important; }
-[data-theme="dark"] .profile-qr-btn { background: #3a3a5f !important; border-color: #3a3a5f !important; color: #f5f5ff !important; }
-[data-theme="dark"] .profile-file-placeholder { background: #2a2a3d !important; color: var(--text-color) !important; }
-[data-theme="dark"] .profile-download-link { color: #6cd5bf !important; }
-[data-theme="dark"] .profile-research-item { background: #2a2a3d !important; border-color: var(--border-color) !important; }
-[data-theme="dark"] .profile-research-item:hover { background: #33334d !important; }
-[data-theme="dark"] .profile-research-item-name { color: var(--text-color) !important; }
-[data-theme="dark"] .profile-research-item-area { color: #999 !important; }
-[data-theme="dark"] .profile-research-status-badge { background: #115e59 !important; color: #ccfbf1 !important; }
-[data-theme="dark"] .invite-modal { background: var(--card-bg) !important; }
-[data-theme="dark"] .invite-modal select { background: #2b2b2b !important; border-color: var(--border-color) !important; color: var(--text-color) !important; }
-[data-theme="dark"] .invite-modal-actions .invite-cancel-btn { background: var(--card-bg) !important; color: var(--text-color) !important; border-color: var(--border-color) !important; }
+[data-theme="dark"] .profile-card {
+  background: var(--card-bg) !important;
+  border-color: var(--border-color) !important;
+}
+[data-theme="dark"] .profile-section-title {
+  color: var(--text-color) !important;
+}
+[data-theme="dark"] .profile-info-label {
+  color: #ccc !important;
+}
+[data-theme="dark"] .profile-info-value {
+  color: #aaa !important;
+}
+[data-theme="dark"] .profile-info-row {
+  border-bottom-color: var(--border-color) !important;
+}
+[data-theme="dark"] .profile-bio-text {
+  color: #b0b0b0 !important;
+}
+[data-theme="dark"] .profile-info-badge {
+  background: #2a2a3d !important;
+  color: #aaa !important;
+}
+[data-theme="dark"] .profile-edit-btn {
+  background: var(--card-bg) !important;
+  color: var(--text-color) !important;
+}
+[data-theme="dark"] .profile-qr-btn {
+  background: #3a3a5f !important;
+  border-color: #3a3a5f !important;
+  color: #f5f5ff !important;
+}
+[data-theme="dark"] .profile-file-placeholder {
+  background: #2a2a3d !important;
+  color: var(--text-color) !important;
+}
+[data-theme="dark"] .profile-download-link {
+  color: #6cd5bf !important;
+}
+[data-theme="dark"] .profile-research-item {
+  background: #2a2a3d !important;
+  border-color: var(--border-color) !important;
+}
+[data-theme="dark"] .profile-research-item:hover {
+  background: #33334d !important;
+}
+[data-theme="dark"] .profile-research-item-name {
+  color: var(--text-color) !important;
+}
+[data-theme="dark"] .profile-research-item-area {
+  color: #999 !important;
+}
+[data-theme="dark"] .profile-research-status-badge {
+  background: #115e59 !important;
+  color: #ccfbf1 !important;
+}
+[data-theme="dark"] .invite-modal {
+  background: var(--card-bg) !important;
+}
+[data-theme="dark"] .invite-modal select {
+  background: #2b2b2b !important;
+  border-color: var(--border-color) !important;
+  color: var(--text-color) !important;
+}
+[data-theme="dark"] .invite-modal-actions .invite-cancel-btn {
+  background: var(--card-bg) !important;
+  color: var(--text-color) !important;
+  border-color: var(--border-color) !important;
+}
 [data-theme="dark"] .invite-modal input,
-[data-theme="dark"] .invite-modal textarea { background: #2b2b2b !important; border-color: var(--border-color) !important; color: var(--text-color) !important; }
-[data-theme="dark"] .profile-toggle-btn { background: var(--card-bg) !important; color: var(--text-color) !important; }
-[data-theme="dark"] .profile-toast--success { background: #115e59 !important; color: #ccfbf1 !important; border-color: #0d9488 !important; }
-[data-theme="dark"] .profile-toast--error { background: #7f1d1d !important; color: #fecaca !important; border-color: #dc2626 !important; }
+[data-theme="dark"] .invite-modal textarea {
+  background: #2b2b2b !important;
+  border-color: var(--border-color) !important;
+  color: var(--text-color) !important;
+}
+[data-theme="dark"] .profile-toggle-btn {
+  background: var(--card-bg) !important;
+  color: var(--text-color) !important;
+}
+[data-theme="dark"] .profile-toast--success {
+  background: #115e59 !important;
+  color: #ccfbf1 !important;
+  border-color: #0d9488 !important;
+}
+[data-theme="dark"] .profile-toast--error {
+  background: #7f1d1d !important;
+  color: #fecaca !important;
+  border-color: #dc2626 !important;
+}
 
 /* Edit Profile Modal - Dark Mode */
-[data-theme="dark"] .profile-edit-modal { background: var(--card-bg) !important; border: 1px solid var(--border-color) !important; }
-[data-theme="dark"] .profile-edit-modal-title { color: var(--text-color) !important; }
-[data-theme="dark"] .profile-edit-cancel-btn { background: var(--card-bg) !important; color: var(--text-color) !important; border-color: var(--border-color) !important; }
+[data-theme="dark"] .profile-edit-modal {
+  background: var(--card-bg) !important;
+  border: 1px solid var(--border-color) !important;
+}
+[data-theme="dark"] .profile-edit-modal-title {
+  color: var(--text-color) !important;
+}
+[data-theme="dark"] .profile-edit-cancel-btn {
+  background: var(--card-bg) !important;
+  color: var(--text-color) !important;
+  border-color: var(--border-color) !important;
+}
