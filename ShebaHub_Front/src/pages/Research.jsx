@@ -30,6 +30,7 @@ import { useAuth } from "../context/AuthContext";
 import { useNotifications } from "../context/NotificationContext";
 import usePageTitle from "../hooks/usePageTitle";
 import LoadingSpinner from "../components/LoadingSpinner";
+import QrModal from "../components/QrModal";
 import ResearchChat from "./ResearchChat";
 import "../styles/Research.css";
 
@@ -202,6 +203,9 @@ export default function Research() {
   const [myApplication, setMyApplication] = useState(null);
   const [myApplicationLoading, setMyApplicationLoading] = useState(false);
   const [confirmDialog, setConfirmDialog] = useState(null); // { message, onConfirm }
+  const [isShareMenuOpen, setIsShareMenuOpen] = useState(false);
+  const [isShareQrOpen, setIsShareQrOpen] = useState(false);
+  const shareMenuRef = useRef(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -302,7 +306,42 @@ export default function Research() {
     return () => document.removeEventListener("visibilitychange", onVisibility);
   }, [refreshResearch]);
 
+  useEffect(() => {
+    if (!isShareMenuOpen) return undefined;
+
+    const handleOutsideClick = (event) => {
+      if (
+        shareMenuRef.current &&
+        !shareMenuRef.current.contains(event.target)
+      ) {
+        setIsShareMenuOpen(false);
+      }
+    };
+
+    const handleEscape = (event) => {
+      if (event.key === "Escape") {
+        setIsShareMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleOutsideClick);
+    document.addEventListener("keydown", handleEscape);
+    return () => {
+      document.removeEventListener("mousedown", handleOutsideClick);
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [isShareMenuOpen]);
+
   const data = research;
+
+  const researchShareUrl = useMemo(() => {
+    const researchId = data?.id ?? id;
+    if (!researchId) return "";
+    if (typeof window === "undefined") return `/research/${researchId}`;
+    return `${window.location.origin}/research/${researchId}`;
+  }, [data?.id, id]);
+
+  const canShare = Boolean(researchShareUrl);
 
   const skills = useMemo(() => {
     const s = data?.skillsAndTools;
@@ -568,6 +607,42 @@ export default function Research() {
     if (id && canEditThis) {
       navigate(`/research/${id}/edit`);
     }
+  };
+
+  const handleCopyShareLink = async () => {
+    if (!researchShareUrl) {
+      toast.error("לא ניתן לשתף כרגע");
+      return;
+    }
+
+    try {
+      if (navigator?.clipboard?.writeText) {
+        await navigator.clipboard.writeText(researchShareUrl);
+      } else {
+        const textarea = document.createElement("textarea");
+        textarea.value = researchShareUrl;
+        textarea.setAttribute("readonly", "");
+        textarea.style.position = "absolute";
+        textarea.style.left = "-9999px";
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand("copy");
+        document.body.removeChild(textarea);
+      }
+      toast.success("הקישור הועתק");
+      setIsShareMenuOpen(false);
+    } catch (err) {
+      toast.error("לא הצלחתי להעתיק את הקישור");
+    }
+  };
+
+  const handleOpenShareQr = () => {
+    if (!researchShareUrl) {
+      toast.error("לא ניתן לשתף כרגע");
+      return;
+    }
+    setIsShareQrOpen(true);
+    setIsShareMenuOpen(false);
   };
 
   const handleStatusChange = async (newStatus) => {
@@ -1022,6 +1097,14 @@ export default function Research() {
           </div>
         </div>
       )}
+      <QrModal
+        isOpen={isShareQrOpen}
+        url={researchShareUrl}
+        onClose={() => setIsShareQrOpen(false)}
+        title="שיתוף מחקר"
+        description="סרקו כדי להגיע למחקר ישירות."
+        closeText="סגירה"
+      />
       <div style={styles.header}>
         <div style={styles.title}>{data.researchName}</div>
         <div style={styles.titleUnderline}></div>
@@ -1207,6 +1290,37 @@ export default function Research() {
                 </select>
               </div>
             )}
+
+            <div className="rd-share" ref={shareMenuRef}>
+              <button
+                type="button"
+                className="rd-share-btn"
+                onClick={() => setIsShareMenuOpen((prev) => !prev)}
+                aria-expanded={isShareMenuOpen}
+                aria-haspopup="menu"
+                disabled={!canShare}
+              >
+                שיתוף
+              </button>
+              {isShareMenuOpen && (
+                <div className="rd-share-menu" role="menu">
+                  <button
+                    type="button"
+                    className="rd-share-item"
+                    onClick={handleCopyShareLink}
+                  >
+                    העתק קישור
+                  </button>
+                  <button
+                    type="button"
+                    className="rd-share-item"
+                    onClick={handleOpenShareQr}
+                  >
+                    QR
+                  </button>
+                </div>
+              )}
+            </div>
 
             {showEditButton && (
               <button
