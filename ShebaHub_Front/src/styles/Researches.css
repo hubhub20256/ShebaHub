@@ -29,6 +29,7 @@
   width: 100%;
   display: flex;
   justify-content: center;
+  margin-top: 1rem;
   margin-bottom: 2rem;
   /* 32px */
 }
