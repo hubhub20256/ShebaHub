@@ -45,9 +45,9 @@ const STATUS_LABELS = {
 };
 
 const URGENCY_LABELS = {
-  high: "גדולה",
+  high: "גבוהה",
   medium: "בינונית",
-  low: "קטנה",
+  low: "נמוכה",
 };
 
 const STATUS_FILTER_OPTIONS = [
