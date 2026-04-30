@@ -1,7 +1,6 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
-
-
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+import license from "rollup-plugin-license";
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -21,11 +20,11 @@ export default defineConfig({
     },
   },
   esbuild: {
-    drop: process.env.NODE_ENV === 'production' ? ['console'] : [],
+    drop: process.env.NODE_ENV === "production" ? ["console"] : [],
   },
   test: {
-    environment: 'jsdom',
+    environment: "jsdom",
     globals: true,
-    setupFiles: './src/test/setup.js',
+    setupFiles: "./src/test/setup.js",
   },
-})
+});
