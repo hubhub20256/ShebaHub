@@ -1295,6 +1295,7 @@ const AddTaskModal = ({
               id="new-task-files"
               className="add-task-file-input"
               type="file"
+              accept=".pdf,application/pdf"
               multiple
               onChange={onFilesChange}
               disabled={isSubmitting}
@@ -2330,6 +2331,7 @@ const TaskDetailsModal = ({
               id={`upload-attachment-${task.id}`}
               className="visually-hidden-file-input"
               type="file"
+              accept=".pdf,application/pdf"
               multiple
               onChange={handleAttachmentUpload}
               disabled={uploadingAttachments}
