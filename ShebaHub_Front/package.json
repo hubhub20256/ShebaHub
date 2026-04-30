@@ -11,6 +11,7 @@
     "test": "vitest"
   },
   "dependencies": {
+    "qrcode.react": "^4.2.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-hot-toast": "^2.6.0",
@@ -29,6 +30,7 @@
     "eslint-plugin-react-refresh": "^0.4.24",
     "globals": "^16.5.0",
     "jsdom": "^28.1.0",
+    "rollup-plugin-license": "^3.7.1",
     "vite": "^7.2.4",
     "vitest": "^4.0.18"
   }

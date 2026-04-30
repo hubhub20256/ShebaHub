@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import toast from "react-hot-toast";
+import QrModal from "../components/QrModal";
 import { useAuth } from "../context/AuthContext";
 import { profilesAPI, API_BASE_URL } from "../services/api";
 import usePageTitle from "../hooks/usePageTitle";
@@ -685,6 +686,11 @@ function Profile() {
   const [userData, setUserData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isFullEditing, setIsFullEditing] = useState(false);
+  const [isQrDialogOpen, setIsQrDialogOpen] = useState(false);
+  const [publicRoleProfileIds, setPublicRoleProfileIds] = useState({
+    mentor: "",
+    apprentice: "",
+  });
   const [draft, setDraft] = useState(INITIAL_DRAFT);
   const [avatarFile, setAvatarFile] = useState(null);
   const [avatarInitialUrl, setAvatarInitialUrl] = useState("");
@@ -791,6 +797,74 @@ function Profile() {
   const isMentor = activeRole === "mentor";
   const isApprentice = activeRole === "apprentice";
   const hasProfile = isMentor || isApprentice;
+
+  const sanitizePublicProfileId = useMemo(() => {
+    const currentUserId = String(user?.id || "");
+    return (value) => {
+      const normalized = value == null ? "" : String(value).trim();
+      if (!normalized || normalized === "me") return "";
+      if (currentUserId && normalized === currentUserId) return "";
+      return normalized;
+    };
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (!isOwnProfile || !user?.id) return;
+
+    let cancelled = false;
+    async function loadPublicRoleIds() {
+      try {
+        const data = await profilesAPI.getPublicProfilesByUserId(user.id);
+        if (cancelled) return;
+        setPublicRoleProfileIds({
+          mentor: sanitizePublicProfileId(data?.mentor?.id),
+          apprentice: sanitizePublicProfileId(data?.student?.id),
+        });
+      } catch (err) {
+        if (!cancelled) {
+          console.error("Failed loading public profile ids", err);
+          setPublicRoleProfileIds({ mentor: "", apprentice: "" });
+        }
+      }
+    }
+
+    loadPublicRoleIds();
+    return () => {
+      cancelled = true;
+    };
+  }, [isOwnProfile, user?.id, sanitizePublicProfileId]);
+
+  const qrProfileUrl = useMemo(() => {
+    const activeRolePublicId =
+      activeRole === "mentor"
+        ? publicRoleProfileIds.mentor
+        : publicRoleProfileIds.apprentice;
+
+    const activeRoleLocalId = sanitizePublicProfileId(
+      activeRole === "mentor" ? mentorProfile?.id : apprenticeProfile?.id,
+    );
+    const fallbackLocalId =
+      sanitizePublicProfileId(userData?.id) ||
+      sanitizePublicProfileId(mentorProfile?.id) ||
+      sanitizePublicProfileId(apprenticeProfile?.id) ||
+      sanitizePublicProfileId(!isMeAlias ? id : "");
+
+    const profileId =
+      activeRolePublicId || activeRoleLocalId || fallbackLocalId;
+    if (!profileId) return "";
+    if (typeof window === "undefined") return `/user/${profileId}`;
+    return `${window.location.origin}/user/${profileId}`;
+  }, [
+    activeRole,
+    publicRoleProfileIds.mentor,
+    publicRoleProfileIds.apprentice,
+    mentorProfile?.id,
+    apprenticeProfile?.id,
+    userData?.id,
+    isMeAlias,
+    id,
+    sanitizePublicProfileId,
+  ]);
 
   const showApprenticeSpecialty = useMemo(() => {
     if (!userData || !isApprentice) return false;
@@ -1290,9 +1364,20 @@ function Profile() {
             )}
           </div>
         </div>
-        <button className="profile-edit-btn" onClick={openFullEdit}>
-          עריכת פרופיל
-        </button>
+        <div className="profile-header-actions">
+          <button className="profile-edit-btn" onClick={openFullEdit}>
+            עריכת פרופיל
+          </button>
+          {hasProfile && qrProfileUrl && (
+            <button
+              type="button"
+              className="profile-qr-btn"
+              onClick={() => setIsQrDialogOpen(true)}
+            >
+              ׳§׳•׳“ QR ׳׳™׳©׳™
+            </button>
+          )}
+        </div>
       </div>
 
       {!hasProfile && (
@@ -1631,6 +1716,13 @@ function Profile() {
           </div>
         </div>
       )}
+
+      <QrModal
+        isOpen={isQrDialogOpen}
+        url={qrProfileUrl}
+        onClose={() => setIsQrDialogOpen(false)}
+        closeText="בחזרה לפרופיל"
+      />
 
       {isFullEditing && (
         <div style={styles.modalOverlay}>
