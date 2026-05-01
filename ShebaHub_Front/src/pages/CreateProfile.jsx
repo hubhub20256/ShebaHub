@@ -10,6 +10,7 @@ import {
   SPECIALTIES_FELLOWSHIPS,
 } from "../data/specialties";
 import { scrollToFirstError, validateFile } from "../utils/formValidation";
+import ConfirmDialog from "../components/ConfirmDialog";
 
 // --- CONSTANTS ---
 const SPECIALTY_GROUPS = [
@@ -79,6 +80,7 @@ export default function CreateMentorProfile() {
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const [serverError, setServerError] = useState("");
+  const [showMentorPopup, setShowMentorPopup] = useState(false);
   const [mentorsList, setMentorsList] = useState([]);
 
   const hasMentorProfile = useMemo(() => user?.has_mentor_profile === true, [user]);
@@ -439,9 +441,13 @@ export default function CreateMentorProfile() {
         }
       }
 
-      toast.success("הפרופיל נוצר בהצלחה!");
-      navigate("/");
-      setTimeout(() => window.scrollTo({ top: 0, left: 0, behavior: "auto" }), 0);
+      if (role === "mentor") {
+        setShowMentorPopup(true);
+      } else {
+        toast.success("הפרופיל נוצר בהצלחה!");
+        navigate("/");
+        setTimeout(() => window.scrollTo({ top: 0, left: 0, behavior: "auto" }), 0);
+      }
     } catch (error) {
       console.error("Profile creation failed:", error);
       console.error("Server error data:", JSON.stringify(error.data, null, 2));
@@ -1172,6 +1178,27 @@ export default function CreateMentorProfile() {
         `}</style>
         </form>
       </div >
+
+      <ConfirmDialog
+        isOpen={showMentorPopup}
+        title="הפרופיל נוצר בהצלחה!"
+        message="מעוניינים לפתוח עמוד מחקר כעת?"
+        onConfirm={() => {
+          setShowMentorPopup(false);
+          toast.success("הפרופיל נוצר בהצלחה!");
+          navigate("/create-research");
+          setTimeout(() => window.scrollTo({ top: 0, left: 0, behavior: "auto" }), 0);
+        }}
+        onCancel={() => {
+          setShowMentorPopup(false);
+          toast.success("הפרופיל נוצר בהצלחה!");
+          navigate("/");
+          setTimeout(() => window.scrollTo({ top: 0, left: 0, behavior: "auto" }), 0);
+        }}
+        confirmText="כן, לפתיחת מחקר"
+        cancelText="לא כרגע"
+        confirmStyle={{ background: "linear-gradient(135deg, #6cd5bf, #4eb8a1)", boxShadow: "0 12px 22px rgba(108, 213, 191, 0.3)" }}
+      />
     </div>
   );
 }
