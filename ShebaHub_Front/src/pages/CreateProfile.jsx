@@ -10,6 +10,7 @@ import {
   SPECIALTIES_FELLOWSHIPS,
 } from "../data/specialties";
 import { scrollToFirstError, validateFile } from "../utils/formValidation";
+import ConfirmDialog from "../components/ConfirmDialog";
 
 // --- CONSTANTS ---
 const SPECIALTY_GROUPS = [
@@ -79,6 +80,8 @@ export default function CreateMentorProfile() {
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const [serverError, setServerError] = useState("");
+  const [showMentorPopup, setShowMentorPopup] = useState(false);
+  const [showPreSubmitPopup, setShowPreSubmitPopup] = useState(false);
   const [mentorsList, setMentorsList] = useState([]);
 
   const hasMentorProfile = useMemo(() => user?.has_mentor_profile === true, [user]);
@@ -104,7 +107,7 @@ export default function CreateMentorProfile() {
       setErrors({});
       return;
     }
-    
+
     // Auto-select missing profile if they only have one
     if (hasMentorProfile && !hasApprenticeProfile) {
       setRole("apprentice");
@@ -120,7 +123,7 @@ export default function CreateMentorProfile() {
         const list = Array.isArray(data) ? data : data?.results || [];
         setMentorsList(list);
       }
-    }).catch(() => {});
+    }).catch(() => { });
     return () => { cancelled = true; };
   }, []);
 
@@ -323,14 +326,18 @@ export default function CreateMentorProfile() {
     }
   }
 
-  async function submit(e) {
+  function submit(e) {
     e.preventDefault();
     const validationErrors = validate();
     if (validationErrors) {
       setTimeout(() => scrollToFirstError(validationErrors), 100);
       return;
     }
+    setShowPreSubmitPopup(true);
+  }
 
+  async function performSubmit() {
+    setShowPreSubmitPopup(false);
     setIsLoading(true);
     setServerError("");
 
@@ -439,9 +446,13 @@ export default function CreateMentorProfile() {
         }
       }
 
-      toast.success("הפרופיל נוצר בהצלחה!");
-      navigate("/");
-      setTimeout(() => window.scrollTo({ top: 0, left: 0, behavior: "auto" }), 0);
+      if (role === "mentor") {
+        setShowMentorPopup(true);
+      } else {
+        toast.success("הפרופיל נוצר בהצלחה!");
+        navigate("/");
+        setTimeout(() => window.scrollTo({ top: 0, left: 0, behavior: "auto" }), 0);
+      }
     } catch (error) {
       console.error("Profile creation failed:", error);
       console.error("Server error data:", JSON.stringify(error.data, null, 2));
@@ -599,7 +610,15 @@ export default function CreateMentorProfile() {
             מתלמד/ת
           </button>
         </div>
-
+        <div style={styles.roleDescription}>
+          {role === "mentor" ? (
+            <p style={{ margin: 0 }}><strong>מנחה: </strong>
+              חוקרים ורופאים המעוניינים לפרסם מחקרים, לגייס מתלמדים ולהנחות צוותים.</p>
+          ) : (
+            <p style={{ margin: 0 }}><strong>מתלמד/ת: </strong>
+              סטודנטים לרפואה, מתמחים ורופאים מתמחים המעוניינים להשתלב במחקרים רפואיים.</p>
+          )}
+        </div>
         <form onSubmit={submit} style={styles.card} className="create-profile-card">
 
           {/* SECTION 1 */}
@@ -616,25 +635,24 @@ export default function CreateMentorProfile() {
                     error={errors.apprenticeStage}
                     options={[{ v: "", t: "בחרי/י שלב" }, { v: "סטודנט", t: "סטודנט" }, { v: "לפני סטאז׳", t: "לפני סטאז׳" }, { v: "סטאז׳ר", t: "סטאז׳ר" }, { v: "אחרי סטאז׳", t: "אחרי סטאז׳" }, { v: "מתמחה", t: "מתמחה" }, { v: "רופא מתמחה", t: "רופא מתמחה" }, { v: "אחר", t: "אחר" }]}
                   />
-            
+
 
                   <InputField
-                  label="שנת תחילת לימודים"
-                  name="startYear"
-                  type="number"
-                  value={form.startYear}
-                  onChange={handleChange}
-                  placeholder="YYYY (למשל 2026)"
-                  min="1900"
-                  max="2999"
-                  onInput={(e) => {
-                    if(e.target.value.length > 4)
-                    {
-                      e.target.value = e.target.value.slice(0,4);
-                    }
-                  }}
+                    label="שנת תחילת לימודים"
+                    name="startYear"
+                    type="number"
+                    value={form.startYear}
+                    onChange={handleChange}
+                    placeholder="YYYY (למשל 2026)"
+                    min="1900"
+                    max="2999"
+                    onInput={(e) => {
+                      if (e.target.value.length > 4) {
+                        e.target.value = e.target.value.slice(0, 4);
+                      }
+                    }}
 
-                   />
+                  />
                 </>
               )}
 
@@ -737,11 +755,11 @@ export default function CreateMentorProfile() {
               )}
 
               {role === "mentor" && (
-                <SelectField label="שלב בהכשרה הרפואית" name="academicRank" 
-                value={form.academicRank} onChange={handleChange} 
-                options={[{ v: "", t: "בחרי שלב בהכשרה" }, 
-                  { v: "סטאז׳", t: "סטאז׳" }, 
-                  { v: "מתמחה", t: "מתמחה" }, 
+                <SelectField label="שלב בהכשרה הרפואית" name="academicRank"
+                  value={form.academicRank} onChange={handleChange}
+                  options={[{ v: "", t: "בחרי שלב בהכשרה" },
+                  { v: "סטאז׳", t: "סטאז׳" },
+                  { v: "מתמחה", t: "מתמחה" },
                   { v: "מומחה/ית", t: "מומחה/ית" }]} />
               )}
             </div>
@@ -871,20 +889,20 @@ export default function CreateMentorProfile() {
             {role === "apprentice" ? (
               <>
                 <div className="mentor-grid" style={styles.grid}>
-    
-
-                   <TextAreaField
-                   label="סוג העבודה המבוקשת"
-                   name="workType"
-                   value={form.workType}
-                   onChange={handleChange}
-                   placeholder="למשל: איסוף נתונים, ניתוח סטטיסטי, כתיבה מדעית..."
-                   rows={2}
-                    />
 
 
+                  <TextAreaField
+                    label="סוג העבודה המבוקשת"
+                    name="workType"
+                    value={form.workType}
+                    onChange={handleChange}
+                    placeholder="למשל: איסוף נתונים, ניתוח סטטיסטי, כתיבה מדעית..."
+                    rows={2}
+                  />
 
-                   
+
+
+
                   <div style={styles.field} id="field-compensationPreference">
                     <label style={styles.label}>העדפת תגמול</label>
                     <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 4 }}>
@@ -945,16 +963,16 @@ export default function CreateMentorProfile() {
                   options={[{ v: "", t: "בחרי/י תחומים" }, { v: "AI ברפואה", t: "AI ברפואה" }, { v: "אפידמיולוגיה", t: "אפידמיולוגיה" }, { v: "רפואה דחופה", t: "רפואה דחופה" }, { v: "מחקר קליני", t: "מחקר קליני" }]} /> */}
 
                   <TextAreaField
-                  label="תחומי עניין מחקריים"
-                  name="researchInterests"
-                  value={form.researchInterests}
-                  onChange={handleChange}
-                  placeholder="למשל: AI ברפואה, אפידמיולוגיה, רפואה דחופה ..."
-                  rows={2}
-                   />
+                    label="תחומי עניין מחקריים"
+                    name="researchInterests"
+                    value={form.researchInterests}
+                    onChange={handleChange}
+                    placeholder="למשל: AI ברפואה, אפידמיולוגיה, רפואה דחופה ..."
+                    rows={2}
+                  />
 
-             
-                
+
+
                 </div>
                 <TextAreaField label="תיאור מחקרים קודמים" name="previousResearchDescription" value={form.previousResearchDescription} onChange={handleChange} />
               </>
@@ -1165,27 +1183,59 @@ export default function CreateMentorProfile() {
         `}</style>
         </form>
       </div >
+
+      <ConfirmDialog
+        isOpen={showMentorPopup}
+        title="הפרופיל נוצר בהצלחה!"
+        message="מעוניינים לפתוח עמוד מחקר כעת?"
+        onConfirm={() => {
+          setShowMentorPopup(false);
+          toast.success("הפרופיל נוצר בהצלחה!");
+          navigate("/create-research");
+          setTimeout(() => window.scrollTo({ top: 0, left: 0, behavior: "auto" }), 0);
+        }}
+        onCancel={() => {
+          setShowMentorPopup(false);
+          toast.success("הפרופיל נוצר בהצלחה!");
+          navigate("/");
+          setTimeout(() => window.scrollTo({ top: 0, left: 0, behavior: "auto" }), 0);
+        }}
+        confirmText="כן, לפתיחת מחקר"
+        cancelText="לא כרגע"
+        confirmStyle={{ background: "linear-gradient(135deg, #6cd5bf, #4eb8a1)", boxShadow: "0 12px 22px rgba(108, 213, 191, 0.3)" }}
+      />
+
+      <ConfirmDialog
+        isOpen={showPreSubmitPopup}
+        title={role === "mentor" ? "יצירת פרופיל מנחה" : "יצירת פרופיל מתלמד"}
+        message={`אתם עומדים ליצור פרופיל ${role === "mentor" ? "מנחה" : "מתלמד"}. האם אתם בטוחים שזה סוג הפרופיל שרציתם?`}
+        onConfirm={performSubmit}
+        onCancel={() => setShowPreSubmitPopup(false)}
+        confirmText="כן, צור פרופיל"
+        cancelText="לא, חזרה לעריכה"
+        confirmStyle={{ background: "linear-gradient(135deg, #6cd5bf, #4eb8a1)", boxShadow: "0 12px 22px rgba(108, 213, 191, 0.3)" }}
+      />
     </div>
   );
 }
 
 // --- SUB-COMPONENTS ---
 
-function InputField({ label, name, value, onChange, placeholder, disabled, error, type = "text" ,min, max, onInput}) {
+function InputField({ label, name, value, onChange, placeholder, disabled, error, type = "text", min, max, onInput }) {
   return (
     <div style={styles.field}>
       <label style={styles.label}>{label}</label>
-      <input 
-      type={type} 
-      name={name}
-      value={value} 
-      onChange={onChange} 
-      placeholder={placeholder} 
-      disabled={disabled} 
-      min={min}
-      max={max}
-      onInput={onInput}
-      style={{ ...styles.input, ...(disabled ? styles.disabled : {}), ...(error ? styles.inputError : {}) }} />
+      <input
+        type={type}
+        name={name}
+        value={value}
+        onChange={onChange}
+        placeholder={placeholder}
+        disabled={disabled}
+        min={min}
+        max={max}
+        onInput={onInput}
+        style={{ ...styles.input, ...(disabled ? styles.disabled : {}), ...(error ? styles.inputError : {}) }} />
       {error && <div style={styles.error}>{error}</div>}
     </div>
   );
@@ -1359,9 +1409,10 @@ const styles = {
   header: { textAlign: "center", marginBottom: 32 },
   title: { fontSize: 32, fontWeight: 800, marginBottom: 8 },
   titleUnderline: { width: 50, height: 4, background: ACCENT_TEAL, margin: "0 auto", borderRadius: 2 },
-  roleSwitch: { display: "flex", justifyContent: "center", background: "var(--switch-bg)", padding: 4, borderRadius: 12, width: "fit-content", margin: "0 auto 32px", border: "1px solid #333" },
+  roleSwitch: { display: "flex", justifyContent: "center", background: "var(--switch-bg)", padding: 4, borderRadius: 12, width: "fit-content", margin: "0 auto 16px", border: "1px solid #333" },
   roleBtn: { minWidth: 100, padding: "10px 12px", borderRadius: 10, border: "none", background: "transparent", cursor: "pointer", fontSize: 14, fontWeight: 600, color: "var(--btn-inactive-text)", transition: "all 0.2s" },
   roleBtnActive: { background: "var(--btn-active-bg)", color: "var(--btn-active-text)", boxShadow: "0 2px 8px rgba(0,0,0,0.05)" },
+  roleDescription: { textAlign: "center", fontSize: 14, color: "var(--text-main)", maxWidth: 500, margin: "0 auto 32px", lineHeight: "1.5", background: "rgba(108, 213, 191, 0.1)", padding: "12px 16px", borderRadius: 8, border: `1px solid ${ACCENT_TEAL}40` },
   card: { border: "1px solid var(--border-color)", borderRadius: 16, padding: "clamp(16px, 4vw, 32px)", background: "var(--popup-bg)", boxShadow: "0 12px 40px rgba(0,0,0,0.03)" },
   section: { marginBottom: 24 },
   sectionTitle: { fontSize: 17, fontWeight: 700, color: "var(--theme-color)", marginBottom: 16, borderRight: `4px solid ${ACCENT_PINK}`, paddingRight: 8, lineHeight: "1" },
