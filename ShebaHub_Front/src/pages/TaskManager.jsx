@@ -1291,10 +1291,7 @@ const AddTaskModal = ({
 
           <div className="add-task-field">
             <label htmlFor="new-task-files">קבצים מצורפים</label>
-            <label
-              className="upload-file-btn"
-              htmlFor="new-task-files"
-            >
+            <label className="upload-file-btn" htmlFor="new-task-files">
               <FaPaperclip />
               העלה קובץ חדש
             </label>
