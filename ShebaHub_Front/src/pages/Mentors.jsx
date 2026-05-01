@@ -14,6 +14,11 @@ export default function Mentors() {
   const [mentors, setMentors] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [visibleCount, setVisibleCount] = useState(20);
+
+  useEffect(() => {
+    setVisibleCount(20);
+  }, [searchQuery]);
 
   useEffect(() => {
     let isMounted = true;
@@ -27,7 +32,8 @@ export default function Mentors() {
         if (isMounted) setMentors(list);
       } catch (err) {
         if (isMounted) {
-          const errorMessage = err?.response?.data?.detail || err?.message || "שגיאה בטעינת מנחים";
+          const errorMessage =
+            err?.response?.data?.detail || err?.message || "שגיאה בטעינת מנחים";
           setError(errorMessage);
         }
       } finally {
@@ -36,7 +42,9 @@ export default function Mentors() {
     }
 
     load();
-    return () => { isMounted = false; };
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const mappedMentors = useMemo(() => {
@@ -48,18 +56,16 @@ export default function Mentors() {
       specialty: m.specialty || "",
       degrees: Array.isArray(m.degrees)
         ? m.degrees.filter(Boolean).join(", ")
-        : (m.degrees || ""),
+        : m.degrees || "",
       Educational_institution: m.institution || "",
       profileImage: m.avatarUrl || null,
     }));
   }, [mentors]);
 
-  const extractMentorTerms = useCallback((m) => [
-    m.name,
-    m.specialty,
-    m.degrees,
-    m.Educational_institution,
-  ], []);
+  const extractMentorTerms = useCallback(
+    (m) => [m.name, m.specialty, m.degrees, m.Educational_institution],
+    [],
+  );
 
   const filteredMentors = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
@@ -73,7 +79,10 @@ export default function Mentors() {
         m.Educational_institution,
         m.email,
         m.gender,
-      ].filter(Boolean).join(" ").toLowerCase();
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
       return haystack.includes(q);
     });
   }, [searchQuery, mappedMentors]);
@@ -84,8 +93,8 @@ export default function Mentors() {
         <div className="page-intro-card">
           <h1 className="page-intro-title">הכירו את המנחים למחקר בשיבא</h1>
           <p className="page-intro-description">
-            מאגר המנחים של בית החולים שיבא מאגד רופאות ורופאים המובילים מחקרים פעילים
-            ומלווים סטודנטים בתהליכי הכשרה אקדמיים.
+            מאגר המנחים של בית החולים שיבא מאגד רופאות ורופאים המובילים מחקרים
+            פעילים ומלווים סטודנטים בתהליכי הכשרה אקדמיים.
           </p>
         </div>
       </div>
@@ -110,10 +119,22 @@ export default function Mentors() {
           </div>
 
           <div className="cards-grid mentors-layout">
-            {filteredMentors.map((m) => (
+            {filteredMentors.slice(0, visibleCount).map((m) => (
               <MentorsCard key={m.id || m.email} mentor={m} />
             ))}
           </div>
+
+          {visibleCount < filteredMentors.length && (
+            <div className="mentors-load-more-wrap">
+              <button
+                type="button"
+                className="mentors-load-more-btn"
+                onClick={() => setVisibleCount((prev) => prev + 20)}
+              >
+                הצג עוד מנחים
+              </button>
+            </div>
+          )}
 
           {filteredMentors.length === 0 && (
             <EmptyState message="לא נמצאו תוצאות לחיפוש הנוכחי." />

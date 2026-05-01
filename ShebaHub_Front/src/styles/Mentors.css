@@ -44,12 +44,14 @@
   outline: none;
   font-size: 0.9375rem; /* 15px */
   background: #ffffff;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
   box-sizing: border-box;
 }
 
 .mentors-search-input:focus {
-  border-color: #37B9A3; /* Sheba teal */
+  border-color: #37b9a3; /* Sheba teal */
   box-shadow: 0 0 0 3px rgba(55, 185, 163, 0.1);
 }
 
@@ -70,6 +72,54 @@
   margin-top: 2.5rem; /* 40px */
   color: #64748b;
   font-size: 1rem;
+}
+
+.mentors-layout > * {
+  animation: mentors-card-enter 280ms ease-out both;
+}
+
+@keyframes mentors-card-enter {
+  from {
+    opacity: 0;
+    transform: translateY(0.75rem) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.mentors-load-more-wrap {
+  display: flex;
+  justify-content: center;
+  margin: 2rem 0 0;
+}
+
+.mentors-load-more-btn {
+  padding: 0.75rem 1.5rem;
+  min-width: 11rem;
+  border: 0;
+  border-radius: 0.75rem;
+  background: #37b9a3;
+  color: #ffffff;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 0.75rem 1.5rem rgba(55, 185, 163, 0.18);
+  transition:
+    background-color 0.2s ease,
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.mentors-load-more-btn:hover {
+  background: #2f9f8c;
+  transform: translateY(-1px);
+}
+
+.mentors-load-more-btn:focus-visible {
+  outline: 3px solid rgba(55, 185, 163, 0.22);
+  outline-offset: 3px;
 }
 
 /* --- Media Queries --- */
@@ -97,11 +147,35 @@
 }
 
 /* ===== DARK MODE ===== */
-[data-theme="dark"] .mentors-title { color: var(--text-color) !important; }
+[data-theme="dark"] .mentors-title {
+  color: var(--text-color) !important;
+}
 [data-theme="dark"] .mentors-search-input {
   background: var(--card-bg) !important;
   border-color: var(--border-color) !important;
   color: var(--text-color) !important;
 }
-[data-theme="dark"] .mentors-search-icon { color: #888 !important; }
-[data-theme="dark"] .mentors-no-results { color: #999 !important; }
+[data-theme="dark"] .mentors-search-icon {
+  color: #888 !important;
+}
+[data-theme="dark"] .mentors-no-results {
+  color: #999 !important;
+}
+[data-theme="dark"] .mentors-load-more-btn {
+  background: #6cd5bf;
+  color: #10261f;
+  box-shadow: 0 0.75rem 1.5rem rgba(108, 213, 191, 0.2);
+}
+[data-theme="dark"] .mentors-load-more-btn:hover {
+  background: #5bcab3;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mentors-layout > * {
+    animation: none;
+  }
+
+  .mentors-load-more-btn {
+    transition: none;
+  }
+}
