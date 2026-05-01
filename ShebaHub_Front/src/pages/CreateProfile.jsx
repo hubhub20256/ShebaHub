@@ -81,6 +81,7 @@ export default function CreateMentorProfile() {
   const [isLoading, setIsLoading] = useState(false);
   const [serverError, setServerError] = useState("");
   const [showMentorPopup, setShowMentorPopup] = useState(false);
+  const [showPreSubmitPopup, setShowPreSubmitPopup] = useState(false);
   const [mentorsList, setMentorsList] = useState([]);
 
   const hasMentorProfile = useMemo(() => user?.has_mentor_profile === true, [user]);
@@ -325,14 +326,18 @@ export default function CreateMentorProfile() {
     }
   }
 
-  async function submit(e) {
+  function submit(e) {
     e.preventDefault();
     const validationErrors = validate();
     if (validationErrors) {
       setTimeout(() => scrollToFirstError(validationErrors), 100);
       return;
     }
+    setShowPreSubmitPopup(true);
+  }
 
+  async function performSubmit() {
+    setShowPreSubmitPopup(false);
     setIsLoading(true);
     setServerError("");
 
@@ -1197,6 +1202,17 @@ export default function CreateMentorProfile() {
         }}
         confirmText="כן, לפתיחת מחקר"
         cancelText="לא כרגע"
+        confirmStyle={{ background: "linear-gradient(135deg, #6cd5bf, #4eb8a1)", boxShadow: "0 12px 22px rgba(108, 213, 191, 0.3)" }}
+      />
+
+      <ConfirmDialog
+        isOpen={showPreSubmitPopup}
+        title={role === "mentor" ? "יצירת פרופיל מנחה" : "יצירת פרופיל מתלמד"}
+        message={`אתם עומדים ליצור פרופיל ${role === "mentor" ? "מנחה" : "מתלמד"}. האם אתם בטוחים שזה סוג הפרופיל שרציתם?`}
+        onConfirm={performSubmit}
+        onCancel={() => setShowPreSubmitPopup(false)}
+        confirmText="כן, צור פרופיל"
+        cancelText="לא, חזרה לעריכה"
         confirmStyle={{ background: "linear-gradient(135deg, #6cd5bf, #4eb8a1)", boxShadow: "0 12px 22px rgba(108, 213, 191, 0.3)" }}
       />
     </div>
