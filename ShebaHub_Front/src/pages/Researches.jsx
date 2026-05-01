@@ -1,4 +1,10 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import ResearchCard from "../components/researchCard";
 import SearchAutocomplete from "../components/SearchAutocomplete";
 import LoadingSpinner from "../components/LoadingSpinner";
@@ -17,6 +23,11 @@ export default function Researches() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [joinedIds, setJoinedIds] = useState(new Set());
+  const [visibleCount, setVisibleCount] = useState(20);
+
+  useEffect(() => {
+    setVisibleCount(20);
+  }, [searchQuery]);
 
   const splitList = (value) => {
     if (!value) return [];
@@ -37,7 +48,9 @@ export default function Researches() {
     startDate: r.startDate,
     hoursScope: r.weeklyHours ? `${r.weeklyHours} שעות בשבוע` : "",
     duration: r.durationMonths ? `${r.durationMonths} חודשים` : "",
-    rewards: Array.isArray(r.compensation) ? r.compensation.join(", ") : (r.compensation || ""),
+    rewards: Array.isArray(r.compensation)
+      ? r.compensation.join(", ")
+      : r.compensation || "",
     status: r.status || "",
     acceptingApplications: r.accepting_applications,
     isFull: r.isFull || false,
@@ -63,7 +76,9 @@ export default function Researches() {
       if (Array.isArray(data)) {
         setJoinedIds(new Set(data.map((r) => r.id)));
       }
-    } catch { /* non-blocking */ }
+    } catch {
+      /* non-blocking */
+    }
   }, [user]);
 
   useEffect(() => {
@@ -91,17 +106,20 @@ export default function Researches() {
   const activeList = useMemo(
     () => researches.map(mapApiResearchToCard),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [researches]
+    [researches],
   );
 
-  const extractResearchTerms = useCallback((r) => [
-    r.title,
-    ...r.fields,
-    ...r.mentors,
-    r.rewards,
-    r.hoursScope,
-    r.duration,
-  ], []);
+  const extractResearchTerms = useCallback(
+    (r) => [
+      r.title,
+      ...r.fields,
+      ...r.mentors,
+      r.rewards,
+      r.hoursScope,
+      r.duration,
+    ],
+    [],
+  );
 
   const filteredResearches = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
@@ -130,18 +148,25 @@ export default function Researches() {
   return (
     <div className="researches-page" dir="rtl">
       <div className="page-intro-card">
-        <h1 className="page-intro-title">זירת המחקר של שיבא: פרויקטים, מחקרים והזדמנויות</h1>
+        <h1 className="page-intro-title">
+          זירת המחקר של שיבא: פרויקטים, מחקרים והזדמנויות
+        </h1>
 
         <div className="page-intro-separator"></div>
 
         <p className="page-intro-description">
-          לפניכם מאגר המחקרים הפעילים והעתידיים בבית החולים. כאן תוכלו להיחשף לחזית העשייה המדעית,
-          לעיין בפרטי המחקרים במחלקות השונות ולמצוא פרויקטים המחפשים שותפים או ליווי מחקרי.
+          לפניכם מאגר המחקרים הפעילים והעתידיים בבית החולים. כאן תוכלו להיחשף
+          לחזית העשייה המדעית, לעיין בפרטי המחקרים במחלקות השונות ולמצוא
+          פרויקטים המחפשים שותפים או ליווי מחקרי.
         </p>
       </div>
 
       {loading && <LoadingSpinner text="טוען מחקרים..." />}
-      {error && <p className="researches-no-results" style={{ color: "#dc2626" }}>{error}</p>}
+      {error && (
+        <p className="researches-no-results" style={{ color: "#dc2626" }}>
+          {error}
+        </p>
+      )}
 
       {!loading && !error && (
         <>
@@ -157,11 +182,27 @@ export default function Researches() {
             iconClassName="researches-search-icon"
           />
 
-          <div className="cards-grid">
-            {filteredResearches.map((r) => (
-              <ResearchCard key={r.id} research={r} joined={joinedIds.has(r.id)} />
+          <div className="cards-grid researches-layout">
+            {filteredResearches.slice(0, visibleCount).map((r) => (
+              <ResearchCard
+                key={r.id}
+                research={r}
+                joined={joinedIds.has(r.id)}
+              />
             ))}
           </div>
+
+          {visibleCount < filteredResearches.length && (
+            <div className="researches-load-more-wrap">
+              <button
+                type="button"
+                className="researches-load-more-btn"
+                onClick={() => setVisibleCount((prev) => prev + 20)}
+              >
+                הצג עוד מחקרים
+              </button>
+            </div>
+          )}
 
           {filteredResearches.length === 0 && (
             <EmptyState message="לא נמצאו מחקרים תואמים." />
