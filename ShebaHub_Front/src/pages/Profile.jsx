@@ -702,6 +702,7 @@ function Profile() {
     isOpen: false,
     doc: null,
   });
+  const [deleteProfileDialog, setDeleteProfileDialog] = useState(false);
   const [editErrors, setEditErrors] = useState({});
   const [mentorsList, setMentorsList] = useState([]);
   const avatarFileInputRef = useRef(null);
@@ -884,6 +885,26 @@ function Profile() {
       navigate("/create-profile?role=apprentice");
     } else if (!hasMentorProfile && hasApprenticeProfile) {
       navigate("/create-profile?role=mentor");
+    }
+  }
+
+  async function handleDeleteProfile() {
+    setIsSaving(true);
+    try {
+      if (activeRole === "mentor") {
+        await profilesAPI.deleteMentorProfile();
+      } else if (activeRole === "apprentice") {
+        await profilesAPI.deleteStudentProfile();
+      }
+      toast.success("הפרופיל נמחק בהצלחה!");
+      await refreshUser();
+      navigate("/");
+    } catch (err) {
+      console.error("Failed to delete profile", err);
+      toast.error("אירעה שגיאה במחיקת הפרופיל");
+    } finally {
+      setIsSaving(false);
+      setDeleteProfileDialog(false);
     }
   }
 
@@ -1367,6 +1388,9 @@ function Profile() {
         <div className="profile-header-actions">
           <button className="profile-edit-btn" onClick={openFullEdit}>
             עריכת פרופיל
+          </button>
+          <button className="profile-edit-btn" style={{ background: "#ef4444", color: "white", borderColor: "#ef4444" }} onClick={() => setDeleteProfileDialog(true)}>
+            מחיקת פרופיל
           </button>
           {hasProfile && qrProfileUrl && (
             <button
@@ -2950,6 +2974,16 @@ function Profile() {
         onConfirm={confirmDeleteDocument}
         onCancel={() => setConfirmDialog({ isOpen: false, doc: null })}
         confirmText="מחק"
+        cancelText="ביטול"
+      />
+
+      <ConfirmDialog
+        isOpen={deleteProfileDialog}
+        title="מחיקת פרופיל"
+        message="האם את/ה בטוח/ה שברצונך למחוק את הפרופיל שלך? הפעולה אינה ניתנת לביטול. חשבון המשתמש יישאר פעיל."
+        onConfirm={handleDeleteProfile}
+        onCancel={() => setDeleteProfileDialog(false)}
+        confirmText={isSaving ? "מוחק..." : "מחק פרופיל"}
         cancelText="ביטול"
       />
     </div>
