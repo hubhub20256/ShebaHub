@@ -165,6 +165,15 @@ const THEME_COLOR = "#2C2C6C";
 const ACCENT_TEAL = "#6cd5bf";
 const ACCENT_PINK = "#ef67a0";
 const BG_GRAY = "#f8f9fa";
+const getAccordionContentStyle = (isOpen) => ({
+  maxHeight: isOpen ? "70vh" : "0",
+  opacity: isOpen ? 1 : 0,
+  overflowY: isOpen ? "auto" : "hidden",
+  overflowX: "hidden",
+  WebkitOverflowScrolling: "touch",
+  transition:
+    "max-height 0.6s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease",
+});
 
 /** Research Component */
 export default function Research() {
@@ -1829,14 +1838,7 @@ export default function Research() {
               </div>
             </div>
 
-            <div
-              style={{
-                maxHeight: isApprenticesOpen ? "2000px" : "0",
-                opacity: isApprenticesOpen ? 1 : 0,
-                overflow: "hidden",
-                transition: "all 0.6s cubic-bezier(0.4, 0, 0.2, 1)",
-              }}
-            >
+            <div style={getAccordionContentStyle(isApprenticesOpen)}>
               {(hasAnyPermission ? applicationsError : publicApprovedError) && (
                 <div
                   style={{ marginTop: 12, color: "#b91c1c", fontWeight: 700 }}
@@ -1966,14 +1968,7 @@ export default function Research() {
               </div>
             </div>
 
-            <div
-              style={{
-                maxHeight: isMentorsOpen ? "2000px" : "0",
-                opacity: isMentorsOpen ? 1 : 0,
-                overflow: "hidden",
-                transition: "all 0.6s cubic-bezier(0.4, 0, 0.2, 1)",
-              }}
-            >
+            <div style={getAccordionContentStyle(isMentorsOpen)}>
               {(
                 hasAnyPermission ? applicationsLoading : publicApprovedLoading
               ) ? (
@@ -2101,14 +2096,7 @@ export default function Research() {
               </div>
             </div>
 
-            <div
-              style={{
-                maxHeight: isApplicantsOpen ? "2000px" : "0",
-                opacity: isApplicantsOpen ? 1 : 0,
-                overflow: "hidden",
-                transition: "all 0.6s cubic-bezier(0.4, 0, 0.2, 1)",
-              }}
-            >
+            <div style={getAccordionContentStyle(isApplicantsOpen)}>
               {applicationsError && (
                 <div
                   style={{ marginTop: 12, color: "#b91c1c", fontWeight: 700 }}
