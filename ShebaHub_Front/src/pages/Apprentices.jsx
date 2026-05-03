@@ -15,6 +15,11 @@ export default function Apprentices() {
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [visibleCount, setVisibleCount] = useState(20);
+
+  useEffect(() => {
+    setVisibleCount(20);
+  }, [searchQuery]);
 
   useEffect(() => {
     let isMounted = true;
@@ -55,11 +60,10 @@ export default function Apprentices() {
     }));
   }, [students]);
 
-  const extractApprenticeTerms = useCallback((a) => [
-    a.name,
-    a.medical_level,
-    a.Educational_institution,
-  ], []);
+  const extractApprenticeTerms = useCallback(
+    (a) => [a.name, a.medical_level, a.Educational_institution],
+    [],
+  );
 
   const filteredApprentices = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
@@ -84,19 +88,22 @@ export default function Apprentices() {
 
   return (
     <div className="apprentices-page" dir="rtl">
-
       <div className="page-intro-wrapper">
-          <div className="page-intro-card">
-            <h1 className="page-intro-title">הכירו את שותפי המחקר הבאים שלכם</h1>
-            <p className="page-intro-description">
-              כאן תוכלו למצוא את דור העתיד של החוקרים בשיבא. המאגר מציג סטודנטים לרפואה
-              ומתלמדים המשתלבים בפרויקטים מחקריים במחלקות השונות.
-            </p>
-          </div>
+        <div className="page-intro-card">
+          <h1 className="page-intro-title">הכירו את שותפי המחקר הבאים שלכם</h1>
+          <p className="page-intro-description">
+            כאן תוכלו למצוא את דור העתיד של החוקרים בשיבא. המאגר מציג סטודנטים
+            לרפואה ומתלמדים המשתלבים בפרויקטים מחקריים במחלקות השונות.
+          </p>
         </div>
+      </div>
 
       {loading && <LoadingSpinner text="טוען מתלמדים..." />}
-      {error && <p className="apprentices-no-results" style={{ color: "#dc2626" }}>{error}</p>}
+      {error && (
+        <p className="apprentices-no-results" style={{ color: "#dc2626" }}>
+          {error}
+        </p>
+      )}
 
       {!loading && !error && (
         <>
@@ -113,10 +120,22 @@ export default function Apprentices() {
           />
 
           <div className="cards-grid apprentices-layout">
-            {filteredApprentices.slice(0, 20).map((a) => (
+            {filteredApprentices.slice(0, visibleCount).map((a) => (
               <ApprenticeCard key={a.id} apprentice={a} />
             ))}
           </div>
+
+          {visibleCount < filteredApprentices.length && (
+            <div className="apprentices-load-more-wrap">
+              <button
+                type="button"
+                className="apprentices-load-more-btn"
+                onClick={() => setVisibleCount((prev) => prev + 20)}
+              >
+                הצג עוד מתלמדים
+              </button>
+            </div>
+          )}
 
           {filteredApprentices.length === 0 && (
             <EmptyState message="לא נמצאו תוצאות." />

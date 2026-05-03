@@ -23,15 +23,15 @@
 /* משתנים למצב לילה */
 [data-theme="dark"] {
   color-scheme: dark;
-  --primary-color: #4da3ff;
+  --primary-color: #6cd5bf;
   /* כחול בהיר יותר שמתאים לרקע כהה */
-  --bg-color: #121212;
+  --bg-color: #111111;
   /* רקע כהה מאוד */
-  --text-color: #e0e0e0;
+  --text-color: #e6ecff;
   /* טקסט בהיר */
-  --card-bg: #1e1e1e;
+  --card-bg: #161616;
   /* רקע כרטיסים כהה */
-  --border-color: #333333;
+  --border-color: #2e2e2e;
   /* גבולות כהים */
 }
 
@@ -413,6 +413,55 @@ textarea:focus-visible,
 [data-theme="dark"] .confirm-dialog-title-text { color: var(--text-color) !important; }
 [data-theme="dark"] .confirm-dialog-message { color: #b0b0b0 !important; }
 [data-theme="dark"] .confirm-dialog-cancel-btn { background: var(--card-bg) !important; color: var(--text-color) !important; border-color: var(--border-color) !important; }
+
+/* Unified dark-mode surfaces for consistent look across pages */
+[data-theme="dark"] .card,
+[data-theme="dark"] .auth-card,
+[data-theme="dark"] .profile-card,
+[data-theme="dark"] .profile-wide-card,
+[data-theme="dark"] .research-detail-card,
+[data-theme="dark"] .my-research-card,
+[data-theme="dark"] .invite-modal,
+[data-theme="dark"] .profile-edit-modal,
+[data-theme="dark"] .add-task-modal {
+  background: var(--card-bg) !important;
+  border-color: var(--border-color) !important;
+  color: var(--text-color) !important;
+}
+
+[data-theme="dark"] input:not([type="checkbox"]),
+[data-theme="dark"] select,
+[data-theme="dark"] textarea {
+  background-color: #1d1d1d !important;
+  border-color: var(--border-color) !important;
+  color: var(--text-color) !important;
+}
+
+[data-theme="dark"] input::placeholder,
+[data-theme="dark"] textarea::placeholder {
+  color: #a7a7a7 !important;
+}
+
+/* Readability guard: prevent dark text over dark surfaces */
+[data-theme="dark"] p,
+[data-theme="dark"] span,
+[data-theme="dark"] small,
+[data-theme="dark"] label,
+[data-theme="dark"] li,
+[data-theme="dark"] th,
+[data-theme="dark"] td,
+[data-theme="dark"] h1,
+[data-theme="dark"] h2,
+[data-theme="dark"] h3,
+[data-theme="dark"] h4,
+[data-theme="dark"] h5,
+[data-theme="dark"] h6 {
+  color: var(--text-color);
+}
+
+[data-theme="dark"] a {
+  color: #cfd8ff;
+}
 
 /* ======================================================= */
 /* Global Mobile Responsive Fixes                          */

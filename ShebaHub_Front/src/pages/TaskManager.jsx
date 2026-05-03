@@ -45,9 +45,9 @@ const STATUS_LABELS = {
 };
 
 const URGENCY_LABELS = {
-  high: "גדולה",
+  high: "גבוהה",
   medium: "בינונית",
-  low: "קטנה",
+  low: "נמוכה",
 };
 
 const STATUS_FILTER_OPTIONS = [
@@ -1291,10 +1291,15 @@ const AddTaskModal = ({
 
           <div className="add-task-field">
             <label htmlFor="new-task-files">קבצים מצורפים</label>
+            <label className="upload-file-btn" htmlFor="new-task-files">
+              <FaPaperclip />
+              העלה קובץ חדש
+            </label>
             <input
               id="new-task-files"
-              className="add-task-file-input"
+              className="visually-hidden-file-input"
               type="file"
+              accept=".pdf,application/pdf"
               multiple
               onChange={onFilesChange}
               disabled={isSubmitting}
@@ -1386,12 +1391,7 @@ const TaskChatPanel = ({
     fetchComments();
   }, [fetchComments]);
 
-  const handleSend = async (e) => {
-    if (e.key !== "Enter" || e.shiftKey) {
-      return;
-    }
-
-    e.preventDefault();
+  const submitComment = async () => {
     if (!newComment.trim() || sending) {
       return;
     }
@@ -1418,6 +1418,15 @@ const TaskChatPanel = ({
     } finally {
       setSending(false);
     }
+  };
+
+  const handleSend = async (e) => {
+    if (e.key !== "Enter" || e.shiftKey) {
+      return;
+    }
+
+    e.preventDefault();
+    await submitComment();
   };
 
   const handleDeleteComment = async (commentId) => {
@@ -1512,13 +1521,6 @@ const TaskChatPanel = ({
 
       <div className="chat-input-container">
         <div className="chat-input-wrapper">
-          <button
-            className="attach-file-btn"
-            title="העלאת קבצים מתבצעת מחלון הפרטים"
-            disabled
-          >
-            <FaPaperclip />
-          </button>
           <textarea
             className="chat-input"
             placeholder="כתוב תגובה..."
@@ -1528,6 +1530,14 @@ const TaskChatPanel = ({
             rows={2}
             disabled={sending}
           />
+          <button
+            type="button"
+            className="chat-send-btn"
+            onClick={submitComment}
+            disabled={sending || !newComment.trim()}
+          >
+            שלח
+          </button>
         </div>
       </div>
     </div>
@@ -1575,6 +1585,10 @@ const TaskEditModal = ({
   const [fieldErrors, setFieldErrors] = useState({});
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [uploadingAttachments, setUploadingAttachments] = useState(false);
+  const [deletingAttachmentId, setDeletingAttachmentId] = useState(null);
+  const [attachmentDeleteConfirmId, setAttachmentDeleteConfirmId] =
+    useState(null);
 
   useEffect(() => {
     latestTaskRef.current = task;
@@ -1594,7 +1608,14 @@ const TaskEditModal = ({
     setAssigneeError("");
     setFieldErrors({});
     setError("");
+    setUploadingAttachments(false);
+    setDeletingAttachmentId(null);
+    setAttachmentDeleteConfirmId(null);
   }, [task.id]);
+
+  const applyTaskUpdate = (nextTask) => {
+    onTaskUpdated(nextTask);
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -1783,6 +1804,94 @@ const TaskEditModal = ({
   const closeRemoveAssigneeConfirm = () => {
     if (assigneeActionPendingId) return;
     setAssigneeDeleteConfirm(null);
+  };
+
+  const handleAttachmentUpload = async (event) => {
+    const selectedFiles = Array.from(event.target.files || []);
+    event.target.value = "";
+
+    if (!selectedFiles.length) return;
+
+    setUploadingAttachments(true);
+
+    try {
+      const uploaded = await tasksAPI.uploadAttachments(task.id, selectedFiles);
+      const currentTask = latestTaskRef.current || task;
+      const existingAttachments = Array.isArray(currentTask.attachments)
+        ? currentTask.attachments
+        : [];
+
+      applyTaskUpdate({
+        ...currentTask,
+        attachments: [...existingAttachments, ...uploaded],
+      });
+
+      toast.success("הקבצים הועלו בהצלחה.");
+    } catch (requestError) {
+      if (requestError?.status === 404) {
+        toast.error("המשימה אינה זמינה יותר.");
+        await onTaskInaccessible(task.id);
+        onClose();
+        return;
+      }
+
+      const message =
+        requestError?.status === 403
+          ? "אין הרשאה להעלות קבצים למשימה זו."
+          : getErrorMessage(requestError, "העלאת הקבצים נכשלה.");
+      toast.error(message);
+    } finally {
+      setUploadingAttachments(false);
+    }
+  };
+
+  const closeAttachmentDeleteConfirm = () => {
+    if (deletingAttachmentId) return;
+    setAttachmentDeleteConfirmId(null);
+  };
+
+  const handleAttachmentDelete = async () => {
+    if (!attachmentDeleteConfirmId || deletingAttachmentId) return;
+    const attachmentId = attachmentDeleteConfirmId;
+
+    setDeletingAttachmentId(attachmentId);
+    try {
+      await tasksAPI.deleteAttachment(task.id, attachmentId);
+
+      const currentTask = latestTaskRef.current || task;
+      const nextAttachments = (currentTask.attachments || []).filter(
+        (attachment) =>
+          toComparableId(attachment.id) !== toComparableId(attachmentId),
+      );
+
+      applyTaskUpdate({ ...currentTask, attachments: nextAttachments });
+      toast.success("הקובץ הוסר.");
+    } catch (requestError) {
+      if (requestError?.status === 404) {
+        toast.error("המשימה אינה זמינה יותר.");
+        await onTaskInaccessible(task.id);
+        onClose();
+        return;
+      }
+
+      const message =
+        requestError?.status === 403
+          ? "אין הרשאה למחוק קבצים ממשימה זו."
+          : getErrorMessage(requestError, "מחיקת הקובץ נכשלה.");
+      toast.error(message);
+    } finally {
+      setDeletingAttachmentId(null);
+      setAttachmentDeleteConfirmId(null);
+    }
+  };
+
+  const handleDownloadAttachment = (attachment) => {
+    if (!attachment?.url) {
+      toast.error("אין קישור להורדה עבור קובץ זה.");
+      return;
+    }
+
+    window.open(attachment.url, "_blank", "noopener,noreferrer");
   };
 
   const handleSubmit = async (event) => {
@@ -2040,6 +2149,73 @@ const TaskEditModal = ({
               ) : null}
             </div>
 
+            <div className="modal-section">
+              <h3>קבצים מצורפים ({task.attachments?.length || 0})</h3>
+              {task.attachments && task.attachments.length > 0 ? (
+                <div className="attachments-list">
+                  {task.attachments.map((attachment) => (
+                    <div key={attachment.id} className="attachment-item">
+                      <div className="attachment-info-group">
+                        <FaFileAlt className="attachment-icon" />
+                        <div className="attachment-details">
+                          <span className="attachment-name">
+                            {attachment.name}
+                          </span>
+                          <span className="attachment-size">
+                            {attachment.size}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="attachment-actions">
+                        <button
+                          type="button"
+                          className="download-btn"
+                          title="הורד קובץ"
+                          onClick={() => handleDownloadAttachment(attachment)}
+                        >
+                          <FaDownload />
+                        </button>
+                        <button
+                          type="button"
+                          className="attachment-delete-btn"
+                          title="מחק קובץ"
+                          onClick={() =>
+                            setAttachmentDeleteConfirmId(attachment.id)
+                          }
+                          disabled={
+                            toComparableId(deletingAttachmentId) ===
+                            toComparableId(attachment.id)
+                          }
+                        >
+                          <FaTrash />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="empty-text">לא צורפו קבצים למשימה זו.</p>
+              )}
+
+              <label
+                className={`upload-file-btn ${uploadingAttachments ? "is-disabled" : ""}`}
+                htmlFor={`upload-edit-attachment-${task.id}`}
+              >
+                <FaPaperclip />
+                {uploadingAttachments ? "מעלה קבצים..." : "העלה קובץ חדש"}
+              </label>
+              <input
+                id={`upload-edit-attachment-${task.id}`}
+                className="visually-hidden-file-input"
+                type="file"
+                accept=".pdf,application/pdf"
+                multiple
+                onChange={handleAttachmentUpload}
+                disabled={uploadingAttachments}
+              />
+            </div>
+
             {error ? <p className="add-task-error">{error}</p> : null}
 
             <div className="add-task-actions">
@@ -2074,6 +2250,16 @@ const TaskEditModal = ({
         }}
         onCancel={closeRemoveAssigneeConfirm}
         confirmText={assigneeActionPendingId ? "מסיר..." : "הסר"}
+        cancelText="ביטול"
+      />
+
+      <ConfirmDialog
+        isOpen={Boolean(attachmentDeleteConfirmId)}
+        title="מחיקת קובץ לצמיתות"
+        message="מחיקת הקובץ היא פעולה בלתי הפיכה. האם להמשיך?"
+        onConfirm={handleAttachmentDelete}
+        onCancel={closeAttachmentDeleteConfirm}
+        confirmText={deletingAttachmentId ? "מוחק..." : "מחק לצמיתות"}
         cancelText="ביטול"
       />
     </>
@@ -2330,6 +2516,7 @@ const TaskDetailsModal = ({
               id={`upload-attachment-${task.id}`}
               className="visually-hidden-file-input"
               type="file"
+              accept=".pdf,application/pdf"
               multiple
               onChange={handleAttachmentUpload}
               disabled={uploadingAttachments}

@@ -33,6 +33,11 @@
   backdrop-filter: none;
 }
 
+[data-theme="dark"] .navbar-logo-image {
+  content: url("../assets/ShebaNavbarLogoDarkTextWhite.png");
+  filter: none;
+}
+
 /* ✅ חשוב: מבטל "רווח תחתון" של תמונה (inline baseline) שגורם לכל ה-navbar להיראות כאילו ירד */
 .navbar-logo-container {
   display: flex;
@@ -107,6 +112,10 @@
 }
 
 [data-theme="dark"] .navbar-profile-icon img {
+  filter: brightness(0) invert(1);
+}
+
+[data-theme="dark"] .navbar-profile-icon {
   filter: brightness(0) invert(1);
 }
 

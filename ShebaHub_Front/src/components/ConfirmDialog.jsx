@@ -89,6 +89,7 @@ export default function ConfirmDialog({
   onCancel,
   confirmText = "מחק",
   cancelText = "ביטול",
+  confirmStyle = {},
 }) {
   const dialogRef = React.useRef(null);
   const previousFocusRef = React.useRef(null);
@@ -162,7 +163,7 @@ export default function ConfirmDialog({
           {message}
         </div>
         <div style={actionsStyle}>
-          <button type="button" style={confirmBtnStyle} onClick={onConfirm}>
+          <button type="button" style={{...confirmBtnStyle, ...confirmStyle}} onClick={onConfirm}>
             {confirmText}
           </button>
           <button
