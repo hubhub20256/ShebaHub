@@ -80,7 +80,7 @@ export default function AdminApplications() {
     adminAPI
       .listApplications(params)
       .then((data) => {
-        setApplications(data);
+        setApplications(Array.isArray(data) ? data : data.results || []);
         setError("");
       })
       .catch(() => setError("שגיאה בטעינת מועמדויות"))

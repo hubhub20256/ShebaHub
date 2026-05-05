@@ -52,7 +52,7 @@ export default function AdminLogs() {
     adminAPI
       .getLogs(params)
       .then((data) => {
-        setLogs(data);
+        setLogs(Array.isArray(data) ? data : data.results || []);
         setError("");
       })
       .catch(() => setError("שגיאה בטעינת יומן"))

@@ -240,7 +240,7 @@ export default function AdminResearches() {
     adminAPI
       .listResearches(params)
       .then((data) => {
-        setResearches(data);
+        setResearches(Array.isArray(data) ? data : data.results || []);
         setError("");
       })
       .catch(() => setError("שגיאה בטעינת מחקרים"))

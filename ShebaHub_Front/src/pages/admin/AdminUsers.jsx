@@ -135,7 +135,7 @@ export default function AdminUsers() {
     adminAPI
       .listUsers(params)
       .then((data) => {
-        setUsers(data);
+        setUsers(Array.isArray(data) ? data : data.results || []);
         setError("");
       })
       .catch(() => setError("שגיאה בטעינת משתמשים"))
