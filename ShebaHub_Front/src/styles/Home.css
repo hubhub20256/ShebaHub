@@ -1,209 +1,349 @@
-/* src/styles/Home.css */
-
-/* 
- * Home Page Styles
- * Strategy: Desktop-first approach to match original design, 
- * with overlays for mobile responsiveness using @media queries.
- */
-.home-body,
-.home-body #root,
-.home-body main,
-.home-body .app,
-.home-body .layout {
-  background: var(--bg-color) !important;
-  margin: 0;
+:root {
+  --sheba-pink: #e6007e;
+  --sheba-dark-blue: #18206a;
+  --sheba-hub-color: #2d96b1;
+  --bg-subtle: #f8fafc;
+  --card-bg: #ffffff;
+  --text-main: #1e293b;
+  --text-muted: #475569;
 }
 
-/* Main Page Container */
 .home-page {
-  background: var(--bg-color);
-  color: #0f172a;
-  /* Font family inherited from index.css mostly, but explicit here if needed */
-  font-family: system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
-  overflow-x: hidden; /* Prevent horizontal scroll on small screens */
+  background: var(--bg-subtle);
+  font-family: 'Assistant', sans-serif;
+  min-height: calc(100vh - 80px);
+  padding: 0;
+  direction: rtl;
 }
 
-/* Hero Section */
-.home-hero {
-  direction: ltr;
-  max-width: 75rem; /* 1200px */
+.home-container {
+  width: 100%;
+  max-width: 1400px;
   margin: 0 auto;
-  padding: 3.5rem 1.25rem; /* 56px 20px */
+  padding: 2rem 3rem;
+  box-sizing: border-box;
+}
+
+.home-header-section {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.home-title {
+  font-size: clamp(1.6rem, 3vw, 3rem);
+  font-weight: 900;
+  margin: 0 0 0.8rem;
+  line-height: 1.1;
+}
+
+.welcome-text {
+  color: #000;
+}
+
+.brand-highlight {
+  color: var(--sheba-pink);
+}
+
+.hub-highlight {
+  color: var(--sheba-hub-color);
+}
+
+.home-combined-subtitle {
+  font-size: clamp(0.95rem, 1.2vw, 1.35rem);
+  color: #59616d;
+  font-weight: 600;
+  max-width: 1050px;
+  margin: 0 auto;
+  line-height: 1.7;
+}
+
+.home-main-layout {
   display: grid;
   grid-template-columns: 1fr 1.15fr;
-  gap: 2.25rem; /* 36px */
+  gap: 3rem;
   align-items: center;
 }
 
-/* Left Column (Text Content) */
-.home-left {
-  /* Default styles for the left column */
-}
-
-/* Right Column (Image Helper) */
-.home-right {
-  display: flex;
-  justify-content: flex-end;
-}
-
-/* Title */
-.home-title {
-  margin: 0 auto;
-  text-align: center;
-  font-size: 2.125rem; /* 34px */
-  font-weight: 700;
-  color: #2C2C6C;
-  max-width: 100%;
-}
-
-/* Subtitle */
-.home-subtitle {
-  margin: 0.75rem auto 0 auto; /* 12px */
-  text-align: center;
-  font-size: 0.875rem; /* 14px */
-  line-height: 1.7;
-  color: #334155;
-  max-width: 37.5rem; /* 600px */
-}
-
-/* Vision List Container */
 .home-vision-list {
-  margin-top: 1.75rem; /* 28px */
   display: flex;
   flex-direction: column;
-  gap: 1.5rem; /* 24px */
+  gap: 1.2rem;
 }
 
-/* Individual Vision Row */
 .home-vision-row {
-  display: flex;
-  flex-direction: row-reverse;
-  gap: 1rem; /* 16px */
-  align-items: flex-start;
+  background: var(--card-bg);
+  border-radius: 22px;
+  padding: 1.4rem 1.6rem;
+  border-right: 5px solid var(--sheba-dark-blue);
+  box-shadow: 0 14px 35px rgba(15, 23, 42, 0.07);
 }
 
-/* Vision Text Block */
-.home-vision-text-block {
-  max-width: 30rem; /* 480px */
-}
-
-/* Vision Label ("The Problem", "The Solution", etc.) */
 .home-vision-label {
-  font-size: 0.875rem; /* 14px */
-  font-weight: 600;
-  margin-bottom: 0.25rem; /* 4px */
-  color: #0f172a;
+  font-size: 1.25rem;
+  font-weight: 900;
+  color: var(--sheba-dark-blue);
+  margin: 0 0 0.45rem;
 }
 
-/* Vision Description Text */
 .home-vision-text {
+  font-size: 1rem;
+  color: var(--text-muted);
+  line-height: 1.75;
   margin: 0;
-  font-size: 0.8125rem; /* 13px */
-  line-height: 1.8;
-  color: #334155;
 }
 
-/* Number Badge (01, 02, 03) */
-.home-vision-num {
-  width: 2.75rem; /* 44px */
-  height: 2.75rem; /* 44px */
-  display: grid;
-  place-items: center;
-  font-weight: 700;
-  font-size: 0.8125rem; /* 13px */
-  color: #ffffff;
-  background: #37B9A3;
-  border-radius: 0.5rem; /* 8px */
-  flex-shrink: 0;
+.home-visual-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.4rem;
+  align-items: center;
 }
 
-/* Hero Image */
-.home-image {
+.home-hero-image {
   width: 100%;
-  max-width: 43.75rem; /* 700px */
-  height: 25rem; /* 400px */
+  max-width: 520px;
+  height: 300px;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 20px 50px rgba(113, 142, 248, 0.3);
+  margin: 0 auto;
+}
+
+.home-hero-image img {
+  width: 100%;
+  height: 100%;
   object-fit: cover;
-  border-radius: 0.5rem; /* 8px */
-  box-shadow: 0 1rem 2rem rgba(15, 23, 42, 0.12);
 }
 
-/* --- Media Queries for Responsiveness --- */
+.home-logos-row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 3rem;
+  margin-top: 1rem;
+  width: 100%;
+  flex-wrap: wrap;
+}
 
-/* Tablet and smaller desktops */
-@media (max-width: 900px) {
-  .home-hero {
-    grid-template-columns: 1fr; /* Stack columns vertically */
-    gap: 2rem; /* 32px */
-    padding: 2rem 1rem; /* 32px 16px */
-    text-align: center; /* Center text when stacked */
+.home-logo-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: visible;
+}
+
+.home-logo-box.sheba-box {
+  width: 240px;
+  height: 100px;
+}
+
+.home-logo-box.hit-box {
+  width: 150px;
+  height: 90px;
+}
+
+.home-logo {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  transition: transform 0.25s ease;
+}
+
+.home-logo.sheba {
+  width: 220px;
+  height: auto;
+  transform: scale(1.3);
+}
+
+.home-logo.hit {
+  width: 130px;
+  height: auto;
+  transform: scale(1.05);
+}
+
+.home-logo.sheba:hover {
+  transform: scale(1) translateY(-2px);
+}
+
+.home-logo.hit:hover {
+  transform: scale(1.15) translateY(-2px);
+}
+
+.wave-divider {
+  width: 100%;
+  overflow: hidden;
+  line-height: 0;
+  margin: 0;
+}
+
+.wave-divider svg {
+  display: block;
+  width: 100%;
+  height: 120px;
+}
+
+.wave-fill {
+  fill: var(--sheba-dark-blue);
+}
+
+.wave-section {
+  background: var(--sheba-dark-blue);
+  color: white;
+  padding: 3rem 2rem;
+  margin-top: -5px;
+}
+
+
+/* ===== טאבלט ===== */
+@media (max-width: 1024px) {
+  .home-container {
+    padding: 2rem;
   }
 
-  /* Center the image in the single column layout */
-  .home-right {
-    justify-content: center;
-    width: 100%;
+  .home-header-section {
+    margin-bottom: 2rem;
   }
 
-  .home-image {
-    max-width: 32.5rem; /* 520px */
-    height: 17.5rem; /* 280px */
+  .home-main-layout {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+
+  .home-visual-container {
+    order: -1;
+  }
+
+  .home-hero-image {
+    max-width: 600px;
+    height: 280px;
+  }
+
+  .home-logos-row {
+    gap: 2rem;
+  }
+
+  .home-logo-box.sheba-box {
+    width: 210px;
+    height: 90px;
+  }
+
+  .home-logo-box.hit-box {
+    width: 130px;
+    height: 80px;
+  }
+
+  .home-logo.sheba {
+    width: 200px;
+    transform: none;
+  }
+
+  .home-logo.hit {
+    width: 110px;
+    transform: none;
   }
 }
 
-/* Mobile Devices */
+
+/* ===== נייד ===== */
 @media (max-width: 600px) {
-  .home-hero {
-    padding: 1.5rem 0.875rem; /* 24px 14px */
+  .home-container {
+    padding: 1.2rem;
+  }
+
+  .home-header-section {
+    margin-bottom: 1.5rem;
   }
 
   .home-title {
-    font-size: 1.625rem; /* 26px */
+    font-size: 1.55rem;
   }
 
-  .home-subtitle {
-    font-size: 0.8125rem; /* 13px */
+  .home-combined-subtitle {
+    font-size: 0.95rem;
+    line-height: 1.6;
+  }
+
+  .home-main-layout {
+    gap: 1.5rem;
+  }
+
+  .home-hero-image {
+    height: 210px;
     max-width: 100%;
+    border-radius: 18px;
+  }
+
+  .home-logos-row {
+    flex-direction: row;
+    gap: 1.2rem;
+    margin-top: 0.5rem;
+  }
+
+  .home-logo-box.sheba-box {
+    width: 170px;
+    height: 75px;
+  }
+
+  .home-logo-box.hit-box {
+    width: 95px;
+    height: 65px;
+  }
+
+  .home-logo.sheba {
+    width: 165px;
+  }
+
+  .home-logo.hit {
+    width: 85px;
   }
 
   .home-vision-list {
-    gap: 1rem; /* 16px */
-    margin-top: 1.25rem; /* 20px */
+    gap: 1rem;
   }
 
   .home-vision-row {
-    gap: 0.75rem; /* 12px */
-  }
-
-  .home-vision-text-block {
-    max-width: 100%;
-    text-align: right; /* Keep Hebrew text aligned right usually, or center if desired */
+    padding: 1rem;
+    border-radius: 18px;
   }
 
   .home-vision-label {
-    font-size: 0.8125rem; /* 13px */
+    font-size: 1.05rem;
   }
 
   .home-vision-text {
-    font-size: 0.78125rem; /* 12.5px */
-    line-height: 1.75;
+    font-size: 0.9rem;
+    line-height: 1.65;
   }
 
-  .home-vision-num {
-    width: 2.5rem; /* 40px */
-    height: 2.5rem; /* 40px */
-    font-size: 0.78125rem; /* 12.5px */
-    border-radius: 0.625rem; /* 10px */
+  .wave-divider svg {
+    height: 80px;
   }
 
-  .home-image {
-    max-width: 100%;
-    height: 15rem; /* 240px */
+  .wave-section {
+    padding: 2rem 1rem;
   }
 }
 
-/* ===== DARK MODE ===== */
-[data-theme="dark"] .home-page { color: var(--text-color); }
-[data-theme="dark"] .home-title { color: var(--text-color) !important; }
-[data-theme="dark"] .home-subtitle,
-[data-theme="dark"] .home-vision-text { color: #b0b0b0 !important; }
-[data-theme="dark"] .home-vision-label { color: var(--text-color) !important; }
+
+/* ===== נייד קטן מאוד ===== */
+@media (max-width: 380px) {
+  .home-title {
+    font-size: 1.35rem;
+  }
+
+  .home-hero-image {
+    height: 180px;
+  }
+
+  .home-logo-box.sheba-box {
+    width: 150px;
+  }
+
+  .home-logo.sheba {
+    width: 145px;
+  }
+
+  .home-logo.hit {
+    width: 75px;
+  }
+}
