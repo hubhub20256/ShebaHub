@@ -889,11 +889,17 @@ function Profile() {
   }
 
   async function handleDeleteProfile() {
+    if (activeRole !== "mentor" && activeRole !== "apprentice") {
+      toast.error("No active profile selected for deletion.");
+      setDeleteProfileDialog(false);
+      return;
+    }
+
     setIsSaving(true);
     try {
       if (activeRole === "mentor") {
         await profilesAPI.deleteMentorProfile();
-      } else if (activeRole === "apprentice") {
+      } else {
         await profilesAPI.deleteStudentProfile();
       }
       toast.success("הפרופיל נמחק בהצלחה!");

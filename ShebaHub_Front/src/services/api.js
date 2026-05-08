@@ -286,6 +286,12 @@ export const profilesAPI = {
       body: profileData,
     }),
 
+  // Delete mentor profile
+  deleteMentorProfile: () =>
+    apiRequest("/profiles/mentor/me/", {
+      method: "DELETE",
+    }),
+
   // Get student profile of current user
   getMyStudentProfile: () => apiRequest("/profiles/student/me/"),
 
@@ -301,6 +307,12 @@ export const profilesAPI = {
     apiRequest("/profiles/student/me/", {
       method: "PATCH",
       body: profileData,
+    }),
+
+  // Delete student profile
+  deleteStudentProfile: () =>
+    apiRequest("/profiles/student/me/", {
+      method: "DELETE",
     }),
 
   // Upload avatar image
