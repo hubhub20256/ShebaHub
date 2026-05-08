@@ -415,26 +415,39 @@ def public_student_detail(request, student_id):
         )
     ]
 )
-@api_view(['GET', 'POST', 'PATCH'])
+@extend_schema(
+    methods=['DELETE'],
+    summary="Delete current user's student profile",
+    description="Permanently delete the authenticated user's student profile along with all associated documents, recommendations, and avatar.",
+    responses={
+        204: OpenApiResponse(description="Profile deleted successfully"),
+        404: OpenApiResponse(description="Profile not found"),
+    }
+)
+@api_view(['GET', 'POST', 'PATCH', 'DELETE'])
 @permission_classes([IsAuthenticated])
 def student_profile_me(request):
     """
     Unified endpoint for current user's student profile.
-    
+
     GET /api/profiles/student/me/
     - Returns current user's profile
     - Returns 404 if no profile exists
-    
+
     POST /api/profiles/student/me/
     - Creates profile for authenticated user
     - Returns 409 Conflict if profile already exists
-    
+
     PATCH /api/profiles/student/me/
     - Partial update of current user's profile
     - Returns 404 if no profile exists
+
+    DELETE /api/profiles/student/me/
+    - Permanently deletes user's student profile and all associated data
+    - Returns 404 if no profile exists
     """
     user = request.user
-    
+
     if request.method == 'GET':
         try:
             profile = (
@@ -551,8 +564,46 @@ def student_profile_me(request):
             f"Student profile updated: {user.email}",
             extra={'user_id': str(user.id), 'profile_id': str(profile.id)}
         )
-        
+
         return Response(StudentProfileSerializer(profile, context={'request': request}).data)
+
+    elif request.method == 'DELETE':
+        try:
+            profile = StudentProfile.objects.get(user=user)
+        except StudentProfile.DoesNotExist:
+            return Response(
+                {
+                    'code': 'NOT_FOUND',
+                    'message': 'Student profile not found.',
+                    'details': None,
+                },
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        profile_id = str(profile.id)
+
+        # Delete avatar file if exists
+        if profile.avatar:
+            profile.avatar.delete(save=False)
+
+        # Delete all document files and records
+        for doc in profile.documents.all():
+            if doc.file:
+                doc.file.delete(save=False)
+            doc.delete()
+
+        # Delete all recommendations
+        profile.recommendations.all().delete()
+
+        # Delete the profile
+        profile.delete()
+
+        audit_logger.info(
+            f"Student profile deleted: {user.email}",
+            extra={'user_id': str(user.id), 'profile_id': profile_id}
+        )
+
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 # =============================================================================
@@ -803,26 +854,39 @@ def student_document_detail(request, document_id):
         )
     ]
 )
-@api_view(['GET', 'POST', 'PATCH'])
+@extend_schema(
+    methods=['DELETE'],
+    summary="Delete current user's mentor profile",
+    description="Permanently delete the authenticated user's mentor profile along with all associated documents, recommendations, and avatar.",
+    responses={
+        204: OpenApiResponse(description="Profile deleted successfully"),
+        404: OpenApiResponse(description="Profile not found"),
+    }
+)
+@api_view(['GET', 'POST', 'PATCH', 'DELETE'])
 @permission_classes([IsAuthenticated])
 def mentor_profile_me(request):
     """
     Unified endpoint for current user's mentor profile.
-    
+
     GET /api/profiles/mentor/me/
     - Returns current user's mentor profile
     - Returns 404 if no profile exists
-    
+
     POST /api/profiles/mentor/me/
     - Creates mentor profile for authenticated user
     - Returns 409 Conflict if profile already exists
-    
+
     PATCH /api/profiles/mentor/me/
     - Partial update of current user's mentor profile
     - Returns 404 if no profile exists
+
+    DELETE /api/profiles/mentor/me/
+    - Permanently deletes user's mentor profile and all associated data
+    - Returns 404 if no profile exists
     """
     user = request.user
-    
+
     if request.method == 'GET':
         try:
             profile = (
@@ -939,8 +1003,46 @@ def mentor_profile_me(request):
             f"Mentor profile updated: {user.email}",
             extra={'user_id': str(user.id), 'profile_id': str(profile.id)}
         )
-        
+
         return Response(MentorProfileSerializer(profile, context={'request': request}).data)
+
+    elif request.method == 'DELETE':
+        try:
+            profile = MentorProfile.objects.get(user=user)
+        except MentorProfile.DoesNotExist:
+            return Response(
+                {
+                    'code': 'NOT_FOUND',
+                    'message': 'Mentor profile not found.',
+                    'details': None,
+                },
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        profile_id = str(profile.id)
+
+        # Delete avatar file if exists
+        if profile.avatar:
+            profile.avatar.delete(save=False)
+
+        # Delete all document files and records
+        for doc in profile.documents.all():
+            if doc.file:
+                doc.file.delete(save=False)
+            doc.delete()
+
+        # Delete all recommendations
+        profile.recommendations.all().delete()
+
+        # Delete the profile
+        profile.delete()
+
+        audit_logger.info(
+            f"Mentor profile deleted: {user.email}",
+            extra={'user_id': str(user.id), 'profile_id': profile_id}
+        )
+
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 # =============================================================================

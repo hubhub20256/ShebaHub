@@ -1,4 +1,5 @@
 import re
+import uuid
 
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes, parser_classes, throttle_classes
@@ -410,7 +411,7 @@ def invite_to_research(request, research_id: int):
         subject=f"הוזמנת למחקר {research.researchName}",
         body=f"{request.user.get_full_name()} הזמין/ה אותך להצטרף למחקר {research.researchName}.",
     )
-    EmailService.send_research_invitation_email(target_user, research)
+    EmailService.send_research_invitation_email(target_user, research, inviter=request.user)
 
     return Response(
         ResearchApplicationSerializer(obj, context={"request": request}).data,
@@ -589,6 +590,7 @@ def apply_to_research(request, research_id: int):
         subject=f"בקשת הצטרפות חדשה למחקר {research.researchName}",
         body=f"{request.user.get_full_name()} הגיש/ה בקשת הצטרפות למחקר שלך.",
     )
+    EmailService.send_new_application_email(research.owner, request.user, research)
 
     return Response(ResearchApplicationSerializer(obj, context={"request": request}).data, status=status.HTTP_201_CREATED)
 
@@ -1954,13 +1956,13 @@ def research_tasks(request):
                 for item in parsed:
                     try:
                         if isinstance(item, dict):
-                            uid = int(item.get("id") or item.get("user_id"))
+                            uid = uuid.UUID(str(item.get("id") or item.get("user_id")))
                             role = str(item.get("role") or "")[:100]
                         else:
-                            uid = int(item)
+                            uid = uuid.UUID(str(item))
                             role = ""
                         parsed_assignees.append((uid, role))
-                    except (TypeError, ValueError):
+                    except (TypeError, ValueError, AttributeError):
                         continue
 
         if not parsed_assignees:
@@ -2095,12 +2097,12 @@ def research_task_assign(request, task_id: int):
     if err:
         return err
 
-    user_id = request.data.get("user_id") or request.data.get("id")
-    if not user_id:
+    raw_user_id = request.data.get("user_id") or request.data.get("id")
+    if not raw_user_id:
         return Response({"detail": "user_id is required."}, status=status.HTTP_400_BAD_REQUEST)
     try:
-        user_id = int(user_id)
-    except (TypeError, ValueError):
+        user_id = uuid.UUID(str(raw_user_id))
+    except (TypeError, ValueError, AttributeError):
         return Response({"detail": "Invalid user_id."}, status=status.HTTP_400_BAD_REQUEST)
 
     if user_id not in _research_member_user_ids(task.research):
@@ -2134,7 +2136,7 @@ def research_task_assign(request, task_id: int):
 )
 @api_view(["DELETE"])
 @permission_classes([IsAuthenticated, IsEmailVerified])
-def research_task_unassign(request, task_id: int, user_id: int):
+def research_task_unassign(request, task_id: int, user_id):
     """DELETE /api/research/tasks/<task_id>/assignees/<user_id>/"""
     task, err = _check_task_access(request, task_id, for_write=True)
     if err:

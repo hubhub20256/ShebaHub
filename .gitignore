@@ -31,3 +31,4 @@ Thumbs.db
 **/staticfiles/
 **/media/
 **/*.sqlite3
+nul

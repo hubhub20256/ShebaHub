@@ -96,9 +96,9 @@ class TestListResearches:
     def test_staff_can_list(self, staff_client, research):
         resp = staff_client.get(URL_PREFIX)
         assert resp.status_code == status.HTTP_200_OK
-        assert isinstance(resp.data, list)
-        assert len(resp.data) == 1
-        assert resp.data[0]["id"] == research.id
+        assert "results" in resp.data
+        assert len(resp.data["results"]) == 1
+        assert resp.data["results"][0]["id"] == research.id
 
     @pytest.mark.django_db
     def test_non_staff_gets_403(self, regular_client):
@@ -126,7 +126,7 @@ class TestListResearches:
         )
         resp = staff_client.get(URL_PREFIX, {"moderation_status": "pending"})
         assert resp.status_code == status.HTTP_200_OK
-        for item in resp.data:
+        for item in resp.data["results"]:
             assert item["moderation_status"] == "pending"
 
     @pytest.mark.django_db
@@ -139,7 +139,7 @@ class TestListResearches:
         )
         resp = staff_client.get(URL_PREFIX)
         assert resp.status_code == status.HTTP_200_OK
-        for item in resp.data:
+        for item in resp.data["results"]:
             assert item["is_deleted"] is False
 
     @pytest.mark.django_db
@@ -152,7 +152,7 @@ class TestListResearches:
         )
         resp = staff_client.get(URL_PREFIX, {"include_deleted": "true"})
         assert resp.status_code == status.HTTP_200_OK
-        deleted_items = [item for item in resp.data if item["is_deleted"]]
+        deleted_items = [item for item in resp.data["results"] if item["is_deleted"]]
         assert len(deleted_items) >= 1
 
     @pytest.mark.django_db
@@ -164,8 +164,8 @@ class TestListResearches:
         )
         resp = staff_client.get(URL_PREFIX, {"search": "UniqueNameXYZ"})
         assert resp.status_code == status.HTTP_200_OK
-        assert len(resp.data) == 1
-        assert resp.data[0]["researchName"] == "UniqueNameXYZ"
+        assert len(resp.data["results"]) == 1
+        assert resp.data["results"][0]["researchName"] == "UniqueNameXYZ"
 
 
 # ---------------------------------------------------------------------------

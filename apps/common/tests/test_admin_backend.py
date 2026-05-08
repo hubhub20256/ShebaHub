@@ -11,6 +11,21 @@ from apps.common.admin_credentials import ADMIN_EMAIL, ADMIN_PASSWORD
 from apps.common.backends import EnvAdminBackend
 
 
+@pytest.fixture(autouse=True)
+def _admin_env(monkeypatch):
+    """Ensure ADMIN_EMAIL / ADMIN_PASSWORD are set for every test."""
+    import apps.common.admin_credentials as creds_mod
+    import apps.common.backends as backends_mod
+    import apps.common.tests.test_admin_backend as this_mod
+
+    test_email = "test_admin@example.com"
+    test_password = "TestAdminPass123!"
+
+    for mod in (creds_mod, backends_mod, this_mod):
+        monkeypatch.setattr(mod, "ADMIN_EMAIL", test_email)
+        monkeypatch.setattr(mod, "ADMIN_PASSWORD", test_password)
+
+
 @pytest.fixture
 def backend():
     return EnvAdminBackend()

@@ -1,0 +1,821 @@
+{
+  "info": {
+    "name": "ShebaHub API Smoke",
+    "description": "Smoke-test collection for the ShebaHub backend API. Covers auth, reference data, profiles, research, tasks, chat, and admin-panel read endpoints. Designed to be run end-to-end against a local dev server. Authenticated requests inherit a Bearer token captured from the Login request. Use the matching environment file `shebahub.local.postman_environment.json` and edit `user_email` / `user_password` to match a seeded test user before running.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      { "key": "token", "value": "{{access_token}}", "type": "string" }
+    ]
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [""]
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Signup",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/auth/signup/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "signup", ""]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{user_email}}\",\n  \"password\": \"{{user_password}}\",\n  \"confirmPassword\": \"{{user_password}}\",\n  \"firstName\": \"Test\",\n  \"lastName\": \"User\",\n  \"gender\": \"other\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 201 or 400 (already exists)', function () {",
+                  "  pm.expect([201, 400, 409]).to.include(pm.response.code);",
+                  "});",
+                  "pm.test('response time < 2000ms', function () {",
+                  "  pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});",
+                  "pm.test('content-type is JSON', function () {",
+                  "  pm.expect(pm.response.headers.get('Content-Type') || '').to.match(/json/i);",
+                  "});",
+                  "if (pm.response.code === 201) {",
+                  "  const json = pm.response.json();",
+                  "  if (json && json.tokens) {",
+                  "    pm.environment.set('access_token', json.tokens.access);",
+                  "    pm.environment.set('refresh_token', json.tokens.refresh);",
+                  "  }",
+                  "  pm.test('returns user object with email', function () {",
+                  "    pm.expect(json.user).to.have.property('email');",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/auth/login/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "login", ""]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{user_email}}\",\n  \"password\": \"{{user_password}}\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('response time < 2000ms', function () { pm.expect(pm.response.responseTime).to.be.below(2000); });",
+                  "pm.test('content-type is JSON', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.match(/json/i); });",
+                  "const json = pm.response.json();",
+                  "pm.test('returns access token', function () { pm.expect(json.tokens).to.have.property('access'); });",
+                  "pm.test('returns refresh token', function () { pm.expect(json.tokens).to.have.property('refresh'); });",
+                  "pm.environment.set('access_token', json.tokens.access);",
+                  "pm.environment.set('refresh_token', json.tokens.refresh);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Me",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/auth/me/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "me", ""]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('response time < 2000ms', function () { pm.expect(pm.response.responseTime).to.be.below(2000); });",
+                  "pm.test('returns user with email', function () { pm.expect(pm.response.json()).to.have.property('email'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Token Refresh",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/auth/token/refresh/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "token", "refresh", ""]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refresh\": \"{{refresh_token}}\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200 or 401 if missing token', function () { pm.expect([200, 401]).to.include(pm.response.code); });",
+                  "pm.test('response time < 2000ms', function () { pm.expect(pm.response.responseTime).to.be.below(2000); });",
+                  "if (pm.response.code === 200) {",
+                  "  const json = pm.response.json();",
+                  "  pm.test('returns new access token', function () { pm.expect(json).to.have.property('access'); });",
+                  "  pm.environment.set('access_token', json.access);",
+                  "  if (json.refresh) { pm.environment.set('refresh_token', json.refresh); }",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/auth/logout/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "logout", ""]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refresh\": \"{{refresh_token}}\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('response time < 2000ms', function () { pm.expect(pm.response.responseTime).to.be.below(2000); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Reference Data",
+      "item": [
+        {
+          "name": "Institutions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/reference-data/institutions/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "reference-data", "institutions", ""]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('response time < 2000ms', function () { pm.expect(pm.response.responseTime).to.be.below(2000); });",
+                  "pm.test('content-type is JSON', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.match(/json/i); });",
+                  "pm.test('response is an array', function () { pm.expect(pm.response.json()).to.be.an('array'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Degrees",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/reference-data/degrees/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "reference-data", "degrees", ""]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('response is an array', function () { pm.expect(pm.response.json()).to.be.an('array'); });",
+                  "pm.test('response time < 2000ms', function () { pm.expect(pm.response.responseTime).to.be.below(2000); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Specialties",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/reference-data/specialties/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "reference-data", "specialties", ""]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('response is an array', function () { pm.expect(pm.response.json()).to.be.an('array'); });",
+                  "pm.test('response time < 2000ms', function () { pm.expect(pm.response.responseTime).to.be.below(2000); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Profiles",
+      "item": [
+        {
+          "name": "Student Profile (me)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/profiles/student/me/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "profiles", "student", "me", ""]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200 or 404 if profile not created', function () { pm.expect([200, 404]).to.include(pm.response.code); });",
+                  "pm.test('response time < 2000ms', function () { pm.expect(pm.response.responseTime).to.be.below(2000); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Mentor Profile (me)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/profiles/mentor/me/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "profiles", "mentor", "me", ""]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200 or 404 if profile not created', function () { pm.expect([200, 404]).to.include(pm.response.code); });",
+                  "pm.test('response time < 2000ms', function () { pm.expect(pm.response.responseTime).to.be.below(2000); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Research",
+      "item": [
+        {
+          "name": "List Researches",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/research/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "research", ""]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('response time < 2000ms', function () { pm.expect(pm.response.responseTime).to.be.below(2000); });",
+                  "pm.test('content-type is JSON', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.match(/json/i); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create Research (POST /api/research/me/)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/research/me/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "research", "me", ""]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"researchName\": \"Postman Smoke Research\",\n  \"description\": \"Created by Postman smoke collection.\",\n  \"researchArea\": \"Cardiology\",\n  \"mentors\": \"Dr. Test\",\n  \"teamSize\": 3,\n  \"weeklyHours\": 10,\n  \"durationMonths\": 6,\n  \"compensation\": [],\n  \"workMode\": \"hybrid\",\n  \"location\": \"Sheba\",\n  \"status\": \"open\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 201 or 400 if invalid', function () { pm.expect([201, 400, 403]).to.include(pm.response.code); });",
+                  "pm.test('response time < 2000ms', function () { pm.expect(pm.response.responseTime).to.be.below(2000); });",
+                  "if (pm.response.code === 201) {",
+                  "  const json = pm.response.json();",
+                  "  pm.test('returns research id', function () { pm.expect(json).to.have.property('id'); });",
+                  "  pm.environment.set('research_id', json.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Research Detail",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/research/{{research_id}}/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "research", "{{research_id}}", ""]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200 or 404 if research_id not seeded', function () { pm.expect([200, 404]).to.include(pm.response.code); });",
+                  "pm.test('response time < 2000ms', function () { pm.expect(pm.response.responseTime).to.be.below(2000); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Apply to Research",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/research/{{research_id}}/apply/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "research", "{{research_id}}", "apply", ""]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is one of 201/400/403/404', function () { pm.expect([201, 400, 403, 404]).to.include(pm.response.code); });",
+                  "pm.test('response time < 2000ms', function () { pm.expect(pm.response.responseTime).to.be.below(2000); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "My Applications",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/research/my-applications/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "research", "my-applications", ""]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('response is an array', function () { pm.expect(pm.response.json()).to.be.an('array'); });",
+                  "pm.test('response time < 2000ms', function () { pm.expect(pm.response.responseTime).to.be.below(2000); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Joined Researches",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/research/joined/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "research", "joined", ""]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('response is an array', function () { pm.expect(pm.response.json()).to.be.an('array'); });",
+                  "pm.test('response time < 2000ms', function () { pm.expect(pm.response.responseTime).to.be.below(2000); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Research Tasks",
+      "item": [
+        {
+          "name": "List Tasks",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/research/tasks/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "research", "tasks", ""]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200 or 403 if email not verified', function () { pm.expect([200, 403]).to.include(pm.response.code); });",
+                  "pm.test('response time < 2000ms', function () { pm.expect(pm.response.responseTime).to.be.below(2000); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create Task",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/research/tasks/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "research", "tasks", ""]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"research_id\": {{research_id}},\n  \"title\": \"Postman smoke task\",\n  \"description\": \"Created by Postman.\",\n  \"urgency\": \"medium\",\n  \"status\": \"todo\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is one of 201/400/403/404', function () { pm.expect([201, 400, 403, 404]).to.include(pm.response.code); });",
+                  "pm.test('response time < 2000ms', function () { pm.expect(pm.response.responseTime).to.be.below(2000); });",
+                  "if (pm.response.code === 201) {",
+                  "  const json = pm.response.json();",
+                  "  pm.test('returns task id', function () { pm.expect(json).to.have.property('id'); });",
+                  "  pm.environment.set('task_id', json.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Task Detail",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/research/tasks/{{task_id}}/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "research", "tasks", "{{task_id}}", ""]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200 or 404 if task_id not seeded', function () { pm.expect([200, 404]).to.include(pm.response.code); });",
+                  "pm.test('response time < 2000ms', function () { pm.expect(pm.response.responseTime).to.be.below(2000); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update Task (PATCH)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/research/tasks/{{task_id}}/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "research", "tasks", "{{task_id}}", ""]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"in_progress\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is one of 200/403/404', function () { pm.expect([200, 403, 404]).to.include(pm.response.code); });",
+                  "pm.test('response time < 2000ms', function () { pm.expect(pm.response.responseTime).to.be.below(2000); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Chat",
+      "item": [
+        {
+          "name": "List Chat Messages",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/research/me/{{research_id}}/chat/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "research", "me", "{{research_id}}", "chat", ""]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200 or 403 if not a member or 404 if research missing', function () { pm.expect([200, 403, 404]).to.include(pm.response.code); });",
+                  "pm.test('response time < 2000ms', function () { pm.expect(pm.response.responseTime).to.be.below(2000); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Send Chat Message",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/research/me/{{research_id}}/chat/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "research", "me", "{{research_id}}", "chat", ""]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"body\": \"Hello from Postman smoke\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is one of 201/400/403/404', function () { pm.expect([201, 400, 403, 404]).to.include(pm.response.code); });",
+                  "pm.test('response time < 2000ms', function () { pm.expect(pm.response.responseTime).to.be.below(2000); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Chat Members",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/research/me/{{research_id}}/chat/members/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "research", "me", "{{research_id}}", "chat", "members", ""]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200 or 403 or 404', function () { pm.expect([200, 403, 404]).to.include(pm.response.code); });",
+                  "pm.test('response time < 2000ms', function () { pm.expect(pm.response.responseTime).to.be.below(2000); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Admin Smoke",
+      "item": [
+        {
+          "name": "Dashboard Stats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/admin-panel/stats/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin-panel", "stats", ""]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200 or 403 if not staff', function () { pm.expect([200, 403]).to.include(pm.response.code); });",
+                  "pm.test('response time < 2000ms', function () { pm.expect(pm.response.responseTime).to.be.below(2000); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List Users (admin)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/admin-panel/users/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin-panel", "users", ""]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200 or 403 if not staff', function () { pm.expect([200, 403]).to.include(pm.response.code); });",
+                  "pm.test('response time < 2000ms', function () { pm.expect(pm.response.responseTime).to.be.below(2000); });",
+                  "if (pm.response.code === 200) {",
+                  "  pm.test('paginated response has results array', function () { pm.expect(pm.response.json()).to.have.property('results'); });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List Researches (admin)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/admin-panel/researches/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin-panel", "researches", ""]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200 or 403 if not staff', function () { pm.expect([200, 403]).to.include(pm.response.code); });",
+                  "pm.test('response time < 2000ms', function () { pm.expect(pm.response.responseTime).to.be.below(2000); });",
+                  "if (pm.response.code === 200) {",
+                  "  pm.test('paginated response has results array', function () { pm.expect(pm.response.json()).to.have.property('results'); });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List Audit Logs (admin)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/admin-panel/logs/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin-panel", "logs", ""]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200 or 403 if not staff', function () { pm.expect([200, 403]).to.include(pm.response.code); });",
+                  "pm.test('response time < 2000ms', function () { pm.expect(pm.response.responseTime).to.be.below(2000); });",
+                  "if (pm.response.code === 200) {",
+                  "  pm.test('paginated response has results array', function () { pm.expect(pm.response.json()).to.have.property('results'); });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "variable": []
+}
