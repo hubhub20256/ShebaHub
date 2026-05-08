@@ -106,8 +106,8 @@ class TestListUsers:
     def test_staff_can_list(self, staff_client, target_user):
         resp = staff_client.get(URL_PREFIX)
         assert resp.status_code == status.HTTP_200_OK
-        assert isinstance(resp.data, list)
-        emails = [u["email"] for u in resp.data]
+        assert "results" in resp.data
+        emails = [u["email"] for u in resp.data["results"]]
         assert target_user.email in emails
 
     @pytest.mark.django_db
@@ -124,8 +124,8 @@ class TestListUsers:
     def test_search_filter(self, staff_client, target_user):
         resp = staff_client.get(URL_PREFIX, {"search": "target@example"})
         assert resp.status_code == status.HTTP_200_OK
-        assert len(resp.data) >= 1
-        assert any(u["email"] == target_user.email for u in resp.data)
+        assert len(resp.data["results"]) >= 1
+        assert any(u["email"] == target_user.email for u in resp.data["results"])
 
     @pytest.mark.django_db
     def test_is_active_filter(self, staff_client, target_user):
@@ -134,21 +134,21 @@ class TestListUsers:
 
         resp = staff_client.get(URL_PREFIX, {"is_active": "false"})
         assert resp.status_code == status.HTTP_200_OK
-        for u in resp.data:
+        for u in resp.data["results"]:
             assert u["is_active"] is False
 
     @pytest.mark.django_db
     def test_non_superuser_staff_cannot_see_superusers(self, staff_client, superuser):
         resp = staff_client.get(URL_PREFIX)
         assert resp.status_code == status.HTTP_200_OK
-        emails = [u["email"] for u in resp.data]
+        emails = [u["email"] for u in resp.data["results"]]
         assert superuser.email not in emails
 
     @pytest.mark.django_db
     def test_superuser_can_see_superusers(self, super_client, superuser):
         resp = super_client.get(URL_PREFIX)
         assert resp.status_code == status.HTTP_200_OK
-        emails = [u["email"] for u in resp.data]
+        emails = [u["email"] for u in resp.data["results"]]
         assert superuser.email in emails
 
 

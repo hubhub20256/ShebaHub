@@ -102,7 +102,7 @@ urlpatterns = [
     path("tasks/<int:task_id>/", research_task_detail, name="research-task-detail"),
     path("tasks/<int:task_id>/assignees/", research_task_assign, name="research-task-assign"),
     path(
-        "tasks/<int:task_id>/assignees/<int:user_id>/",
+        "tasks/<int:task_id>/assignees/<uuid:user_id>/",
         research_task_unassign,
         name="research-task-unassign",
     ),

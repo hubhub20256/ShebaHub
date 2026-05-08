@@ -145,15 +145,38 @@ class EmailService:
         )
 
     @classmethod
-    def send_research_invitation_email(cls, user, research):
+    def send_research_invitation_email(cls, user, research, inviter=None):
         """Notify a student that they have been invited to a research."""
         if not cls._check_verified(user):
             return False
+        inviter_name = inviter.get_full_name() if inviter else '\u05de\u05e0\u05d7\u05d4 \u05d1\u05de\u05d7\u05e7\u05e8'
         return cls._safe_send(
-            subject=f'\u05d4\u05d5\u05d6\u05de\u05e0\u05ea \u05dc\u05de\u05d7\u05e7\u05e8 {research.researchName} \u2014 ShebaHub',
+            subject=f'\u05d4\u05d5\u05d6\u05de\u05e0\u05ea \u05dc\u05d4\u05e6\u05d8\u05e8\u05e3 \u05dc\u05de\u05d7\u05e7\u05e8 {research.researchName} \u2014 ShebaHub',
             message=(
-                f'\u05d4\u05d5\u05d6\u05de\u05e0\u05ea \u05dc\u05d4\u05e6\u05d8\u05e8\u05e3 \u05dc\u05de\u05d7\u05e7\u05e8 "{research.researchName}".\n\n'
-                f'\u05dc\u05e6\u05e4\u05d9\u05d9\u05d4 \u05d5\u05dc\u05d0\u05d9\u05e9\u05d5\u05e8: {cls._frontend_url()}/research/{research.id}'
+                '\u05e9\u05dc\u05d5\u05dd,\n\n'
+                f'{inviter_name} \u05d4\u05d6\u05de\u05d9\u05df/\u05d4 \u05d0\u05d5\u05ea\u05da \u05dc\u05d4\u05e6\u05d8\u05e8\u05e3 \u05dc\u05de\u05d7\u05e7\u05e8 "{research.researchName}".\n\n'
+                f'\u05dc\u05e6\u05e4\u05d9\u05d9\u05d4 \u05d1\u05d4\u05d6\u05de\u05e0\u05d4 \u05d5\u05dc\u05ea\u05d2\u05d5\u05d1\u05d4:\n'
+                f'{cls._frontend_url()}/research/{research.id}\n\n'
+                '\u05d0\u05d9\u05df \u05e6\u05d5\u05e8\u05da \u05dc\u05d4\u05e9\u05d9\u05d1 \u05dc\u05de\u05d9\u05d9\u05dc \u05d6\u05d4 \u2014 \u05d6\u05d5\u05d4\u05d9 \u05d4\u05d5\u05d3\u05e2\u05d4 \u05d0\u05d5\u05d8\u05d5\u05de\u05d8\u05d9\u05ea \u05d1\u05dc\u05d1\u05d3.'
             ),
             recipient_list=[user.email],
+        )
+
+    @classmethod
+    def send_new_application_email(cls, mentor, applicant, research):
+        """Notify a research owner (mentor) that a new application was submitted."""
+        if not cls._check_verified(mentor):
+            return False
+        applicant_name = applicant.get_full_name()
+        return cls._safe_send(
+            subject=f'\u05d1\u05e7\u05e9\u05ea \u05d4\u05e6\u05d8\u05e8\u05e4\u05d5\u05ea \u05d7\u05d3\u05e9\u05d4 \u05dc\u05de\u05d7\u05e7\u05e8 {research.researchName} \u2014 ShebaHub',
+            message=(
+                '\u05e9\u05dc\u05d5\u05dd,\n\n'
+                f'\u05d4\u05ea\u05e7\u05d1\u05dc\u05d4 \u05d1\u05e7\u05e9\u05ea \u05d4\u05e6\u05d8\u05e8\u05e4\u05d5\u05ea \u05d7\u05d3\u05e9\u05d4 \u05dc\u05de\u05d7\u05e7\u05e8 "{research.researchName}".\n'
+                f'\u05d4\u05de\u05d1\u05e7\u05e9/\u05ea: {applicant_name}\n\n'
+                f'\u05dc\u05e6\u05e4\u05d9\u05d9\u05d4 \u05d1\u05d1\u05e7\u05e9\u05d4 \u05d5\u05dc\u05de\u05ea\u05df \u05de\u05e2\u05e0\u05d4:\n'
+                f'{cls._frontend_url()}/research/me/{research.id}\n\n'
+                '\u05d0\u05d9\u05df \u05e6\u05d5\u05e8\u05da \u05dc\u05d4\u05e9\u05d9\u05d1 \u05dc\u05de\u05d9\u05d9\u05dc \u05d6\u05d4 \u2014 \u05d6\u05d5\u05d4\u05d9 \u05d4\u05d5\u05d3\u05e2\u05d4 \u05d0\u05d5\u05d8\u05d5\u05de\u05d8\u05d9\u05ea \u05d1\u05dc\u05d1\u05d3.'
+            ),
+            recipient_list=[mentor.email],
         )

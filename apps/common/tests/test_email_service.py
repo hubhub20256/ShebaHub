@@ -69,7 +69,7 @@ class TestVerificationEmailFromAddress:
         from_email = call_kwargs.kwargs.get("from_email") or call_kwargs[1].get(
             "from_email"
         )
-        assert from_email == "noreply@hitheal.org.il"
+        assert from_email == "noreply@shebahub.hitheal.org.il"
 
 
 # ---------------------------------------------------------------------------
@@ -95,7 +95,7 @@ class TestSignupTriggersVerificationEmail:
 
         sent = mail.outbox[0]
         assert sent.to == [SIGNUP_PAYLOAD["email"]]
-        assert sent.from_email == "noreply@hitheal.org.il"
+        assert sent.from_email == "noreply@shebahub.hitheal.org.il"
         # The verification link should contain uid= and token=
         assert "uid=" in sent.body
         assert "token=" in sent.body
