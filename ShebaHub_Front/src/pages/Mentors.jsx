@@ -6,6 +6,7 @@ import EmptyState from "../components/EmptyState";
 import { profilesAPI } from "../services/api";
 import usePageTitle from "../hooks/usePageTitle";
 import filterIcon from "../assets/filter.png";
+import AdvancedFilters from "../components/AdvancedFilters";
 
 import {
   SPECIALTIES_BASE,
@@ -254,6 +255,87 @@ export default function Mentors() {
     selectedUniversityAffiliations.length > 0 ||
     selectedMentoringExperience.length > 0;
 
+    const filtersConfig = [
+      {
+        key: "specialties",
+        label: "סינון לפי קטגוריית התמחות",
+        dropdownClassName: "mentors-specialty-dropdown",
+        customContent: (
+          <>
+            <div className="mentors-specialty-groups">
+              {SPECIALTY_GROUPS.map((group) => (
+                <button
+                  key={group.key}
+                  type="button"
+                  className={`mentors-filter-option ${
+                    selectedSpecialtyGroups.includes(group.key) ? "active" : ""
+                  }`}
+                  onClick={() => toggleSpecialtyGroup(group.key)}
+                >
+                  {group.label}
+                </button>
+              ))}
+            </div>
+    
+            {activeSpecialtyGroup && (
+              <div className="mentors-specialty-values">
+                {activeGroupValues.map((specialty) => (
+                  <button
+                    key={specialty}
+                    type="button"
+                    className={`mentors-filter-option ${
+                      selectedSpecialties.includes(specialty) ? "active" : ""
+                    }`}
+                    onClick={() => toggleValue(specialty, setSelectedSpecialties)}
+                  >
+                    {specialty}
+                  </button>
+                ))}
+              </div>
+            )}
+          </>
+        ),
+      },
+      {
+        key: "academic-rank",
+        label: "סינון לפי שלב בהכשרה",
+        options: ACADEMIC_RANK_OPTIONS,
+        selectedValues: selectedAcademicRanks,
+        onToggle: (value) => toggleValue(value, setSelectedAcademicRanks),
+      },
+      {
+        key: "degrees",
+        label: "סינון לפי תארים",
+        options: DEGREE_OPTIONS,
+        selectedValues: selectedDegrees,
+        onToggle: (value) => toggleValue(value, setSelectedDegrees),
+      },
+      {
+        key: "university-rank",
+        label: "סינון לפי דרגה אקדמית",
+        options: UNIVERSITY_RANK_OPTIONS,
+        selectedValues: selectedUniversityRanks,
+        onToggle: (value) => toggleValue(value, setSelectedUniversityRanks),
+      },
+      {
+        key: "university-affiliation",
+        label: "סינון לפי שיוך אקדמי",
+        options: UNIVERSITY_AFFILIATION_OPTIONS,
+        selectedValues: selectedUniversityAffiliations,
+        onToggle: (value) =>
+          toggleValue(value, setSelectedUniversityAffiliations),
+        hidden: !shouldShowUniversityAffiliation,
+      },
+      {
+        key: "mentoring-experience",
+        label: "סינון לפי ניסיון בהנחיה",
+        options: YES_NO_OPTIONS,
+        selectedValues: selectedMentoringExperience,
+        onToggle: (value) =>
+          toggleValue(value, setSelectedMentoringExperience),
+      },
+    ];  
+
   const filteredMentors = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
 
@@ -489,269 +571,16 @@ export default function Mentors() {
         )}
 
 
-        {showAdvancedFilters && (
-          <div className="mentors-advanced-filters" ref={filtersRef}>
-            <div className="mentors-filter-item">
-              <button
-                type="button"
-                className="mentors-filter-button"
-                onClick={() =>
-                  setOpenFilter(
-                    openFilter === "specialties" ? null : "specialties",
-                  )
-                }
-              >
-                סינון לפי קטגוריית התמחות
-                <span>{openFilter === "specialties" ? "▲" : "▼"}</span>
-              </button>
-
-              {openFilter === "specialties" && (
-                <div className="mentors-filter-dropdown mentors-specialty-dropdown">
-                  <div className="mentors-specialty-groups">
-                    {SPECIALTY_GROUPS.map((group) => (
-                      <button
-                        key={group.key}
-                        type="button"
-                        className={`mentors-filter-option ${
-                          selectedSpecialtyGroups.includes(group.key)
-                            ? "active"
-                            : ""
-                        }`}
-                        onClick={() => toggleSpecialtyGroup(group.key)}
-                      >
-                        {group.label}
-                      </button>
-                    ))}
-                  </div>
-
-                  {activeSpecialtyGroup && (
-                    <div className="mentors-specialty-values">
-                      {activeGroupValues.map((specialty) => (
-                        <button
-                          key={specialty}
-                          type="button"
-                          className={`mentors-filter-option ${
-                            selectedSpecialties.includes(specialty)
-                              ? "active"
-                              : ""
-                          }`}
-                          onClick={() =>
-                            toggleValue(specialty, setSelectedSpecialties)
-                          }
-                        >
-                          {specialty}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-
-            <div className="mentors-filter-item">
-              <button
-                type="button"
-                className="mentors-filter-button"
-                onClick={() =>
-                  setOpenFilter(
-                    openFilter === "academic-rank" ? null : "academic-rank",
-                  )
-                }
-              >
-                סינון לפי שלב בהכשרה
-                <span>{openFilter === "academic-rank" ? "▲" : "▼"}</span>
-              </button>
-
-              {openFilter === "academic-rank" && (
-                <div className="mentors-filter-dropdown">
-                  <div className="mentors-filter-dropdown-column">
-                    {ACADEMIC_RANK_OPTIONS.map((rank) => (
-                      <button
-                        key={rank}
-                        type="button"
-                        className={`mentors-filter-option ${
-                          selectedAcademicRanks.includes(rank) ? "active" : ""
-                        }`}
-                        onClick={() =>
-                          toggleValue(rank, setSelectedAcademicRanks)
-                        }
-                      >
-                        {rank}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className="mentors-filter-item">
-              <button
-                type="button"
-                className="mentors-filter-button"
-                onClick={() =>
-                  setOpenFilter(openFilter === "degrees" ? null : "degrees")
-                }
-              >
-                סינון לפי תארים
-                <span>{openFilter === "degrees" ? "▲" : "▼"}</span>
-              </button>
-
-              {openFilter === "degrees" && (
-                <div className="mentors-filter-dropdown">
-                  <div className="mentors-filter-dropdown-column">
-                    {DEGREE_OPTIONS.map((degree) => (
-                      <button
-                        key={degree}
-                        type="button"
-                        className={`mentors-filter-option ${
-                          selectedDegrees.includes(degree) ? "active" : ""
-                        }`}
-                        onClick={() => toggleValue(degree, setSelectedDegrees)}
-                      >
-                        {degree}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className="mentors-filter-item">
-              <button
-                type="button"
-                className="mentors-filter-button"
-                onClick={() =>
-                  setOpenFilter(
-                    openFilter === "university-rank" ? null : "university-rank",
-                  )
-                }
-              >
-                סינון לפי דרגה אקדמית
-                <span>{openFilter === "university-rank" ? "▲" : "▼"}</span>
-              </button>
-
-              {openFilter === "university-rank" && (
-                <div className="mentors-filter-dropdown">
-                  <div className="mentors-filter-dropdown-column">
-                    {UNIVERSITY_RANK_OPTIONS.map((rank) => (
-                      <button
-                        key={rank}
-                        type="button"
-                        className={`mentors-filter-option ${
-                          selectedUniversityRanks.includes(rank) ? "active" : ""
-                        }`}
-                        onClick={() =>
-                          toggleValue(rank, setSelectedUniversityRanks)
-                        }
-                      >
-                        {rank}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {shouldShowUniversityAffiliation && (
-              <div className="mentors-filter-item">
-                <button
-                  type="button"
-                  className="mentors-filter-button"
-                  onClick={() =>
-                    setOpenFilter(
-                      openFilter === "university-affiliation"
-                        ? null
-                        : "university-affiliation",
-                    )
-                  }
-                >
-                  סינון לפי שיוך אקדמי
-                  <span>
-                    {openFilter === "university-affiliation" ? "▲" : "▼"}
-                  </span>
-                </button>
-
-                {openFilter === "university-affiliation" && (
-                  <div className="mentors-filter-dropdown">
-                    <div className="mentors-filter-dropdown-column">
-                      {UNIVERSITY_AFFILIATION_OPTIONS.map((institution) => (
-                        <button
-                          key={institution}
-                          type="button"
-                          className={`mentors-filter-option ${
-                            selectedUniversityAffiliations.includes(institution)
-                              ? "active"
-                              : ""
-                          }`}
-                          onClick={() =>
-                            toggleValue(
-                              institution,
-                              setSelectedUniversityAffiliations,
-                            )
-                          }
-                        >
-                          {institution}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
+            {showAdvancedFilters && (
+              <AdvancedFilters
+                filtersRef={filtersRef}
+                openFilter={openFilter}
+                setOpenFilter={setOpenFilter}
+                filtersConfig={filtersConfig}
+                hasActiveFilters={hasActiveFilters}
+                clearFilters={clearAdvancedFilters}
+              />
             )}
-
-            <div className="mentors-filter-item">
-              <button
-                type="button"
-                className="mentors-filter-button"
-                onClick={() =>
-                  setOpenFilter(
-                    openFilter === "mentoring-experience"
-                      ? null
-                      : "mentoring-experience",
-                  )
-                }
-              >
-                סינון לפי ניסיון בהנחיה
-                <span>
-                  {openFilter === "mentoring-experience" ? "▲" : "▼"}
-                </span>
-              </button>
-
-              {openFilter === "mentoring-experience" && (
-                <div className="mentors-filter-dropdown">
-                  <div className="mentors-filter-dropdown-column">
-                    {YES_NO_OPTIONS.map((value) => (
-                      <button
-                        key={value}
-                        type="button"
-                        className={`mentors-filter-option ${
-                          selectedMentoringExperience.includes(value)
-                            ? "active"
-                            : ""
-                        }`}
-                        onClick={() =>
-                          toggleValue(value, setSelectedMentoringExperience)
-                        }
-                      >
-                        {value}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {hasActiveFilters && (
-              <button
-                type="button"
-                className="mentors-clear-filters"
-                onClick={clearAdvancedFilters}
-              >
-                ניקוי סינון
-              </button>
-            )}
-          </div>
-        )}
 
           <div className="cards-grid mentors-layout">
             {filteredMentors.slice(0, visibleCount).map((m) => (
