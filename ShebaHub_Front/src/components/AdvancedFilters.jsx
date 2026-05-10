@@ -7,48 +7,42 @@ export default function AdvancedFilters({
   filtersConfig,
   hasActiveFilters,
   clearFilters,
+  classPrefix = "mentors",
 }) {
   return (
-    <div className="mentors-advanced-filters" ref={filtersRef}>
+    <div className={`${classPrefix}-advanced-filters`} ref={filtersRef}>
       {filtersConfig.map((filter) => {
         if (filter.hidden) return null;
 
         return (
-          <div className="mentors-filter-item" key={filter.key}>
+          <div className={`${classPrefix}-filter-item`} key={filter.key}>
             <button
               type="button"
-              className="mentors-filter-button"
+              className={`${classPrefix}-filter-button`}
               onClick={() =>
-                setOpenFilter(
-                  openFilter === filter.key ? null : filter.key
-                )
+                setOpenFilter(openFilter === filter.key ? null : filter.key)
               }
             >
               {filter.label}
-
-              <span>
-                {openFilter === filter.key ? "▲" : "▼"}
-              </span>
+              <span>{openFilter === filter.key ? "▲" : "▼"}</span>
             </button>
 
             {openFilter === filter.key && (
               <div
-                className={`mentors-filter-dropdown ${
+                className={`${classPrefix}-filter-dropdown ${
                   filter.dropdownClassName || ""
                 }`}
               >
                 {filter.customContent ? (
                   filter.customContent
-                ) : (
-                  <div className="mentors-filter-dropdown-column">
+                ) : filter.options?.length > 0 ? (
+                  <div className={`${classPrefix}-filter-dropdown-column`}>
                     {filter.options.map((option) => (
                       <button
                         key={option}
                         type="button"
-                        className={`mentors-filter-option ${
-                          filter.selectedValues.includes(option)
-                            ? "active"
-                            : ""
+                        className={`${classPrefix}-filter-option ${
+                          filter.selectedValues.includes(option) ? "active" : ""
                         }`}
                         onClick={() => filter.onToggle(option)}
                       >
@@ -56,6 +50,10 @@ export default function AdvancedFilters({
                       </button>
                     ))}
                   </div>
+                ) : (
+                  <p className={`${classPrefix}-filter-empty`}>
+                    אין ערכים זמינים
+                  </p>
                 )}
               </div>
             )}
@@ -66,7 +64,7 @@ export default function AdvancedFilters({
       {hasActiveFilters && (
         <button
           type="button"
-          className="mentors-clear-filters"
+          className={`${classPrefix}-clear-filters`}
           onClick={clearFilters}
         >
           ניקוי סינון

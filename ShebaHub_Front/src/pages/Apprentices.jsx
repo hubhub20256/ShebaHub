@@ -9,6 +9,9 @@ import usePageTitle from "../hooks/usePageTitle";
 import "../components/card.css";
 import "../styles/Apprentices.css";
 
+import AdvancedFilters from "../components/AdvancedFilters";
+import filterIcon from "../assets/filter.png";
+
 
 const currentYear = new Date().getFullYear();
 
@@ -101,6 +104,7 @@ export default function Apprentices() {
 
   const [openFilter, setOpenFilter] = useState(null);
   const [selectedFilters, setSelectedFilters] = useState(INITIAL_FILTERS);
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
 
   const filtersRef = useRef(null);
 
@@ -287,6 +291,14 @@ export default function Apprentices() {
     ([, value]) => Array.isArray(value) ? value.length > 0 : value !== "",
   );
 
+  const filtersConfig = filterGroups.map((group) => ({
+    key: group.key,
+    label: group.title,
+    options: group.values,
+    selectedValues: selectedFilters[group.key] || [],
+    onToggle: (value) => toggleFilterValue(group.key, value),
+  }));
+
   const filteredApprentices = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
 
@@ -368,89 +380,86 @@ export default function Apprentices() {
 
       {!loading && !error && (
         <>
-          <SearchAutocomplete
-            value={searchQuery}
-            onChange={setSearchQuery}
-            placeholder="חיפוש לפי שם מתלמד/ת, תחומי עניין מחקרי, זמינות למחקר ועוד.."
-            items={mappedApprentices}
-            extractTerms={extractApprenticeTerms}
-            wrapperClassName="apprentices-search-row"
-            innerClassName="apprentices-search-wrapper"
-            inputClassName="apprentices-search-input"
-            iconClassName="apprentices-search-icon"
-          />
+          <div className="mentors-search-row">
+          <div className="mentors-search-wrapper">
+            <SearchAutocomplete
+              value={searchQuery}
+              onChange={setSearchQuery}
+              placeholder="חיפוש לפי שם מתלמד/ת, תחומי עניין מחקרי, זמינות למחקר ועוד.."
+              items={mappedApprentices}
+              extractTerms={extractApprenticeTerms}
+              wrapperClassName=""
+              innerClassName=""
+              inputClassName="mentors-search-input"
+              iconClassName="mentors-search-icon"
+            />
 
-          <div className="apprentices-advanced-filters" ref={filtersRef}>
-              {filterGroups.map((group) => (
-              <div key={group.key} className="apprentices-filter-item">
+            <button
+              type="button"
+              className={`mentors-inline-filter-btn ${
+                showAdvancedFilters ? "active" : ""
+              }`}
+              onClick={() => setShowAdvancedFilters((prev) => !prev)}
+            >
+              <img
+                src={filterIcon}
+                alt="filter"
+                className="mentors-inline-filter-icon"
+              />
+            </button>
+          </div>
+        </div>
+
+        {hasActiveFilters && (
+          <div className="mentors-active-filters">
+            {Object.entries(selectedFilters).map(([fieldName, value]) => {
+              if (Array.isArray(value)) {
+                return value.map((item) => (
+                  <button
+                    key={`${fieldName}-${item}`}
+                    type="button"
+                    className="mentors-active-filter-chip"
+                    onClick={() => toggleFilterValue(fieldName, item)}
+                  >
+                    {item}
+                    <span>×</span>
+                  </button>
+                ));
+              }
+
+              if (!value) return null;
+
+              return (
                 <button
+                  key={fieldName}
                   type="button"
-                  className="apprentices-filter-button"
+                  className="mentors-active-filter-chip"
                   onClick={() =>
-                    setOpenFilter(openFilter === group.key ? null : group.key)
-                  }
-                >
-                  {group.title}
-                  <span>{openFilter === group.key ? "▲" : "▼"}</span>
-                </button>
-
-                {openFilter === group.key && (
-                  <div className="apprentices-filter-dropdown">
-                    {group.values.length > 0 ? (
-                      group.values.map((value) => (
-                        <button
-                          key={value}
-                          type="button"
-                          className={`apprentices-filter-option ${
-                            selectedFilters[group.key].includes(value)
-                              ? "active"
-                              : ""
-                          }`}
-                          onClick={() => toggleFilterValue(group.key, value)}
-                        >
-                          {value}
-                        </button>
-                      ))
-                    ) : (
-                      <p className="apprentices-filter-empty">
-                        אין ערכים זמינים
-                      </p>
-                    )}
-                  </div>
-                )}
-              </div>
-            ))}
-
-            <div className="apprentices-filter-item">
-              <div className="apprentices-filter-date-wrapper">
-                <label className="apprentices-filter-date-label">
-                  זמינות להתחלה
-                </label>
-
-                <input
-                  type="date"
-                  className="apprentices-filter-date-input"
-                  value={selectedFilters.startDate}
-                  onChange={(e) =>
                     setSelectedFilters((prev) => ({
                       ...prev,
-                      startDate: e.target.value,
+                      [fieldName]: "",
                     }))
                   }
-                />
-              </div>
-            </div>
-
-            {hasActiveFilters && (
-              <button
-                type="button"
-                className="apprentices-clear-filters"
-                onClick={clearFilters}
-              >
-                ניקוי סינון
-              </button>
-            )}
+                >
+                  זמינות להתחלה: {value}
+                  <span>×</span>
+                </button>
+              );
+            })}
           </div>
+        )}
+
+        {showAdvancedFilters && (        
+          <AdvancedFilters
+            filtersRef={filtersRef}
+            openFilter={openFilter}
+            setOpenFilter={setOpenFilter}
+            filtersConfig={filtersConfig}
+            hasActiveFilters={hasActiveFilters}
+            clearFilters={clearFilters}
+            classPrefix="mentors"
+          />
+        )}
 
           <div className="cards-grid apprentices-layout">
             {filteredApprentices.slice(0, visibleCount).map((a) => (

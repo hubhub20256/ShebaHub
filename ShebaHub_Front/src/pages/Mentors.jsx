@@ -579,6 +579,7 @@ export default function Mentors() {
                 filtersConfig={filtersConfig}
                 hasActiveFilters={hasActiveFilters}
                 clearFilters={clearAdvancedFilters}
+                classPrefix="mentors"
               />
             )}
 
