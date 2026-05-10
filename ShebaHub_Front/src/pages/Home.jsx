@@ -2,7 +2,6 @@ import { useEffect } from "react";
 import shebaLogo from "../assets/ShebaNavbarLogo.png";
 import hitLogo from "../assets/hitLogo.png";
 import research2 from "../assets/homepagepic5.jpeg";
-
 import usePageTitle from "../hooks/usePageTitle";
 import "../styles/Home.css";
 
@@ -11,79 +10,73 @@ const Home = () => {
 
   useEffect(() => {
     document.body.classList.add("home-body");
-
-    return () => {
-      document.body.classList.remove("home-body");
-    };
+    return () => document.body.classList.remove("home-body");
   }, []);
 
   const visionItems = [
     {
-      label: "הבעיה",
-      text: "היום, חוקרים מקדישים עד כ־50% מזמנם למשימות חוזרות שאינן דורשות מומחיות מחקרית, בעוד שכ־55% מהסטודנטים לרפואה חסרי ניסיון מחקרי משמעותי וגישה להזדמנויות.",
+      title: "הבעיה",
+      description: "חוקרים מקדישים עד כ־50% מזמנם למשימות חוזרות, בעוד שסטודנטים רבים חסרים גישה להזדמנויות מחקר מעשיות.",
     },
     {
-      label: "הפתרון",
-      text: "ShebaHub היא פלטפורמה חכמה ומאובטחת המחברת בין חוקרים לסטודנטים בהתאם לצרכים, תחומי עניין וזמינות, ומאפשרת התאמה מדויקת לביצוע משימות מחקר מגוונות.",
+      title: "הפתרון",
+      description: "ShebaHub מחברת בין חוקרים לסטודנטים באמצעות פלטפורמה חכמה, המאפשרת התאמה מדויקת לפי צרכים וזמינות.",
     },
     {
-      label: "ההשפעה",
-      text: "המערכת משפרת את יעילות המחקר, מקצרת תהליכים, מחזקת שיתופי פעולה ומטפחת את דור העתיד של החוקרים הקליניים באמצעות מנטורינג והתנסות מעשית.",
+      title: "ההשפעה",
+      description: "קידום דור העתיד של החוקרים הקליניים תוך שיפור יעילות המחקר וקיצור תהליכים משמעותי.",
     },
   ];
 
   return (
     <main className="home-page" dir="rtl">
-      <div className="wave-divider" aria-hidden="true">
-        <svg viewBox="0 0 1440 150" preserveAspectRatio="none">
-          <path
-            d="M0,80 C300,150 1100,0 1440,80 L1440,0 L0,0 Z"
-            className="wave-fill"
-          />
-        </svg>
-      </div>
+      {/* Decorative Background Elements */}
+      <div className="bg-blob pink-blob"></div>
+      <div className="bg-blob blue-blob"></div>
 
       <div className="home-container">
-        <header className="home-header-section">
-          <h1 className="home-title">
-            <span className="welcome-text">ברוכים הבאים ל־</span>
-            <span className="brand-highlight">Sheba</span>
-            <span className="hub-highlight">Hub</span>
-          </h1>
+        <header className="hero-section">
+          <div className="hero-content">
+          <h1 className="hero-title">
+            <span className="brand-wrapper">
+              <span className="brand-sheba">Sheba</span>
+              <span className="brand-hub">Hub</span>
+            </span>
 
-          <p className="home-combined-subtitle">
-            הפלטפורמה האקדמית של המרכז הרפואי שיבא לחיבור בין חוקרים לסטודנטים,
-            לקידום מחקר, חדשנות ופיתוח קריירה מדעית וקלינית.
-          </p>
+            <span className="hero-title-text">
+              פלטפורמת המחקר והחדשנות של שיבא
+            </span>
+          </h1>
+     
+            <p className="hero-subtitle">
+              פלטפורמה המחברת בין חוקרי שיבא, סטודנטים ומתמחים לקידום מחקר קליני,
+              חדשנות ופיתוח הקריירה האקדמית והרפואית.
+              <br />
+              <span className="subtitle-highlight">
+                הבית של המחקר הקליני יוצרים חיבורים בין חוקרי שיבא לבין דור החוקרים הבא.
+              </span>
+            </p>
+
+            <div className="hero-logos">
+              <img src={shebaLogo} alt="Sheba" className="partner-logo sheba-logo" />
+              <div className="logo-divider"></div>
+              <img src={hitLogo} alt="HIT" className="partner-logo" />
+            </div>
+          </div>
+          
+          <div className="hero-image-wrapper">
+            <div className="image-border-accent"></div>
+            <img src={research2} alt="Medical Research" className="main-hero-img" />
+          </div>
         </header>
 
-        <section className="home-main-layout">
-          <div className="home-vision-container">
-            <div className="home-vision-list">
-              {visionItems.map((item) => (
-                <article className="home-vision-row" key={item.label}>
-                  <h3 className="home-vision-label">{item.label}</h3>
-                  <p className="home-vision-text">{item.text}</p>
-                </article>
-              ))}
+        <section className="vision-grid">
+          {visionItems.map((item, index) => (
+            <div className="vision-card" key={index}>
+              <h3>{item.title}</h3>
+              <p>{item.description}</p>
             </div>
-          </div>
-
-          <div className="home-visual-container">
-            <div className="home-hero-image">
-              <img src={research2} alt="מחקר רפואי במעבדה" />
-            </div>
-
-            <div className="home-logos-row">
-              <div className="home-logo-box sheba-box">
-                <img src={shebaLogo} alt="לוגו שיבא" className="home-logo sheba" />
-              </div>
-
-              <div className="home-logo-box hit-box">
-                <img src={hitLogo} alt="לוגו HIT" className="home-logo hit" />
-              </div>
-            </div>
-          </div>
+          ))}
         </section>
       </div>
     </main>
@@ -91,4 +84,3 @@ const Home = () => {
 };
 
 export default Home;
-

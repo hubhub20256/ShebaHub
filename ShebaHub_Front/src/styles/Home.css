@@ -1,349 +1,347 @@
-:root {
-  --sheba-pink: #e6007e;
-  --sheba-dark-blue: #18206a;
-  --sheba-hub-color: #2d96b1;
-  --bg-subtle: #f8fafc;
-  --card-bg: #ffffff;
-  --text-main: #1e293b;
-  --text-muted: #475569;
+
+html,
+body,
+#root {
+  min-height: 100%;
+  margin: 0;
+  background: #ffffff;
 }
 
-.home-page {
-  background: var(--bg-subtle);
-  font-family: 'Assistant', sans-serif;
-  min-height: calc(100vh - 80px);
-  padding: 0;
-  direction: rtl;
-}
-
-.home-container {
-  width: 100%;
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 2rem 3rem;
+* {
   box-sizing: border-box;
 }
 
-.home-header-section {
-  text-align: center;
-  margin-bottom: 3rem;
+.home-page {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  min-height: calc(100vh - 132px);
+  padding: 4rem 0 0;
+
+  background:
+    radial-gradient(
+      circle at top left,
+      rgba(230, 0, 126, 0.16) 0%,
+      transparent 35%
+    ),
+    radial-gradient(
+      circle at bottom right,
+      rgba(45, 150, 177, 0.18) 0%,
+      transparent 40%
+    ),
+    linear-gradient(
+      180deg,
+      #f7fbff 0%,
+      #eef5f8 50%,
+      #f7fbff 100%
+    );
 }
 
-.home-title {
-  font-size: clamp(1.6rem, 3vw, 3rem);
-  font-weight: 900;
-  margin: 0 0 0.8rem;
+/* Background Blobs for depth */
+.bg-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  z-index: 0;
+  opacity: 0.15;
+  pointer-events: none;
+}
+
+.pink-blob {
+  width: 400px;
+  height: 400px;
+  background: var(--sheba-pink);
+  top: -100px;
+  left: -100px;
+}
+
+.blue-blob {
+  width: 500px;
+  height: 500px;
+  background: var(--sheba-hub-color);
+  bottom: -100px;
+  right: -100px;
+}
+
+.home-container {
+  position: relative;
+  z-index: 1;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+/* Hero Layout */
+.hero-section {
+  display: flex;
+  align-items: center;
+  gap: 4rem;
+  margin-bottom: 6rem;
+}
+
+.hero-content {
+  flex: 1;
+}
+/* 
+.hero-title {
+  font-size: 2.8rem;
+  font-weight: 800;
+  line-height: 1.15;
+
+  color: #000000;
+
+  margin-bottom: 1rem;
+} */
+
+/*  */
+
+.hero-title {
+  display: flex;
+  flex-direction: column;
+
+  align-items: center;
+
+  gap: 0.8rem;
+
+  margin-bottom: 2rem;
+
   line-height: 1.1;
+
+  text-align: center;
 }
 
-.welcome-text {
-  color: #000;
+.hero-title-text {
+  font-size: 1.15rem;
+  font-weight: 700;
+
+  color: #908a8a;
 }
 
-.brand-highlight {
+
+
+.brand-wrapper {
+  display: block;
+
+  font-size: 2.9rem;
+  font-weight: 900;
+
+  letter-spacing: -2px;
+
+  line-height: 1;
+}
+
+
+.brand-sheba {
   color: var(--sheba-pink);
 }
 
-.hub-highlight {
+.brand-hub {
   color: var(--sheba-hub-color);
 }
 
-.home-combined-subtitle {
-  font-size: clamp(0.95rem, 1.2vw, 1.35rem);
-  color: #59616d;
-  font-weight: 600;
-  max-width: 1050px;
-  margin: 0 auto;
-  line-height: 1.7;
-}
-
-.home-main-layout {
-  display: grid;
-  grid-template-columns: 1fr 1.15fr;
-  gap: 3rem;
-  align-items: center;
-}
-
-.home-vision-list {
-  display: flex;
-  flex-direction: column;
-  gap: 1.2rem;
-}
-
-.home-vision-row {
-  background: var(--card-bg);
-  border-radius: 22px;
-  padding: 1.4rem 1.6rem;
-  border-right: 5px solid var(--sheba-dark-blue);
-  box-shadow: 0 14px 35px rgba(15, 23, 42, 0.07);
-}
-
-.home-vision-label {
-  font-size: 1.25rem;
-  font-weight: 900;
-  color: var(--sheba-dark-blue);
-  margin: 0 0 0.45rem;
-}
-
-.home-vision-text {
-  font-size: 1rem;
-  color: var(--text-muted);
-  line-height: 1.75;
-  margin: 0;
-}
-
-.home-visual-container {
-  display: flex;
-  flex-direction: column;
-  gap: 1.4rem;
-  align-items: center;
-}
-
-.home-hero-image {
-  width: 100%;
-  max-width: 520px;
-  height: 300px;
-  border-radius: 20px;
-  overflow: hidden;
-  box-shadow: 0 20px 50px rgba(113, 142, 248, 0.3);
-  margin: 0 auto;
-}
-
-.home-hero-image img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.home-logos-row {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 3rem;
-  margin-top: 1rem;
-  width: 100%;
-  flex-wrap: wrap;
-}
-
-.home-logo-box {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: visible;
-}
-
-.home-logo-box.sheba-box {
-  width: 240px;
-  height: 100px;
-}
-
-.home-logo-box.hit-box {
-  width: 150px;
-  height: 90px;
-}
-
-.home-logo {
-  max-width: 100%;
-  max-height: 100%;
-  object-fit: contain;
-  transition: transform 0.25s ease;
-}
-
-.home-logo.sheba {
-  width: 220px;
-  height: auto;
-  transform: scale(1.3);
-}
-
-.home-logo.hit {
-  width: 130px;
-  height: auto;
-  transform: scale(1.05);
-}
-
-.home-logo.sheba:hover {
-  transform: scale(1) translateY(-2px);
-}
-
-.home-logo.hit:hover {
-  transform: scale(1.15) translateY(-2px);
-}
-
-.wave-divider {
-  width: 100%;
-  overflow: hidden;
-  line-height: 0;
-  margin: 0;
-}
-
-.wave-divider svg {
+/*  */
+.brand-wrapper {
   display: block;
+
+  margin-top: 0.6rem;
+
+  font-size: 4.2rem;
+  font-weight: 900;
+  letter-spacing: -3px;
+}
+
+.brand-sheba {
+  color: var(--sheba-pink);
+}
+
+.brand-hub {
+  color: var(--sheba-hub-color);
+}
+
+.hero-subtitle {
+  max-width: 640px;
+
+  margin: 1.8rem 0 2.8rem;
+
+  padding: 1.4rem 1.6rem;
+
+  font-size: 1.15rem;
+  line-height: 2;
+  font-weight: 400;
+
+  color: #000000;
+
+  background: linear-gradient(
+    180deg,
+    rgba(255, 254, 254, 0.35),
+    rgba(255, 255, 255, 0.08)
+  );
+
+  backdrop-filter: blur(4px);
+
+  border: 1px solid rgba(255, 255, 255, 0.18);
+
+  border-radius: 18px;
+
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.04);
+}
+
+.subtitle-highlight {
+  color: #00010c;
+  font-weight: 700;
+}
+
+
+/* Hero Image with Multi Border Accent */
+.hero-image-wrapper {
+  flex: 1;
+  position: relative;
+  padding: 32px;
+}
+
+.main-hero-img {
   width: 100%;
-  height: 120px;
+  height: 450px;
+  object-fit: cover;
+  border-radius: 40px;
+  box-shadow: var(--soft-shadow);
+  position: relative;
+  z-index: 5;
 }
 
-.wave-fill {
-  fill: var(--sheba-dark-blue);
+/* מסגרת טורקיז */
+.image-border-accent {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: calc(100% - 32px);
+  height: calc(100% - 32px);
+  border: 2px solid var(--sheba-hub-color);
+  border-radius: 40px;
+  z-index: 1;
+  transform: rotate(-2deg);
 }
 
-.wave-section {
-  background: var(--sheba-dark-blue);
-  color: white;
-  padding: 3rem 2rem;
-  margin-top: -5px;
+/* מסגרת ורודה */
+.hero-image-wrapper::before {
+  content: "";
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: calc(100% - 32px);
+  height: calc(100% - 32px);
+  border: 2px solid var(--sheba-pink);
+  border-radius: 40px;
+  z-index: 2;
+  transform: rotate(0deg);
+}
+
+/* מסגרת כחולה */
+.hero-image-wrapper::after {
+  content: "";
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  width: calc(100% - 32px);
+  height: calc(100% - 32px);
+  border: 2px solid var(--sheba-dark-blue);
+  border-radius: 40px;
+  z-index: 3;
+  transform: rotate(2deg);
+}
+
+/* Vision Cards */
+.vision-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2rem;
+  margin-bottom: 4rem;
+}
+
+.vision-card {
+  background: var(--glass-bg);
+  backdrop-filter: blur(10px);
+  padding: 2.5rem;
+  border-radius: 30px;
+  border: 2px solid rgba(45, 150, 177, 0.25);
+  box-shadow: var(--soft-shadow);
+
+  transition:
+    transform 0.3s ease,
+    border-color 0.3s ease;
+}
+
+.vision-card:hover {
+  transform: translateY(-10px);
+  border-color: var(--sheba-dark-blue);
+}
+
+.vision-card h3 {
+  color: var(--sheba-dark-blue);
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+/* הסתרת אייקונים */
+.vision-card .card-icon,
+.vision-card svg,
+.vision-card i {
+  display: none !important;
+}
+
+/* לוגואים */
+
+/* אזור הלוגואים */
+.hero-logos {
+  display: flex;
+  align-items: center;
+  gap: 2.5rem;
+  margin-top: 2rem;
+
+  /* הזזה שמאלה/ימינה יחסית לטקסט */
+  margin-right: -2rem;
 }
 
 
-/* ===== טאבלט ===== */
-@media (max-width: 1024px) {
-  .home-container {
-    padding: 2rem;
+/* ברירת מחדל */
+.partner-logo {
+  height: 50px;
+  width: auto;
+
+  filter: grayscale(100%);
+  opacity: 0.7;
+
+  transition: 0.3s;
+}
+
+/* לוגו שיבא גדול יותר */
+.partner-logo.sheba-logo {
+  height: 150px;
+  
+}
+
+/* hover */
+.partner-logo:hover {
+  filter: grayscale(0%);
+  opacity: 1;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 968px) {
+  .hero-section {
+    flex-direction: column;
+    text-align: center;
   }
 
-  .home-header-section {
-    margin-bottom: 2rem;
-  }
-
-  .home-main-layout {
+  .vision-grid {
     grid-template-columns: 1fr;
-    gap: 2rem;
   }
 
-  .home-visual-container {
-    order: -1;
+  .hero-logos {
+    justify-content: center;
   }
 
-  .home-hero-image {
-    max-width: 600px;
-    height: 280px;
-  }
-
-  .home-logos-row {
-    gap: 2rem;
-  }
-
-  .home-logo-box.sheba-box {
-    width: 210px;
-    height: 90px;
-  }
-
-  .home-logo-box.hit-box {
-    width: 130px;
-    height: 80px;
-  }
-
-  .home-logo.sheba {
-    width: 200px;
-    transform: none;
-  }
-
-  .home-logo.hit {
-    width: 110px;
-    transform: none;
-  }
-}
-
-
-/* ===== נייד ===== */
-@media (max-width: 600px) {
-  .home-container {
-    padding: 1.2rem;
-  }
-
-  .home-header-section {
-    margin-bottom: 1.5rem;
-  }
-
-  .home-title {
-    font-size: 1.55rem;
-  }
-
-  .home-combined-subtitle {
-    font-size: 0.95rem;
-    line-height: 1.6;
-  }
-
-  .home-main-layout {
-    gap: 1.5rem;
-  }
-
-  .home-hero-image {
-    height: 210px;
-    max-width: 100%;
-    border-radius: 18px;
-  }
-
-  .home-logos-row {
-    flex-direction: row;
-    gap: 1.2rem;
-    margin-top: 0.5rem;
-  }
-
-  .home-logo-box.sheba-box {
-    width: 170px;
-    height: 75px;
-  }
-
-  .home-logo-box.hit-box {
-    width: 95px;
-    height: 65px;
-  }
-
-  .home-logo.sheba {
-    width: 165px;
-  }
-
-  .home-logo.hit {
-    width: 85px;
-  }
-
-  .home-vision-list {
-    gap: 1rem;
-  }
-
-  .home-vision-row {
-    padding: 1rem;
-    border-radius: 18px;
-  }
-
-  .home-vision-label {
-    font-size: 1.05rem;
-  }
-
-  .home-vision-text {
-    font-size: 0.9rem;
-    line-height: 1.65;
-  }
-
-  .wave-divider svg {
-    height: 80px;
-  }
-
-  .wave-section {
-    padding: 2rem 1rem;
-  }
-}
-
-
-/* ===== נייד קטן מאוד ===== */
-@media (max-width: 380px) {
-  .home-title {
-    font-size: 1.35rem;
-  }
-
-  .home-hero-image {
-    height: 180px;
-  }
-
-  .home-logo-box.sheba-box {
-    width: 150px;
-  }
-
-  .home-logo.sheba {
-    width: 145px;
-  }
-
-  .home-logo.hit {
-    width: 75px;
+  .hero-image-wrapper {
+    width: 100%;
   }
 }
