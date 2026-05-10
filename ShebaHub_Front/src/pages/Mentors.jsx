@@ -5,6 +5,8 @@ import LoadingSpinner from "../components/LoadingSpinner";
 import EmptyState from "../components/EmptyState";
 import { profilesAPI } from "../services/api";
 import usePageTitle from "../hooks/usePageTitle";
+import filterIcon from "../assets/filter.png";
+
 import {
   SPECIALTIES_BASE,
   SPECIALTIES_SUPER,
@@ -68,6 +70,7 @@ export default function Mentors() {
   const [visibleCount, setVisibleCount] = useState(20);
 
   const [openFilter, setOpenFilter] = useState(null);
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [activeSpecialtyGroup, setActiveSpecialtyGroup] = useState("");
 
   const [selectedSpecialtyGroups, setSelectedSpecialtyGroups] = useState([]);
@@ -77,6 +80,7 @@ export default function Mentors() {
   const [selectedUniversityRanks, setSelectedUniversityRanks] = useState([]);
   const [selectedUniversityAffiliations, setSelectedUniversityAffiliations] = useState([]);
   const [selectedMentoringExperience, setSelectedMentoringExperience] = useState([]);
+  
 
   const filtersRef = useRef(null);
 
@@ -360,20 +364,132 @@ export default function Mentors() {
 
       {!loading && !error && (
         <>
-          <div className="mentors-controls-container">
+         <div className="mentors-search-row">
+          <div className="mentors-search-wrapper">
             <SearchAutocomplete
               value={searchQuery}
               onChange={setSearchQuery}
               placeholder="חיפוש מנחה..."
               items={mappedMentors}
               extractTerms={extractMentorTerms}
-              wrapperClassName="mentors-search-row"
-              innerClassName="mentors-search-wrapper"
+              wrapperClassName=""
+              innerClassName=""
               inputClassName="mentors-search-input"
               iconClassName="mentors-search-icon"
             />
-          </div>
 
+            <button
+              type="button"
+              className={`mentors-inline-filter-btn ${
+                showAdvancedFilters ? "active" : ""
+              }`}
+              onClick={() => setShowAdvancedFilters((prev) => !prev)}
+            >
+              <img
+                src={filterIcon}
+                alt="filter"
+                className="mentors-inline-filter-icon"
+              />
+            </button>
+          </div>
+        </div>
+
+        {hasActiveFilters && (
+          <div className="mentors-active-filters">
+            {selectedSpecialties.map((item) => (
+              <button
+                key={item}
+                className="mentors-active-filter-chip"
+                onClick={() =>
+                  setSelectedSpecialties((prev) =>
+                    prev.filter((v) => v !== item)
+                  )
+                }
+              >
+                {item}
+                <span>×</span>
+              </button>
+            ))}
+
+            {selectedAcademicRanks.map((item) => (
+              <button
+                key={item}
+                className="mentors-active-filter-chip"
+                onClick={() =>
+                  setSelectedAcademicRanks((prev) =>
+                    prev.filter((v) => v !== item)
+                  )
+                }
+              >
+                {item}
+                <span>×</span>
+              </button>
+            ))}
+
+            {selectedDegrees.map((item) => (
+              <button
+                key={item}
+                className="mentors-active-filter-chip"
+                onClick={() =>
+                  setSelectedDegrees((prev) =>
+                    prev.filter((v) => v !== item)
+                  )
+                }
+              >
+                {item}
+                <span>×</span>
+              </button>
+            ))}
+
+            {selectedUniversityRanks.map((item) => (
+              <button
+                key={item}
+                className="mentors-active-filter-chip"
+                onClick={() =>
+                  setSelectedUniversityRanks((prev) =>
+                    prev.filter((v) => v !== item)
+                  )
+                }
+              >
+                {item}
+                <span>×</span>
+              </button>
+            ))}
+
+            {selectedUniversityAffiliations.map((item) => (
+              <button
+                key={item}
+                className="mentors-active-filter-chip"
+                onClick={() =>
+                  setSelectedUniversityAffiliations((prev) =>
+                    prev.filter((v) => v !== item)
+                  )
+                }
+              >
+                {item}
+                <span>×</span>
+              </button>
+            ))}
+
+            {selectedMentoringExperience.map((item) => (
+              <button
+                key={item}
+                className="mentors-active-filter-chip"
+                onClick={() =>
+                  setSelectedMentoringExperience((prev) =>
+                    prev.filter((v) => v !== item)
+                  )
+                }
+              >
+                ניסיון בהנחיה: {item}
+                <span>×</span>
+              </button>
+            ))}
+          </div>
+        )}
+
+
+        {showAdvancedFilters && (
           <div className="mentors-advanced-filters" ref={filtersRef}>
             <div className="mentors-filter-item">
               <button
@@ -635,6 +751,7 @@ export default function Mentors() {
               </button>
             )}
           </div>
+        )}
 
           <div className="cards-grid mentors-layout">
             {filteredMentors.slice(0, visibleCount).map((m) => (
