@@ -35,7 +35,7 @@ const START_YEARS = Array.from({ length: 11 }, (_, i) => ({
 }));
 
 // Keep degrees list tight (matches current UX expectations)
-const DEGREE_OPTIONS = ["MD", "PhD", "MSc", "MPH", "MBA"];
+const DEGREE_OPTIONS = ["BSc", "MD", "PhD", "MSc", "MPH", "MBA"];
 
 function sanitizeDegrees(value) {
   const degrees = Array.isArray(value) ? value : [];
@@ -56,7 +56,7 @@ const APPRENTICE_STAGES = [
   { v: "סטאז׳ר", t: "סטאז׳ר" },
   { v: "אחרי סטאז׳", t: "אחרי סטאז׳" },
   { v: "מתמחה", t: "מתמחה" },
-  { v: "רופא מתמחה", t: "רופא מתמחה" },
+  { v: "רופא מומחה", t: "רופא מומחה" },
   { v: "אחר", t: "אחר" },
 ];
 
@@ -1395,7 +1395,15 @@ function Profile() {
           <button className="profile-edit-btn" onClick={openFullEdit}>
             עריכת פרופיל
           </button>
-          <button className="profile-edit-btn" style={{ background: "#ef4444", color: "white", borderColor: "#ef4444" }} onClick={() => setDeleteProfileDialog(true)}>
+          <button
+            className="profile-edit-btn"
+            style={{
+              background: "#ef4444",
+              color: "white",
+              borderColor: "#ef4444",
+            }}
+            onClick={() => setDeleteProfileDialog(true)}
+          >
             מחיקת פרופיל
           </button>
           {hasProfile && qrProfileUrl && (

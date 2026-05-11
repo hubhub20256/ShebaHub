@@ -1,4 +1,10 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import ApprenticeCard from "../components/apprenticeCard";
 import SearchAutocomplete from "../components/SearchAutocomplete";
 import LoadingSpinner from "../components/LoadingSpinner";
@@ -9,7 +15,6 @@ import usePageTitle from "../hooks/usePageTitle";
 import "../components/card.css";
 import "../styles/Apprentices.css";
 
-
 const currentYear = new Date().getFullYear();
 
 const APPRENTICE_STAGE_OPTIONS = [
@@ -18,7 +23,7 @@ const APPRENTICE_STAGE_OPTIONS = [
   "סטאז׳ר",
   "אחרי סטאז׳",
   "מתמחה",
-  "רופא מתמחה",
+  "רופא מומחה",
   "אחר",
 ];
 
@@ -114,9 +119,9 @@ export default function Apprentices() {
         setOpenFilter(null);
       }
     }
-  
+
     document.addEventListener("mousedown", handleClickOutside);
-  
+
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
@@ -124,8 +129,6 @@ export default function Apprentices() {
 
   useEffect(() => {
     let isMounted = true;
-
-    
 
     async function load() {
       setLoading(true);
@@ -283,8 +286,8 @@ export default function Apprentices() {
     return groups;
   }, [selectedFilters.medical_level]);
 
-  const hasActiveFilters = Object.entries(selectedFilters).some(
-    ([, value]) => Array.isArray(value) ? value.length > 0 : value !== "",
+  const hasActiveFilters = Object.entries(selectedFilters).some(([, value]) =>
+    Array.isArray(value) ? value.length > 0 : value !== "",
   );
 
   const filteredApprentices = useMemo(() => {
@@ -381,7 +384,7 @@ export default function Apprentices() {
           />
 
           <div className="apprentices-advanced-filters" ref={filtersRef}>
-              {filterGroups.map((group) => (
+            {filterGroups.map((group) => (
               <div key={group.key} className="apprentices-filter-item">
                 <button
                   type="button"
