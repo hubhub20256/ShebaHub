@@ -1,0 +1,199 @@
+/* src/styles/Researches.css */
+
+/* Main Page Container */
+.researches-page {
+  /* Inherit shared background from index/global if needed, or define here */
+  padding: 2.5rem 1.25rem;
+  /* 40px 20px */
+  max-width: 75rem;
+  /* 1200px */
+  margin: 0 auto;
+  box-sizing: border-box;
+  font-family: inherit;
+  /* Inherit global font */
+}
+
+/* Page Title */
+.researches-title {
+  text-align: center;
+  margin: 0 0 2rem 0;
+  /* 32px */
+  font-size: 2.2rem;
+  /* Keep existing rem */
+  font-weight: 800;
+  color: #2c3e50;
+}
+
+/* Search Row Container */
+.researches-search-row {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  margin-top: 1rem;
+  margin-bottom: 2rem;
+  /* 32px */
+}
+
+/* Search Input Wrapper */
+.researches-search-wrapper {
+  position: relative;
+  width: 100%;
+  max-width: 32.5rem;
+  /* 520px */
+}
+
+/* Search Input Field */
+.researches-search-input {
+  width: 100%;
+  height: 3rem;
+  /* 48px */
+  padding: 0 3.125rem 0 1rem;
+  /* 50px 16px */
+  border: 1px solid #e2e8f0;
+  border-radius: 0.75rem;
+  /* 12px */
+  outline: none;
+  font-size: 0.9375rem;
+  /* 15px */
+  background: #ffffff;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  box-sizing: border-box;
+}
+
+.researches-search-input:focus {
+  border-color: #37B9A3;
+  /* Sheba teal */
+  box-shadow: 0 0 0 3px rgba(55, 185, 163, 0.1);
+}
+
+/* Search Icon */
+.researches-search-icon {
+  position: absolute;
+  top: 50%;
+  right: 1rem;
+  /* 16px */
+  transform: translateY(-50%);
+  color: #94a3b8;
+  font-size: 1.25rem;
+  /* 20px */
+  pointer-events: none;
+}
+
+/* No Results Message */
+.researches-no-results {
+  text-align: center;
+  margin-top: 2.5rem;
+  /* 40px */
+  color: #64748b;
+  font-size: 1rem;
+}
+
+/* --- Media Queries --- */
+
+@media (max-width: 600px) {
+  .researches-page {
+    padding: 1.5rem 1rem;
+    /* 24px 16px */
+  }
+
+  .researches-title {
+    font-size: 1.75rem;
+    margin-bottom: 1.5rem;
+    /* 24px */
+  }
+
+  .researches-search-input {
+    height: 2.75rem;
+    /* 44px */
+    font-size: 0.875rem;
+    /* 14px */
+    padding-right: 2.75rem;
+    /* 44px */
+  }
+
+  .researches-search-icon {
+    right: 0.875rem;
+    /* 14px */
+    font-size: 1.125rem;
+    /* 18px */
+  }
+}
+
+/* --- Status Badge Styles --- */
+
+.status-badge-container {
+  display: flex;
+  justify-content: flex-start;
+  /* Aligns to the right in RTL */
+  margin-bottom: 0.75rem;
+}
+
+.research-status-badge {
+  background-color: #e6fffa;
+  /* Light green background */
+  color: #0d9488;
+  /* Dark teal text */
+  padding: 0.25rem 0.75rem;
+  /* 4px 12px equivalent */
+  border-radius: 1.25rem;
+  /* Rounded pill shape */
+  font-size: 0.75rem;
+  /* 12px equivalent */
+  font-weight: 700;
+  display: inline-block;
+  line-height: 1;
+}
+
+/* Status-specific badge colors */
+.research-status-badge.status--open {
+  background-color: #e6fffa;
+  color: #0d9488;
+}
+.research-status-badge.status--in-progress {
+  background-color: #eff6ff;
+  color: #2563eb;
+}
+.research-status-badge.status--completed {
+  background-color: #f0fdf4;
+  color: #16a34a;
+}
+.research-status-badge.status--closed {
+  background-color: #f1f5f9;
+  color: #64748b;
+}
+.research-status-badge.status--draft {
+  background-color: #fefce8;
+  color: #a16207;
+}
+
+/* Dark Mode */
+[data-theme="dark"] .research-status-badge.status--open {
+  background-color: #115e59;
+  color: #ccfbf1;
+}
+[data-theme="dark"] .research-status-badge.status--in-progress {
+  background-color: #1e3a5f;
+  color: #bfdbfe;
+}
+[data-theme="dark"] .research-status-badge.status--completed {
+  background-color: #14532d;
+  color: #bbf7d0;
+}
+[data-theme="dark"] .research-status-badge.status--closed {
+  background-color: #334155;
+  color: #cbd5e1;
+}
+[data-theme="dark"] .research-status-badge.status--draft {
+  background-color: #422006;
+  color: #fef08a;
+}
+
+/* ===== DARK MODE ===== */
+[data-theme="dark"] .researches-title { color: var(--text-color) !important; }
+[data-theme="dark"] .researches-search-input {
+  background: var(--card-bg) !important;
+  border-color: var(--border-color) !important;
+  color: var(--text-color) !important;
+}
+[data-theme="dark"] .researches-search-icon { color: #888 !important; }
+[data-theme="dark"] .researches-no-results { color: #999 !important; }

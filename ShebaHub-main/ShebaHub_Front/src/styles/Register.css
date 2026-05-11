@@ -1,0 +1,40 @@
+/* Register-specific styles (only for register page classes) */
+
+.register-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.register-error {
+  background: rgba(185, 28, 28, 0.08);
+  color: #b91c1c;
+  border: 1px solid rgba(185, 28, 28, 0.25);
+  padding: 10px 12px;
+  border-radius: 12px;
+  font-weight: 700;
+  text-align: right;
+}
+
+.register-checkbox-container {
+  display: flex;
+  justify-content: flex-start; /* ב-RTL זה יישב מימין */
+}
+
+.register-checkbox-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+
+  flex-direction: row;
+
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.register-checkbox-label input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: #37b9a3;
+}
