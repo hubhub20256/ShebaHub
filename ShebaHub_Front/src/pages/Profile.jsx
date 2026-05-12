@@ -8,6 +8,8 @@ import usePageTitle from "../hooks/usePageTitle";
 import { validateFile } from "../utils/formValidation";
 import PublicProfile from "./PublicProfile";
 import ConfirmDialog from "../components/ConfirmDialog";
+import SaveItemIcon from "../assets/saveItem.png";
+
 import {
   SPECIALTIES_BASE,
   SPECIALTIES_SUPER,

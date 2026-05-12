@@ -25,6 +25,7 @@ import {
   Notifications,
   AdminDashboard,
   TaskManager,
+  SavedItems,
 } from "./pages";
 
 import RequireAuth from "./components/RequireAuth.jsx";
@@ -147,6 +148,15 @@ function App() {
             <RequireAdmin>
               <AdminDashboard />
             </RequireAdmin>
+          }
+        />
+
+        <Route
+          path="/saved-items"
+          element={
+            <RequireAuth>
+              <SavedItems />
+            </RequireAuth>
           }
         />
 
