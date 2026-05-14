@@ -183,6 +183,35 @@ function resolveField(profile, field) {
   return raw || "";
 }
 
+function linkify(text) {
+  if (!text) return "לא הוזן תיאור";
+
+  // ביטוי רגולרי שמזהה כתובות אתרים
+  const urlRegex = /(https?:\/\/[^\s]+)/g;
+
+  return text.split(urlRegex).map((part, i) => {
+    if (part.match(urlRegex)) {
+      return (
+        <a
+          key={i}
+          href={part}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            color: "#37b9a3", // הצבע הטורקיז של הפרויקט
+            textDecoration: "underline",
+            fontWeight: "700",
+            wordBreak: "break-all", // מבטיח שהקישור לא יגלוש
+          }}
+        >
+          {part.length > 25 ? "🔗 מעבר לקישור חיצוני" : part}
+        </a>
+      );
+    }
+    return part;
+  });
+}
+
 function normalizeProfileForDraft(profile) {
   if (!profile) return { ...INITIAL_DRAFT };
 
@@ -1395,7 +1424,15 @@ function Profile() {
           <button className="profile-edit-btn" onClick={openFullEdit}>
             עריכת פרופיל
           </button>
-          <button className="profile-edit-btn" style={{ background: "#ef4444", color: "white", borderColor: "#ef4444" }} onClick={() => setDeleteProfileDialog(true)}>
+          <button
+            className="profile-edit-btn"
+            style={{
+              background: "#ef4444",
+              color: "white",
+              borderColor: "#ef4444",
+            }}
+            onClick={() => setDeleteProfileDialog(true)}
+          >
             מחיקת פרופיל
           </button>
           {hasProfile && qrProfileUrl && (
@@ -1540,9 +1577,7 @@ function Profile() {
           <div className="profile-column">
             <SectionCard title="אודות">
               <p className="profile-bio-text">
-                {userData.personalAcademicDescription ||
-                  userData.bio ||
-                  "לא הוזן תיאור"}
+                {linkify(userData.personalAcademicDescription || userData.bio)}
               </p>
             </SectionCard>
 
@@ -1722,14 +1757,14 @@ function Profile() {
                 {userData.previousResearchDescription && (
                   <SectionCard title="מחקרים קודמים">
                     <p className="profile-bio-text">
-                      {userData.previousResearchDescription}
+                      {linkify(userData.previousResearchDescription)}
                     </p>
                   </SectionCard>
                 )}
                 {userData.mentoringExperienceDetails && (
                   <SectionCard title="פירוט ניסיון בהנחיה">
                     <p className="profile-bio-text">
-                      {userData.mentoringExperienceDetails}
+                      {linkify(userData.mentoringExperienceDetails)}
                     </p>
                   </SectionCard>
                 )}

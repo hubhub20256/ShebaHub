@@ -13,6 +13,11 @@
   position: relative;
 }
 
+.researchCard {
+  min-width: 0;
+  overflow: hidden;
+}
+
 /* ===== Card Header ===== */
 
 .mentorCard__header,
@@ -64,8 +69,28 @@
   gap: 12px;
 }
 
+.researchCard__title,
+.researchCard__description,
+.researchCard__value,
+.researchCard__field {
+  word-break: break-word;
+  overflow-wrap: anywhere;;
+}
+
 /* ===== Labels / Fields ===== */
 
+.researchCard__fields{
+  flex-wrap: wrap;
+}
+
+.researchCard__field {
+  max-width: 100%;
+  white-space: normal;
+}
+
+.researchCard__detail{
+  min-width: 0;
+}
 .mentorCard__labels,
 .apprenticeCard__labels {
   display: flex;
@@ -331,6 +356,19 @@
   line-height: 1.85;
   color: rgba(15, 23, 42, 0.82);
   text-align: right;
+}
+
+.researchCard__readMore {
+  color: #37b9a3; 
+  font-weight: 800;
+  cursor: pointer;
+  margin-right: 5px;
+  transition: color 0.2s ease;
+  text-decoration: underline; 
+}
+
+.researchCard:hover .researchCard__readMore {
+  color: #2c3e50; /* שינוי צבע קטן במעבר עכבר על כל הכרטיס */
 }
 
 /* סידור השדות בשני טורים */

@@ -369,6 +369,11 @@
   position: relative;
   z-index: 1;
   margin-top: 2rem;
+  overflow: hidden;
+}
+
+.cards-grid.researches-layout > *{
+  min-width: 0;
 }
 
 @media (max-width: 600px) {

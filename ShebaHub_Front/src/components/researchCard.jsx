@@ -13,6 +13,17 @@ const STATUS_MAP = {
 };
 
 export default function ResearchCard({ research, joined }) {
+  const MAX_LENGTH = 150;
+  const description = research.description || "";
+
+  const isTruncated = description.length > MAX_LENGTH;
+
+  const displayDescription = isTruncated 
+    ? description.substring(0, MAX_LENGTH) + "..." 
+    : description;
+
+
+
   // Helper to format dates
   const formatDate = (dateStr) => {
     if (!dateStr) return "";
@@ -29,6 +40,7 @@ export default function ResearchCard({ research, joined }) {
 
   return (
     <Link
+  
       to={to}
       className="researchCard researchCard--clickable"
       dir="rtl"
@@ -62,7 +74,13 @@ export default function ResearchCard({ research, joined }) {
         ))}
       </div>
 
-      <p className="researchCard__description">{research.description}</p>
+
+      <p className="researchCard__description">
+        {displayDescription}
+        {isTruncated && (
+          <span className="researchCard__readMore"> קרא עוד </span>
+        )}
+      </p>
 
       <div className="researchCard__details">
         <div className="researchCard__detail">

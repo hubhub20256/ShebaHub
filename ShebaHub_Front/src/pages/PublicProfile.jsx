@@ -1,6 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { profilesAPI, researchAPI, messagesAPI, API_BASE_URL } from "../services/api";
+import {
+  profilesAPI,
+  researchAPI,
+  messagesAPI,
+  API_BASE_URL,
+} from "../services/api";
 import { useAuth } from "../context/AuthContext";
 import "../styles/Profile.css";
 
@@ -103,7 +108,8 @@ function PublicProfile() {
   const [toast, setToast] = useState(null); // { type: "success" | "error", text: string }
 
   const currentUserIsMentor = user?.has_mentor_profile === true;
-  const isOwnProfile = user && profileData && String(user.id) === String(profileData.userId);
+  const isOwnProfile =
+    user && profileData && String(user.id) === String(profileData.userId);
 
   useEffect(() => {
     let isMounted = true;
@@ -162,10 +168,15 @@ function PublicProfile() {
   useEffect(() => {
     if (!showInviteModal || !currentUserIsMentor) return;
     let cancelled = false;
-    researchAPI.listMyResearches().then((data) => {
-      if (!cancelled) setMyResearches(Array.isArray(data) ? data : []);
-    }).catch(() => {});
-    return () => { cancelled = true; };
+    researchAPI
+      .listMyResearches()
+      .then((data) => {
+        if (!cancelled) setMyResearches(Array.isArray(data) ? data : []);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
   }, [showInviteModal, currentUserIsMentor]);
 
   const showToast = (type, text) => {
@@ -189,10 +200,19 @@ function PublicProfile() {
   };
 
   const handleContactSend = async () => {
-    if (!contactSubject.trim() || !contactMessage.trim() || !profileData?.userId) return;
+    if (
+      !contactSubject.trim() ||
+      !contactMessage.trim() ||
+      !profileData?.userId
+    )
+      return;
     setContactLoading(true);
     try {
-      await messagesAPI.contactUser(profileData.userId, contactSubject, contactMessage);
+      await messagesAPI.contactUser(
+        profileData.userId,
+        contactSubject,
+        contactMessage,
+      );
       showToast("success", "ההודעה נשלחה בהצלחה!");
       setShowContactModal(false);
       setContactSubject("");
@@ -207,20 +227,52 @@ function PublicProfile() {
         "error",
         isEmailNotVerified
           ? "יש לאמת את כתובת האימייל לפני שליחת הודעה. בדוק/י את תיבת הדואר הנכנס."
-          : errMsg || "שגיאה בשליחת ההודעה"
+          : errMsg || "שגיאה בשליחת ההודעה",
       );
     } finally {
       setContactLoading(false);
     }
   };
 
+  function linkify(text) {
+    if (!text) return "לא הוזן תיאור";
+
+    // ביטוי רגולרי שמזהה כתובות אתרים
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+
+    return text.split(urlRegex).map((part, i) => {
+      if (part.match(urlRegex)) {
+        return (
+          <a
+            key={i}
+            href={part}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              color: "#37b9a3", // הצבע הטורקיז של הפרויקט
+              textDecoration: "underline",
+              fontWeight: "700",
+              wordBreak: "break-all", // מבטיח שהקישור לא יגלוש
+            }}
+          >
+            {part.length > 25 ? "🔗 מעבר לקישור חיצוני" : part}
+          </a>
+        );
+      }
+      return part;
+    });
+  }
+
   async function downloadDocument(doc) {
     if (!doc?.id) return;
     try {
       const token = localStorage.getItem("accessToken");
-      const res = await fetch(`${API_BASE_URL}/profiles/documents/${doc.id}/download/`, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      });
+      const res = await fetch(
+        `${API_BASE_URL}/profiles/documents/${doc.id}/download/`,
+        {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        },
+      );
       if (!res.ok) throw new Error("download failed");
       const blob = await res.blob();
       const url = window.URL.createObjectURL(blob);
@@ -264,7 +316,9 @@ function PublicProfile() {
   const showApprenticeSpecialty = (() => {
     if (!isApprentice) return false;
     if (profileData.apprenticeStage === "סטודנט") {
-      return profileData.yearOfStudy === "ו'" || profileData.yearOfStudy === "ז'";
+      return (
+        profileData.yearOfStudy === "ו'" || profileData.yearOfStudy === "ז'"
+      );
     }
     return profileData.apprenticeStage !== "";
   })();
@@ -276,7 +330,12 @@ function PublicProfile() {
       {toast && (
         <div className={`profile-toast profile-toast--${toast.type}`}>
           {toast.text}
-          <button className="profile-toast-close" onClick={() => setToast(null)}>✕</button>
+          <button
+            className="profile-toast-close"
+            onClick={() => setToast(null)}
+          >
+            ✕
+          </button>
         </div>
       )}
       <div style={{ marginBottom: "20px" }}>
@@ -298,11 +357,16 @@ function PublicProfile() {
 
       <div className="profile-header-card">
         <div className="profile-avatar">
-          {(profileData?.avatarUrl || profileData?.avatar) ? (
+          {profileData?.avatarUrl || profileData?.avatar ? (
             <img
               src={profileData.avatarUrl || profileData.avatar}
               alt="פרופיל"
-              style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "50%" }}
+              style={{
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+                borderRadius: "50%",
+              }}
             />
           ) : (
             <>{(profileData?.name || " ")?.[0]}</>
@@ -311,7 +375,9 @@ function PublicProfile() {
         <div className="profile-header-info">
           <h1 className="profile-name">{profileData?.name || "משתמש"}</h1>
           <div className="profile-badges-row">
-            <span className={`profile-role-badge ${isMentor ? "mentor-badge" : "apprentice-badge"}`}>
+            <span
+              className={`profile-role-badge ${isMentor ? "mentor-badge" : "apprentice-badge"}`}
+            >
               {isMentor ? "מנחה" : "מתלמד/ת"}
             </span>
             {profileData?.linkedinUrl && (
@@ -320,14 +386,24 @@ function PublicProfile() {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="profile-info-badge"
-                style={{ color: "#0077b5", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 4 }}
+                style={{
+                  color: "#0077b5",
+                  textDecoration: "none",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 4,
+                }}
               >
                 🔗 LinkedIn
               </a>
             )}
-            {currentUserIsMentor && !isOwnProfile && (
-              (isApprentice && profileData.isAvailableForResearch === false) ? (
-                <span className="profile-info-badge" style={{ color: "#999", marginRight: 8 }}>
+            {currentUserIsMentor &&
+              !isOwnProfile &&
+              (isApprentice && profileData.isAvailableForResearch === false ? (
+                <span
+                  className="profile-info-badge"
+                  style={{ color: "#999", marginRight: 8 }}
+                >
                   לא זמין/ה למחקר
                 </span>
               ) : (
@@ -338,8 +414,7 @@ function PublicProfile() {
                 >
                   הזמן למחקר
                 </button>
-              )
-            )}
+              ))}
             {user && !isOwnProfile && (
               <button
                 className="profile-edit-btn"
@@ -356,45 +431,87 @@ function PublicProfile() {
       <div className="profile-wide-card">
         <h3 className="profile-section-title">פרטים מקצועיים</h3>
         <div className="profile-grid-content">
-          {isApprentice && <InfoRow label="מוסד לימודים" value={getHebrewName(profileData, "institution_detail")} />}
+          {isApprentice && (
+            <InfoRow
+              label="מוסד לימודים"
+              value={getHebrewName(profileData, "institution_detail")}
+            />
+          )}
           <InfoRow label="תארים" value={formatDegrees(profileData)} />
           <InfoRow label="מקום עבודה" value={profileData.workplace || "-"} />
 
           {isMentor ? (
             <>
-              <InfoRow label="שלב בהכשרה" value={getHebrewName(profileData, "academicRank_detail")} />
-              <InfoRow label="ניסיון בהנחיה" value={formatBoolean(profileData.hasMentoringExperience)} />
-              <InfoRow label="דרגה אקדמית" value={profileData.universityRank && profileData.universityRank !== "ללא" ? profileData.universityRank : "-"} />
-              <InfoRow label="שיוך אקדמי" value={profileData.universityAffiliation || "-"} />
+              <InfoRow
+                label="שלב בהכשרה"
+                value={getHebrewName(profileData, "academicRank_detail")}
+              />
+              <InfoRow
+                label="ניסיון בהנחיה"
+                value={formatBoolean(profileData.hasMentoringExperience)}
+              />
+              <InfoRow
+                label="דרגה אקדמית"
+                value={
+                  profileData.universityRank &&
+                  profileData.universityRank !== "ללא"
+                    ? profileData.universityRank
+                    : "-"
+                }
+              />
+              <InfoRow
+                label="שיוך אקדמי"
+                value={profileData.universityAffiliation || "-"}
+              />
             </>
           ) : (
             <>
-              <InfoRow label="שלב נוכחי" value={getHebrewName(profileData, "apprenticeStage_detail")} />
-              {(profileData.apprenticeStage === "סטודנט" || profileData.studyYear) && (
-                <InfoRow label="שנת לימודים" value={profileData.yearOfStudy || profileData.studyYear || "-"} />
+              <InfoRow
+                label="שלב נוכחי"
+                value={getHebrewName(profileData, "apprenticeStage_detail")}
+              />
+              {(profileData.apprenticeStage === "סטודנט" ||
+                profileData.studyYear) && (
+                <InfoRow
+                  label="שנת לימודים"
+                  value={
+                    profileData.yearOfStudy || profileData.studyYear || "-"
+                  }
+                />
               )}
-              <InfoRow label="עובד שיבא" value={formatBoolean(profileData.isShebaEmployee)} />
+              <InfoRow
+                label="עובד שיבא"
+                value={formatBoolean(profileData.isShebaEmployee)}
+              />
             </>
           )}
 
           {shouldShowSpecialty && (
             <>
-              <InfoRow label="קטגוריית התמחות" value={
-                Array.isArray(profileData.specialtyGroups_detail) && profileData.specialtyGroups_detail.length > 0
-                  ? profileData.specialtyGroups_detail
-                    .map((g) => extractDisplay(g))
-                    .filter((v) => v && v !== "-")
-                    .join(" | ")
-                  : Array.isArray(profileData.specialtyGroups) && profileData.specialtyGroups.length > 0
-                    ? profileData.specialtyGroups.join(" | ")
-                    : getHebrewName(profileData, "specialtyGroup_detail")
-              } />
-              <InfoRow label="התמחות" value={
-                Array.isArray(profileData.specialties_detail) && profileData.specialties_detail.length
-                  ? extractDisplay(profileData.specialties_detail)
-                  : getHebrewName(profileData, "specialty_detail")
-              } />
-
+              <InfoRow
+                label="קטגוריית התמחות"
+                value={
+                  Array.isArray(profileData.specialtyGroups_detail) &&
+                  profileData.specialtyGroups_detail.length > 0
+                    ? profileData.specialtyGroups_detail
+                        .map((g) => extractDisplay(g))
+                        .filter((v) => v && v !== "-")
+                        .join(" | ")
+                    : Array.isArray(profileData.specialtyGroups) &&
+                        profileData.specialtyGroups.length > 0
+                      ? profileData.specialtyGroups.join(" | ")
+                      : getHebrewName(profileData, "specialtyGroup_detail")
+                }
+              />
+              <InfoRow
+                label="התמחות"
+                value={
+                  Array.isArray(profileData.specialties_detail) &&
+                  profileData.specialties_detail.length
+                    ? extractDisplay(profileData.specialties_detail)
+                    : getHebrewName(profileData, "specialty_detail")
+                }
+              />
             </>
           )}
         </div>
@@ -404,11 +521,31 @@ function PublicProfile() {
         <div className="profile-wide-card">
           <h3 className="profile-section-title">העדפות מחקר וזמינות</h3>
           <div className="profile-grid-content">
-            <InfoRow label="סוג עבודה" value={getHebrewName(profileData, "workType_detail")} />
-            <InfoRow label="תגמול מועדף" value={getHebrewName(profileData, "compensationPreference_detail")} />
-            <InfoRow label="שעות שבועיות" value={profileData.weeklyHours || "-"} />
-            <InfoRow label="זמינות להתחלה" value={formatDate(profileData.startDate || profileData.availableFrom)} />
-            <InfoRow label="כלים ומיומנויות" value={profileData.softwareSkills || "-"} />
+            <InfoRow
+              label="סוג עבודה"
+              value={getHebrewName(profileData, "workType_detail")}
+            />
+            <InfoRow
+              label="תגמול מועדף"
+              value={getHebrewName(
+                profileData,
+                "compensationPreference_detail",
+              )}
+            />
+            <InfoRow
+              label="שעות שבועיות"
+              value={profileData.weeklyHours || "-"}
+            />
+            <InfoRow
+              label="זמינות להתחלה"
+              value={formatDate(
+                profileData.startDate || profileData.availableFrom,
+              )}
+            />
+            <InfoRow
+              label="כלים ומיומנויות"
+              value={profileData.softwareSkills || "-"}
+            />
           </div>
         </div>
       )}
@@ -417,45 +554,121 @@ function PublicProfile() {
         <div className="profile-column">
           <SectionCard title="אודות">
             <p className="profile-bio-text">
-              {profileData.personalAcademicDescription || profileData.bio || "לא הוזן תיאור"}
+              {profileData.personalAcademicDescription ||
+                profileData.bio ||
+                "לא הוזן תיאור"}
             </p>
           </SectionCard>
 
-          {Array.isArray(profileData.recommenders) && profileData.recommenders.length > 0 && (
-            <SectionCard title="ממליצים">
-              {profileData.recommenders.map((rec, idx) => (
-                <div key={idx} style={{ marginBottom: idx < profileData.recommenders.length - 1 ? 12 : 0, paddingBottom: idx < profileData.recommenders.length - 1 ? 12 : 0, borderBottom: idx < profileData.recommenders.length - 1 ? "1px solid #eee" : "none" }}>
-                  {profileData.recommenders.length > 1 && <span style={{ fontSize: 13, color: "#6b7280", fontWeight: 600 }}>ממליצ/ה {idx + 1}</span>}
-                  {rec.name && (
-                    <InfoRow label="שם" value={
-                      rec.mentorId
-                        ? <Link to={`/user/${rec.mentorId}`} style={{ color: THEME_COLOR, textDecoration: "underline", fontWeight: 600 }}>{rec.name}</Link>
-                        : rec.name
-                    } />
-                  )}
-                  {rec.email && <InfoRow label="אימייל" value={rec.email} />}
-                  {rec.phone && <InfoRow label="טלפון" value={rec.phone} />}
-                </div>
-              ))}
-              {profileData.documents && profileData.documents.filter(d => d.document_type === "RECOMMENDATION").length > 0 && (
-                <div style={{ marginTop: 10, borderTop: "1px solid #eee", paddingTop: 10 }}>
-                  <span style={{ fontSize: 13, color: "#6b7280", fontWeight: 600, display: "block", marginBottom: 6 }}>מכתבי המלצה</span>
-                  {profileData.documents.filter(d => d.document_type === "RECOMMENDATION").map((doc, i) => (
-                    <div key={doc.id || i} className="profile-file-placeholder" style={{ marginBottom: 4 }}>
-                      📄 {doc.original_filename || doc.description || `מכתב המלצה ${i + 1}`}
-                      <span className="profile-download-link" onClick={() => downloadDocument(doc)} style={{ cursor: "pointer" }}>הורדה</span>
+          {Array.isArray(profileData.recommenders) &&
+            profileData.recommenders.length > 0 && (
+              <SectionCard title="ממליצים">
+                {profileData.recommenders.map((rec, idx) => (
+                  <div
+                    key={idx}
+                    style={{
+                      marginBottom:
+                        idx < profileData.recommenders.length - 1 ? 12 : 0,
+                      paddingBottom:
+                        idx < profileData.recommenders.length - 1 ? 12 : 0,
+                      borderBottom:
+                        idx < profileData.recommenders.length - 1
+                          ? "1px solid #eee"
+                          : "none",
+                    }}
+                  >
+                    {profileData.recommenders.length > 1 && (
+                      <span
+                        style={{
+                          fontSize: 13,
+                          color: "#6b7280",
+                          fontWeight: 600,
+                        }}
+                      >
+                        ממליצ/ה {idx + 1}
+                      </span>
+                    )}
+                    {rec.name && (
+                      <InfoRow
+                        label="שם"
+                        value={
+                          rec.mentorId ? (
+                            <Link
+                              to={`/user/${rec.mentorId}`}
+                              style={{
+                                color: THEME_COLOR,
+                                textDecoration: "underline",
+                                fontWeight: 600,
+                              }}
+                            >
+                              {rec.name}
+                            </Link>
+                          ) : (
+                            rec.name
+                          )
+                        }
+                      />
+                    )}
+                    {rec.email && <InfoRow label="אימייל" value={rec.email} />}
+                    {rec.phone && <InfoRow label="טלפון" value={rec.phone} />}
+                  </div>
+                ))}
+                {profileData.documents &&
+                  profileData.documents.filter(
+                    (d) => d.document_type === "RECOMMENDATION",
+                  ).length > 0 && (
+                    <div
+                      style={{
+                        marginTop: 10,
+                        borderTop: "1px solid #eee",
+                        paddingTop: 10,
+                      }}
+                    >
+                      <span
+                        style={{
+                          fontSize: 13,
+                          color: "#6b7280",
+                          fontWeight: 600,
+                          display: "block",
+                          marginBottom: 6,
+                        }}
+                      >
+                        מכתבי המלצה
+                      </span>
+                      {profileData.documents
+                        .filter((d) => d.document_type === "RECOMMENDATION")
+                        .map((doc, i) => (
+                          <div
+                            key={doc.id || i}
+                            className="profile-file-placeholder"
+                            style={{ marginBottom: 4 }}
+                          >
+                            📄{" "}
+                            {doc.original_filename ||
+                              doc.description ||
+                              `מכתב המלצה ${i + 1}`}
+                            <span
+                              className="profile-download-link"
+                              onClick={() => downloadDocument(doc)}
+                              style={{ cursor: "pointer" }}
+                            >
+                              הורדה
+                            </span>
+                          </div>
+                        ))}
                     </div>
-                  ))}
-                </div>
-              )}
-            </SectionCard>
-          )}
+                  )}
+              </SectionCard>
+            )}
 
           <SectionCard title="קבצים ומסמכים">
             {profileData.documents && profileData.documents.length > 0 ? (
               profileData.documents.map((doc, index) => (
                 <div key={doc.id || index} className="profile-file-placeholder">
-                  📄 {doc.original_filename || doc.description || `מסמך ${index + 1}`}
+                  📄{" "}
+                  {doc.original_filename ||
+                    doc.description ||
+                    `מסמך ${index + 1}`}
                   <span
                     className="profile-download-link"
                     onClick={() => downloadDocument(doc)}
@@ -475,47 +688,65 @@ function PublicProfile() {
           {isMentor && (
             <>
               <SectionCard title="תחומי עניין ומחקר">
-                <InfoRow label="תחומי עניין" value={getHebrewName(profileData, "researchInterests_detail")} />
+                <InfoRow
+                  label="תחומי עניין"
+                  value={getHebrewName(profileData, "researchInterests_detail")}
+                />
               </SectionCard>
-              {Array.isArray(profileData.activeResearches) && profileData.activeResearches.length > 0 && (
-                <SectionCard title="מחקרים פעילים">
-                  <div className="profile-research-list">
-                    {profileData.activeResearches.map((r) => (
-                      <Link
-                        key={r.id}
-                        to={`/research/${r.id}`}
-                        className="profile-research-item"
-                      >
-                        <div className="profile-research-item-info">
-                          <span className="profile-research-item-name">{r.researchName}</span>
-                          {r.researchArea && (
-                            <span className="profile-research-item-area">{r.researchArea}</span>
-                          )}
-                        </div>
-                        <span className="profile-research-status-badge">
-                          {r.status === "open" ? "פתוח" : r.status === "in_progress" ? "בתהליך" : r.status}
-                        </span>
-                      </Link>
-                    ))}
-                  </div>
-                </SectionCard>
-              )}
+              {Array.isArray(profileData.activeResearches) &&
+                profileData.activeResearches.length > 0 && (
+                  <SectionCard title="מחקרים פעילים">
+                    <div className="profile-research-list">
+                      {profileData.activeResearches.map((r) => (
+                        <Link
+                          key={r.id}
+                          to={`/research/${r.id}`}
+                          className="profile-research-item"
+                        >
+                          <div className="profile-research-item-info">
+                            <span className="profile-research-item-name">
+                              {r.researchName}
+                            </span>
+                            {r.researchArea && (
+                              <span className="profile-research-item-area">
+                                {r.researchArea}
+                              </span>
+                            )}
+                          </div>
+                          <span className="profile-research-status-badge">
+                            {r.status === "open"
+                              ? "פתוח"
+                              : r.status === "in_progress"
+                                ? "בתהליך"
+                                : r.status}
+                          </span>
+                        </Link>
+                      ))}
+                    </div>
+                  </SectionCard>
+                )}
               {profileData.previousResearchDescription && (
                 <SectionCard title="מחקרים קודמים">
-                  <p className="profile-bio-text">{profileData.previousResearchDescription}</p>
-                </SectionCard>
+                  <p className="profile-bio-text">
+                    {linkify(profileData.previousResearchDescription)}
+                  </p>
+                </SectionCard>  
               )}
               {profileData.mentoringExperienceDetails && (
-                <SectionCard title="פירוט ניסיון בהנחיה">
-                  <p className="profile-bio-text">{profileData.mentoringExperienceDetails}</p>
-                </SectionCard>
+                  <SectionCard title="פירוט ניסיון בהנחיה">
+                    <p className="profile-bio-text">
+                      {linkify(profileData.mentoringExperienceDetails)}
+                    </p>
+                  </SectionCard>
               )}
             </>
           )}
 
           {isApprentice && profileData.professionalExperience && (
             <SectionCard title="ניסיון מקצועי קודם">
-              <p className="profile-bio-text">{profileData.professionalExperience}</p>
+              <p className="profile-bio-text">
+                {profileData.professionalExperience}
+              </p>
             </SectionCard>
           )}
         </div>
@@ -523,22 +754,41 @@ function PublicProfile() {
 
       {/* Invite to Research Modal */}
       {showInviteModal && (
-        <div className="invite-modal-overlay" onClick={() => setShowInviteModal(false)}>
-          <div className="invite-modal" dir="rtl" onClick={(e) => e.stopPropagation()}>
+        <div
+          className="invite-modal-overlay"
+          onClick={() => setShowInviteModal(false)}
+        >
+          <div
+            className="invite-modal"
+            dir="rtl"
+            onClick={(e) => e.stopPropagation()}
+          >
             <h3>הזמנה למחקר</h3>
-            <p style={{ fontSize: "0.875rem", color: "#666", marginBottom: "1rem" }}>
+            <p
+              style={{
+                fontSize: "0.875rem",
+                color: "#666",
+                marginBottom: "1rem",
+              }}
+            >
               בחר מחקר להזמין את {profileData?.name || "המתלמד/ת"} אליו:
             </p>
             {myResearches.length === 0 ? (
-              <p style={{ color: "#999", fontSize: "0.875rem" }}>אין לך מחקרים פעילים</p>
+              <p style={{ color: "#999", fontSize: "0.875rem" }}>
+                אין לך מחקרים פעילים
+              </p>
             ) : (
               <select
                 value={selectedResearchId}
                 onChange={(e) => setSelectedResearchId(e.target.value)}
               >
-                <option value="" disabled>בחר מחקר...</option>
+                <option value="" disabled>
+                  בחר מחקר...
+                </option>
                 {myResearches.map((r) => (
-                  <option key={r.id} value={r.id}>{r.researchName}</option>
+                  <option key={r.id} value={r.id}>
+                    {r.researchName}
+                  </option>
                 ))}
               </select>
             )}
@@ -563,8 +813,15 @@ function PublicProfile() {
 
       {/* Contact User Modal */}
       {showContactModal && (
-        <div className="invite-modal-overlay" onClick={() => setShowContactModal(false)}>
-          <div className="invite-modal" dir="rtl" onClick={(e) => e.stopPropagation()}>
+        <div
+          className="invite-modal-overlay"
+          onClick={() => setShowContactModal(false)}
+        >
+          <div
+            className="invite-modal"
+            dir="rtl"
+            onClick={(e) => e.stopPropagation()}
+          >
             <h3>שליחת הודעה ל{profileData?.name || "משתמש"}</h3>
             <input
               type="text"
@@ -607,7 +864,11 @@ function PublicProfile() {
               <button
                 className="invite-confirm-btn"
                 onClick={handleContactSend}
-                disabled={!contactSubject.trim() || !contactMessage.trim() || contactLoading}
+                disabled={
+                  !contactSubject.trim() ||
+                  !contactMessage.trim() ||
+                  contactLoading
+                }
               >
                 {contactLoading ? "שולח..." : "שלח הודעה"}
               </button>
