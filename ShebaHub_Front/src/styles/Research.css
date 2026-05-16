@@ -427,16 +427,45 @@
   }
 }
 .save-detail-button-inline {
+  position: static;
+
   width: 22px;
   height: 22px;
+
   border: none;
   background: transparent;
   cursor: pointer;
   padding: 0;
-  margin-left: 6px;
+
   display: inline-flex;
   align-items: center;
   justify-content: center;
+
+  margin-left: 8px;
+}
+
+.save-research-button-inline {
+  width: 24px;
+  height: 24px;
+
+  border: none;
+  background: transparent;
+
+  cursor: pointer;
+
+  padding: 0;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  flex-shrink: 0;
+}
+
+.save-research-button-inline img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
 .save-detail-button-inline img {

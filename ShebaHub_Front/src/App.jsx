@@ -2,6 +2,7 @@ import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 
 import { useAuth } from "./context/AuthContext";
+import { Toaster } from "react-hot-toast";
 
 // We move the page imports here because this is where they are used
 import {
@@ -47,6 +48,9 @@ const RedirectIfAuth = ({ children }) => {
 
 function App() {
   return (
+    <>
+      <Toaster position="top-center" />
+
     <Routes>
       {/* The Layout wraps all child routes */}
       <Route element={<Layout />}>
@@ -164,6 +168,7 @@ function App() {
         <Route path="*" element={<NotFound />} />
       </Route>
     </Routes>
+    </>
   );
 }
 

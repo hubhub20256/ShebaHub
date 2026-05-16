@@ -1157,53 +1157,6 @@ export default function Research() {
               flexWrap: "wrap",
             }}
           >
-                
-                <button
-                  type="button"
-                  className={`save-detail-button-inline ${isSaved ? "saved" : ""}`}
-                  onClick={(e) => {
-                    e.stopPropagation();
-
-                    const savedResearches = JSON.parse(
-                      localStorage.getItem("savedResearches") || "[]"
-                    );
-
-                    const exists = savedResearches.some((item) => item.id === data.id);
-
-                    if (exists) {
-                      const updated = savedResearches.filter((item) => item.id !== data.id);
-                      localStorage.setItem("savedResearches", JSON.stringify(updated));
-                      setIsSaved(false);
-                      toast("המחקר הוסר מהשמורים");
-                    } else {
-                      savedResearches.push({
-                        id: data.id,
-                        title: data.researchName,
-                        status: data.status,
-                        acceptingApplications: data.accepting_applications,
-                        isFull: data.isFull,
-                        fields: data.fields || [],
-                        mentors: data.mentors || [],
-                        description: data.description || "",
-                        apprenticesCount: data.apprenticesCount || "",
-                        startDate: data.startDate || "",
-                        hoursScope: data.hoursScope || "",
-                        duration: data.duration || "",
-                        rewards: data.rewards || "",
-                      });
-
-                      localStorage.setItem("savedResearches", JSON.stringify(savedResearches));
-                      setIsSaved(true);
-                      toast.success("המחקר נשמר");
-                    }
-                  }}
-                  aria-label="שמירת מחקר"
-                >
-                <img
-                  src={isSaved ? SaveFilledIcon : SaveOutlineIcon}
-                  alt="שמירה"
-                />
-                </button>
 
             {canEditThis ? (
               <select
@@ -1299,7 +1252,12 @@ export default function Research() {
 
           <div
             className="action-bar-controls"
-            style={{ display: "flex", gap: 10, alignItems: "center" }}
+            style={{
+              display: "flex",
+              gap: 10,
+              alignItems: "center",
+              flexDirection: "row-reverse",
+            }}
           >
             {showResearchDropdown && (
               <div
@@ -1376,6 +1334,54 @@ export default function Research() {
                 </select>
               </div>
             )}
+
+              {!canEditThis && (  
+                <button
+                  type="button"
+                  className={`save-research-button-inline ${isSaved ? "saved" : ""}`}                  onClick={(e) => {
+                    e.stopPropagation();
+
+                    const savedResearches = JSON.parse(
+                      localStorage.getItem("savedResearches") || "[]"
+                    );
+
+                    const exists = savedResearches.some((item) => item.id === data.id);
+
+                    if (exists) {
+                      const updated = savedResearches.filter((item) => item.id !== data.id);
+                      localStorage.setItem("savedResearches", JSON.stringify(updated));
+                      setIsSaved(false);
+                      toast("המחקר הוסר מהשמורים");
+                    } else {
+                      savedResearches.push({
+                        id: data.id,
+                        title: data.researchName,
+                        status: data.status,
+                        acceptingApplications: data.accepting_applications,
+                        isFull: data.isFull,
+                        fields: data.fields || [],
+                        mentors: data.mentors || [],
+                        description: data.description || "",
+                        apprenticesCount: data.apprenticesCount || "",
+                        startDate: data.startDate || "",
+                        hoursScope: data.hoursScope || "",
+                        duration: data.duration || "",
+                        rewards: data.rewards || "",
+                      });
+
+                      localStorage.setItem("savedResearches", JSON.stringify(savedResearches));
+                      setIsSaved(true);
+                      toast.success("המחקר נשמר");
+                    }
+                  }}
+                  aria-label="שמירת מחקר"
+                >
+                <img
+                  src={isSaved ? SaveFilledIcon : SaveOutlineIcon}
+                  alt="שמירה"
+                />
+                </button>
+              )}
 
             <div className="rd-share" ref={shareMenuRef}>
               <button
