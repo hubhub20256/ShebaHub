@@ -3,6 +3,8 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import { profilesAPI, researchAPI, messagesAPI, API_BASE_URL } from "../services/api";
 import { useAuth } from "../context/AuthContext";
 import "../styles/Profile.css";
+import SaveOutlineIcon from "../assets/save-outline.png";
+import SaveFilledIcon from "../assets/save-filled.png";
 
 const THEME_COLOR = "#2C2C6C";
 
@@ -101,6 +103,8 @@ function PublicProfile() {
 
   // Toast message state
   const [toast, setToast] = useState(null); // { type: "success" | "error", text: string }
+
+  const [isSaved, setIsSaved] = useState(false);
 
   const currentUserIsMentor = user?.has_mentor_profile === true;
   const isOwnProfile = user && profileData && String(user.id) === String(profileData.userId);
@@ -235,6 +239,18 @@ function PublicProfile() {
     }
   }
 
+  useEffect(() => {
+    const savedProfiles = JSON.parse(
+      localStorage.getItem("savedProfiles") || "[]"
+    );
+  
+    const exists = savedProfiles.some(
+      (item) => item.id === profileData?.id
+    );
+  
+    setIsSaved(exists);
+  }, [profileData]);
+  
   if (isLoading) {
     return (
       <div dir="rtl" className="profile-page">
@@ -260,6 +276,8 @@ function PublicProfile() {
 
   const isMentor = profileData.role === "mentor";
   const isApprentice = profileData.role === "apprentice";
+
+
 
   const showApprenticeSpecialty = (() => {
     if (!isApprentice) return false;
@@ -297,6 +315,60 @@ function PublicProfile() {
       </div>
 
       <div className="profile-header-card">
+      {!isOwnProfile && (
+        <button
+          type="button"
+          className={`save-detail-button-inline ${isSaved ? "saved" : ""}`}
+          onClick={(e) => {
+            e.stopPropagation();
+
+            const savedProfiles = JSON.parse(
+              localStorage.getItem("savedProfiles") || "[]"
+            );
+
+            const exists = savedProfiles.some(
+              (item) => item.id === profileData?.id
+            );
+
+            if (exists) {
+              const updated = savedProfiles.filter(
+                (item) => item.id !== profileData?.id
+              );
+
+              localStorage.setItem("savedProfiles", JSON.stringify(updated));
+
+              setIsSaved(false);
+              toast("הפרופיל הוסר מהשמורים");
+            } else {
+              savedProfiles.push({
+                id: profileData?.id,
+                type: profileData?.role,
+                name: profileData?.name,
+                profileImage: profileData?.profileImage || profileData?.avatarUrl || profileData?.avatar,
+                specialty: profileData?.specialty,
+                degrees: profileData?.degrees,
+                isAvailableForResearch: profileData?.isAvailableForResearch,
+                medical_level: profileData?.apprenticeStage || profileData?.medical_level,
+                Educational_institution: profileData?.institution,
+                school_beginner_year: profileData?.startYear,
+                gender: profileData?.gender,
+                department: profileData?.department,
+              });
+
+              localStorage.setItem("savedProfiles", JSON.stringify(savedProfiles));
+
+              setIsSaved(true);
+              toast.success("הפרופיל נשמר");
+            }
+          }}
+          aria-label="שמירת פרופיל"
+        >
+          <img
+            src={isSaved ? SaveFilledIcon : SaveOutlineIcon}
+            alt="שמירה"
+          />
+        </button>
+      )}
         <div className="profile-avatar">
           {(profileData?.avatarUrl || profileData?.avatar) ? (
             <img

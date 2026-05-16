@@ -56,12 +56,34 @@
     gap: 1.5rem;
   }
   
-  .saved-card {
-    background: white;
-    border-radius: 20px;
-    padding: 1.4rem;
-    box-shadow: 0 6px 20px rgba(15, 23, 42, 0.08);
-    transition: 0.2s;
+  .saved-grid {
+    display: grid;
+    gap: 20px;
+    width: 100%;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+  
+  .saved-grid.research-layout {
+    grid-template-columns: 1fr;
+  }
+  
+  @media (min-width: 768px) {
+    .saved-grid.research-layout {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+  
+  .saved-grid.mentors-layout,
+  .saved-grid.apprentices-layout {
+    grid-template-columns: 1fr;
+  }
+  
+  @media (min-width: 1024px) {
+    .saved-grid.mentors-layout,
+    .saved-grid.apprentices-layout {
+      grid-template-columns: repeat(3, 1fr);
+    }
   }
   
   .saved-card:hover {

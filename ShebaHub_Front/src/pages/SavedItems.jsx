@@ -1,7 +1,8 @@
 import { useState } from "react";
 import "../styles/SavedItems.css";
-import { Link } from "react-router-dom";
 import ResearchCard from "../components/ResearchCard";
+import MentorsCard from "../components/mentorsCard";
+import ApprenticesCard from "../components/apprenticeCard";
 
 const SavedItems = () => {
   const [activeTab, setActiveTab] = useState("researches");
@@ -10,67 +11,92 @@ const SavedItems = () => {
     localStorage.getItem("savedResearches") || "[]"
   );
 
-  const savedMentors = [
-    {
-      id: 1,
-      title: 'ד"ר כהן',
-      subtitle: "אונקולוגיה",
-    },
-  ];
-
-  const savedApprentices = [
-    {
-      id: 1,
-      title: "נועה ישראלי",
-      subtitle: "סטודנטית לרפואה",
-    },
-  ];
-
   const renderItems = () => {
+    const savedProfiles = JSON.parse(
+      localStorage.getItem("savedProfiles") || "[]"
+    );
+  
+    const savedMentors = savedProfiles.filter((item) => item.type === "mentor");
+    const savedApprentices = savedProfiles.filter(
+      (item) => item.type === "apprentice"
+    );
+  
     let items = [];
-
-    if (activeTab === "researches") {
-      items = savedResearches;
-    }
-
-    if (activeTab === "mentors") {
-      items = savedMentors;
-    }
-
-    if (activeTab === "apprentices") {
-      items = savedApprentices;
-    }
-
+  
+    if (activeTab === "researches") items = savedResearches;
+    if (activeTab === "mentors") items = savedMentors;
+    if (activeTab === "apprentices") items = savedApprentices;
+  
     if (items.length === 0) {
-      return (
-        <div className="saved-empty-state">
-          לא נמצאו פריטים שמורים
-        </div>
-      );
+      return <div className="saved-empty-state">לא נמצאו פריטים שמורים</div>;
     }
-
+  
     return (
-      <div className="saved-grid">
-        {items.map((item) => (
-          <ResearchCard
-            key={item.id}
-            research={{
+      <div
+        className={`saved-grid ${
+          activeTab === "researches" ? "research-layout" : ""
+        } ${activeTab === "mentors" ? "mentors-layout" : ""} ${
+          activeTab === "apprentices" ? "apprentices-layout" : ""
+        }`}
+      >
+        {items.map((item) => {
+          if (activeTab === "researches") {
+            return (
+              <ResearchCard
+                key={item.id}
+                research={{
+                  id: item.id,
+                  title: item.title,
+                  status: item.status,
+                  acceptingApplications: item.acceptingApplications ?? true,
+                  isFull: item.isFull ?? false,
+                  fields: item.fields || [],
+                  mentors: item.mentors || [],
+                  description: item.description || "",
+                  apprenticesCount: item.apprenticesCount || "",
+                  startDate: item.startDate || "",
+                  hoursScope: item.hoursScope || "",
+                  duration: item.duration || "",
+                  rewards: item.rewards || "",
+                }}
+              />
+            );
+          }
+  
+          if (activeTab === "mentors") {
+            return (
+              <MentorsCard
+                key={item.id}
+                mentor={{
+                  id: item.id,
+                  name: item.name || item.fullName,
+                  profileImage: item.profileImage,
+                  specialty: item.specialty,
+                  degrees: item.degrees,
+                  gender: item.gender,
+                }}
+              />
+            );
+          }
+  
+          return (
+            <ApprenticesCard
+              key={item.id}
+              apprentice={{
                 id: item.id,
-                title: item.title,
-                status: item.status,
-                acceptingApplications: item.acceptingApplications ?? true,
-                isFull: item.isFull ?? false,
-                fields: item.fields || [],
-                mentors: item.mentors || [],
-                description: item.description || "",
-                apprenticesCount: item.apprenticesCount || "",
-                startDate: item.startDate || "",
-                hoursScope: item.hoursScope || "",
-                duration: item.duration || "",
-                rewards: item.rewards || "",
-            }}
-        />
-        ))}
+                name: item.name || item.fullName,
+                profileImage: item.profileImage,
+                isAvailableForResearch: item.isAvailableForResearch,
+                medical_level: item.medical_level || item.apprenticeStage,
+                Educational_institution:
+                  item.Educational_institution || item.institution,
+                school_beginner_year: item.school_beginner_year || item.startYear,
+                gender: item.gender,
+                department: item.department,
+              }}
+            />
+          );
+        })}
       </div>
     );
   };
