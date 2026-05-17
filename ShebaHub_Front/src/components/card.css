@@ -490,7 +490,10 @@
   /* אליפסה מושלמת */
   display: inline-flex;
   align-items: center;
-  white-space: nowrap;
+  white-space: normal;
+  word-break: break-word;
+  text-align: center;
+  max-width: 100%;
 }
 
 /* תג 1: שלב הכשרה (טורקיז) */
@@ -666,7 +669,10 @@
   padding: 4px 16px;
   border-radius: 999px;
   display: inline-block;
-  white-space: nowrap;
+  white-space: normal;
+  word-break: break-word;
+  text-align: center;
+  max-width: 100%;
 }
 
 /* שלב הכשרה */
@@ -725,6 +731,7 @@
   font-weight: 500;
   text-align: left;
   flex: 1;
+  min-width: 0;
   margin-right: 20px;
   /* במובייל נאפשר שבירת שורות */
   overflow-wrap: break-word;
