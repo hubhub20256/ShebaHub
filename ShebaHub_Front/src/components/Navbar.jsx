@@ -10,42 +10,6 @@ import { FaSun, FaMoon, FaBell } from "react-icons/fa";
 import { useNotifications } from "../context/NotificationContext";
 
 // ==========================================
-// 0. THEME TOGGLE COMPONENT (NEW)
-// ==========================================
-const ThemeToggle = () => {
-  const [theme, setTheme] = useState(localStorage.getItem("theme") || "light");
-
-  useEffect(() => {
-    // עדכון ה-HTML והזיכרון המקומי בכל פעם שהמשתנה משתנה
-    document.documentElement.setAttribute("data-theme", theme);
-    localStorage.setItem("theme", theme);
-  }, [theme]);
-
-  const toggleTheme = () => {
-    setTheme((prev) => (prev === "light" ? "dark" : "light"));
-  };
-
-  return (
-    <button
-      onClick={toggleTheme}
-      style={{
-        background: "transparent",
-        border: "none",
-        cursor: "pointer",
-        fontSize: "1.2rem",
-        color: "var(--text-color)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        marginLeft: "10px", // רווח קטן מהאלמנטים האחרים
-      }}
-      title="שינוי מצב תצוגה"
-      aria-label={theme === "light" ? "מעבר למצב כהה" : "מעבר למצב בהיר"}
-    >
-      {theme === "light" ? <FaMoon /> : <FaSun style={{ color: "orange" }} />}
-    </button>
-  );
-};
 
 // ==========================================
 // 0b. NOTIFICATION BELL COMPONENT
@@ -351,6 +315,14 @@ const ProfileMenu = ({ closeParentMenu, onOpen, isOpen }) => {
           </Link>
 
           <Link
+            to="/settings"
+            className="navbar-link profile-dropdown-link"
+            onClick={closeParentMenu}
+          >
+            הגדרות חשבון
+          </Link>
+
+          <Link
             to="/"
             className="navbar-link profile-dropdown-link profile-logout-link"
             onClick={(e) => {
@@ -453,8 +425,7 @@ const DesktopNavbar = () => {
           </div>
 
           <div className="navbar-group">
-            {/* כפתור מצב לילה - הועבר לכאן כדי לא לשבור את המרכוז */}
-            <ThemeToggle />
+            {/* כפתור מצב לילה הוסר לכאן */}
 
             {user ? (
               <>
@@ -555,8 +526,7 @@ const MobileNavbar = () => {
         </div>
 
         <div className="mobile-actions">
-          {/* כפתור מצב לילה למובייל */}
-          <ThemeToggle />
+          {/* כפתור מצב לילה הוסר */}
 
           {/* Bell icon for notifications */}
           {user && <NotificationBell />}
@@ -653,6 +623,14 @@ const MobileNavbar = () => {
                 style={{ color: "var(--text-color)" }}
               >
                 ניהול משימות
+              </Link>
+              <Link
+                to="/settings"
+                className="navbar-link"
+                onClick={closeAll}
+                style={{ color: "var(--text-color)" }}
+              >
+                הגדרות חשבון
               </Link>
 
               <Link
