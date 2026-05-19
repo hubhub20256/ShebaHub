@@ -27,6 +27,7 @@ import {
   AdminDashboard,
   TaskManager,
   SavedItems,
+  Settings,
 } from "./pages";
 
 import RequireAuth from "./components/RequireAuth.jsx";
@@ -99,6 +100,14 @@ function App() {
           element={
             <RequireAuth>
               <TaskManager />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/settings"
+          element={
+            <RequireAuth>
+              <Settings />
             </RequireAuth>
           }
         />

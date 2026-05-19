@@ -264,6 +264,15 @@ export const authAPI = {
 
   resendVerification: () =>
     apiRequest("/auth/resend-verification/", { method: "POST" }),
+    
+  updateSettings: (data) =>
+    apiRequest("/auth/settings/update/", { method: "PATCH", body: data }),
+    
+  changePassword: (data) =>
+    apiRequest("/auth/settings/change-password/", { method: "POST", body: data }),
+    
+  deleteAccount: () =>
+    apiRequest("/auth/settings/delete-account/", { method: "DELETE" }),
 };
 
 // ============== PROFILES API ==============
@@ -740,6 +749,8 @@ export const adminAPI = {
     apiRequest(`/admin-panel/users/${id}/reactivate/`, { method: "POST" }),
   forceVerifyUser: (id) =>
     apiRequest(`/admin-panel/users/${id}/force-verify/`, { method: "POST" }),
+  deleteUser: (id) =>
+    apiRequest(`/admin-panel/users/${id}/`, { method: "DELETE" }),
   bulkUserAction: (ids, action) =>
     apiRequest("/admin-panel/users/bulk/", {
       method: "POST",

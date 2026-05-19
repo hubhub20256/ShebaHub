@@ -61,6 +61,18 @@ export default function MentorsCard({ mentor }) {
     }
   };
 
+  const specialtiesList = mentor.specialties || (mentor.specialty ? mentor.specialty.split(",").map(s => s.trim()).filter(Boolean) : []);
+  let displaySpecialties = "מנחה/חוקר";
+  if (specialtiesList.length > 0) {
+    if (specialtiesList.length > 2) {
+      displaySpecialties = specialtiesList.slice(0, 2).join(", ") + ", ...";
+    } else {
+      displaySpecialties = specialtiesList.join(", ");
+    }
+  } else if (mentor.specialty) {
+    displaySpecialties = mentor.specialty;
+  }
+
   return (
     <section className="apprentice-portal-card" dir="rtl">
       <div className="apprentice-portal-header">
@@ -82,14 +94,14 @@ export default function MentorsCard({ mentor }) {
         
         <div className="apprentice-badges-wrapper">
           <span className="apprentice-portal-subtitle">
-            {mentor.specialty || "מנחה/חוקר"}
+            {displaySpecialties}
           </span>
         </div>
 
         <div className="apprentice-portal-details">
           <div className="apprentice-detail-row">
             <span className="apprentice-detail-label">תחום התמחות:</span>
-            <span className="apprentice-detail-value">{mentor.specialty}</span>
+            <span className="apprentice-detail-value">{displaySpecialties}</span>
           </div>
 
           <div className="apprentice-detail-row">

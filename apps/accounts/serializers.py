@@ -30,6 +30,7 @@ class UserSerializer(serializers.ModelSerializer):
             'is_staff',
             'has_student_profile',
             'has_mentor_profile',
+            'notification_topics',
         ]
         read_only_fields = ['id', 'is_staff']
 

@@ -3,7 +3,11 @@ from rest_framework_simplejwt.views import TokenRefreshView
 from rest_framework.permissions import AllowAny
 from drf_spectacular.utils import extend_schema, OpenApiResponse
 
-from .views import signup_view, login_view, password_reset_request, password_reset_confirm, logout_view, me_view, verify_email, resend_verification
+from .views import (
+    signup_view, login_view, password_reset_request, password_reset_confirm, 
+    logout_view, me_view, verify_email, resend_verification,
+    update_settings, change_password_view, delete_account_view
+)
 
 
 # Custom TokenRefreshView with AllowAny permission
@@ -33,4 +37,7 @@ urlpatterns = [
     path('me/', me_view, name='me'),
     path('verify-email/', verify_email, name='verify_email'),
     path('resend-verification/', resend_verification, name='resend_verification'),
+    path('settings/update/', update_settings, name='update_settings'),
+    path('settings/change-password/', change_password_view, name='change_password'),
+    path('settings/delete-account/', delete_account_view, name='delete_account'),
 ]
