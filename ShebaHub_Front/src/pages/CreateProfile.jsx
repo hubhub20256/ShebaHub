@@ -43,6 +43,8 @@ const INITIAL_FORM_STATE = {
   degrees: [],
   institution: "",
   academicRank: "",
+  academicRankOther: "",
+  _academicRankOther: false,
   universityRank: "",
   universityAffiliation: "",
   hasMentoringExperience: "",
@@ -67,6 +69,8 @@ const INITIAL_FORM_STATE = {
   professionalExperience: "",
   isAvailableForResearch: "",
   participationMode: "",
+  specialtyOther: "",
+  _specialtyOther: false,
   _institutionOther: false,
 };
 
@@ -195,6 +199,20 @@ export default function CreateMentorProfile() {
     });
   }
 
+  function toggleSpecialtyOther() {
+    setForm((prev) => ({
+      ...prev,
+      _specialtyOther: !prev._specialtyOther,
+      specialtyOther: prev._specialtyOther ? "" : prev.specialtyOther,
+    }));
+    setErrors((prev) => {
+      const copy = { ...prev };
+      delete copy.specialty;
+      delete copy.specialtyOther;
+      return copy;
+    });
+  }
+
   function handleFileChange(e) {
     const { name, files } = e.target;
     const file = files && files[0] ? files[0] : null;
@@ -252,7 +270,10 @@ export default function CreateMentorProfile() {
 
     if (role === "mentor") {
       if (form.specialtyGroups.length === 0) next.specialtyGroup = "יש לבחור לפחות קטגוריה אחת";
-      if (form.specialties.length === 0) next.specialty = "יש לבחור לפחות התמחות אחת";
+      if (form.specialties.length === 0 && !form._specialtyOther) next.specialty = "יש לבחור לפחות התמחות אחת";
+      if (form._specialtyOther && !form.specialtyOther.trim()) next.specialtyOther = "יש להזין התמחות חופשית";
+      if (!form.academicRank && !form._academicRankOther) next.academicRank = "שדה חובה";
+      if (form._academicRankOther && !form.academicRankOther.trim()) next.academicRankOther = "יש להזין שלב בהכשרה";
       if (!form.hasMentoringExperience) next.hasMentoringExperience = "שדה חובה";
     } else {
       if (!form.apprenticeStage) next.apprenticeStage = "שדה חובה";
@@ -381,13 +402,18 @@ export default function CreateMentorProfile() {
 
       if (role === "mentor") {
         const profileType = "mentor";
+        const mentorSpecialties = [
+          ...form.specialties,
+          ...(form._specialtyOther && form.specialtyOther.trim() ? [form.specialtyOther.trim()] : []),
+        ];
+
         profileData = {
           ...profileData,
           specialtyGroup: form.specialtyGroups[0] || "",
           specialtyGroups: form.specialtyGroups,
-          specialty: form.specialties[0] || form.specialty,
-          specialties: form.specialties,
-          academicRank: form.academicRank,
+          specialty: form.specialties[0] || form.specialty || (form._specialtyOther ? form.specialtyOther.trim() : ""),
+          specialties: mentorSpecialties,
+          academicRank: form.academicRank || (form._academicRankOther ? form.academicRankOther.trim() : ""),
           universityRank: form.universityRank,
           universityAffiliation: form.universityRank && form.universityRank !== "ללא" ? form.universityAffiliation : "",
           hasMentoringExperience: toBoolean(form.hasMentoringExperience),
@@ -633,7 +659,7 @@ export default function CreateMentorProfile() {
                     value={form.apprenticeStage}
                     onChange={handleChange}
                     error={errors.apprenticeStage}
-                    options={[{ v: "", t: "בחרי/י שלב" }, { v: "סטודנט", t: "סטודנט" }, { v: "לפני סטאז׳", t: "לפני סטאז׳" }, { v: "סטאז׳ר", t: "סטאז׳ר" }, { v: "אחרי סטאז׳", t: "אחרי סטאז׳" }, { v: "מתמחה", t: "מתמחה" }, { v: "רופא מתמחה", t: "רופא מתמחה" }, { v: "אחר", t: "אחר" }]}
+                    options={[{ v: "", t: "בחרי/י שלב" }, { v: "סטודנט", t: "סטודנט" }, { v: "לפני סטאז׳", t: "לפני סטאז׳" }, { v: "סטאז׳ר", t: "סטאז׳ר" }, { v: "אחרי סטאז׳", t: "אחרי סטאז׳" }, { v: "מתמחה", t: "מתמחה" }, { v: "רופא מומחה", t: "רופא מומחה" }, { v: "אחר", t: "אחר" }]}
                   />
 
 
@@ -702,9 +728,29 @@ export default function CreateMentorProfile() {
                             {spec}
                           </button>
                         ))}
+                        <button
+                          type="button"
+                          onClick={toggleSpecialtyOther}
+                          className={`pill-btn ${form._specialtyOther ? "pill-btn-active" : ""}`}
+                          style={{ ...styles.pillBtn, ...(form._specialtyOther ? styles.pillBtnActive : {}) }}
+                        >
+                          אחר
+                        </button>
                       </div>
                     ) : (
                       <div style={{ color: "#999", fontSize: 13 }}>קודם בחרי/י קטגוריה</div>
+                    )}
+                    {form._specialtyOther && (
+                      <div style={{ marginTop: 12 }}>
+                        <InputField
+                          label="התמחות אחרת"
+                          name="specialtyOther"
+                          value={form.specialtyOther}
+                          onChange={handleChange}
+                          error={errors.specialtyOther}
+                          placeholder="הקלד/י התמחות חופשית"
+                        />
+                      </div>
                     )}
                     {errors.specialty && <div style={styles.error}>{errors.specialty}</div>}
                   </div>
@@ -755,12 +801,36 @@ export default function CreateMentorProfile() {
               )}
 
               {role === "mentor" && (
-                <SelectField label="שלב בהכשרה הרפואית" name="academicRank"
-                  value={form.academicRank} onChange={handleChange}
-                  options={[{ v: "", t: "בחרי שלב בהכשרה" },
-                  { v: "סטאז׳", t: "סטאז׳" },
-                  { v: "מתמחה", t: "מתמחה" },
-                  { v: "מומחה/ית", t: "מומחה/ית" }]} />
+                <>
+                  <SelectField label="שלב בהכשרה הרפואית" name="academicRank"
+                    value={form.academicRank}
+                    onChange={(e) => {
+                      if (e.target.value === "אחר") {
+                        updateField("academicRank", "");
+                        updateField("_academicRankOther", true);
+                      } else {
+                        updateField("academicRank", e.target.value);
+                        updateField("_academicRankOther", false);
+                        updateField("academicRankOther", "");
+                      }
+                    }}
+                    error={errors.academicRank || errors.academicRankOther}
+                    options={[{ v: "", t: "בחרי שלב בהכשרה" },
+                    { v: "סטאז׳", t: "סטאז׳" },
+                    { v: "מתמחה", t: "מתמחה" },
+                    { v: "מומחה/ית", t: "מומחה/ית" },
+                    { v: "אחר", t: "אחר" }]} />
+                  {form._academicRankOther && (
+                    <InputField
+                      label="שלב אחר בהכשרה"
+                      name="academicRankOther"
+                      value={form.academicRankOther}
+                      onChange={handleChange}
+                      error={errors.academicRankOther}
+                      placeholder="הקלד/י שלב בהכשרה"
+                    />
+                  )}
+                </>
               )}
             </div>
           </div>
@@ -803,7 +873,7 @@ export default function CreateMentorProfile() {
               value={form.degrees}
               onToggle={toggleDegree}
               error={errors.degrees}
-              options={["MD", "PhD", "MSc", "MPH", "MBA", "ללא תואר קודם"]}
+              options={["BSc","MD", "PhD", "MSc", "MPH", "MBA", "ללא תואר קודם"]}
             />
 
             {role === "mentor" && (
@@ -1340,7 +1410,7 @@ function DatePickerField({ label, value, onChange, minDate }) {
 }
 
 
-function SelectField({ label, name, value, onChange, options, disabled, error, required = false }) {
+function SelectField({ label, name, value, onChange, options, disabled, error }) {
   return (
     <div style={styles.field} id={`field-${name}`}>
       <label style={styles.label}>{label}</label>
