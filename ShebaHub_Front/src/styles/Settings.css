@@ -1,0 +1,222 @@
+.settings-container {
+  max-width: 800px;
+  margin: 40px auto;
+  padding: 0 20px;
+}
+
+.settings-card {
+  background-color: var(--card-bg, #ffffff);
+  border-radius: 12px;
+  padding: 30px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  border: 1px solid var(--border-color, #e2e8f0);
+}
+
+.settings-title {
+  font-size: 1.8rem;
+  color: var(--text-color, #1e293b);
+  margin-bottom: 30px;
+  text-align: center;
+  border-bottom: 2px solid var(--border-color, #e2e8f0);
+  padding-bottom: 15px;
+}
+
+.settings-section {
+  margin-bottom: 40px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border-color, #e2e8f0);
+}
+
+.settings-section:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.settings-section h2 {
+  font-size: 1.3rem;
+  color: var(--text-color, #334155);
+  margin-bottom: 20px;
+}
+
+.settings-theme-toggle {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  font-size: 1.1rem;
+  color: var(--text-color, #1e293b);
+}
+
+.settings-form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.settings-form .form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.settings-form label {
+  font-weight: 600;
+  color: var(--text-color, #475569);
+  font-size: 0.95rem;
+}
+
+.settings-form input {
+  padding: 10px 12px;
+  border: 1px solid var(--border-color, #cbd5e1);
+  border-radius: 6px;
+  font-size: 1rem;
+  background-color: var(--bg-color, #ffffff);
+  color: var(--text-color, #1e293b);
+}
+
+.settings-form input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.settings-btn {
+  background-color: #1e3a8a;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  align-self: flex-start;
+  transition: background-color 0.2s;
+}
+
+.settings-btn:hover:not(:disabled) {
+  background-color: #1e40af;
+}
+
+.settings-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.settings-danger-zone {
+  background-color: rgba(239, 68, 68, 0.05);
+  padding: 20px;
+  border-radius: 8px;
+  border: 1px dashed #ef4444;
+}
+
+.settings-danger-zone h2 {
+  color: #b91c1c;
+}
+
+.danger-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.settings-btn-danger {
+  background-color: #ef4444;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.settings-btn-danger:hover:not(:disabled) {
+  background-color: #dc2626;
+}
+
+.settings-btn-danger.outline {
+  background-color: transparent;
+  color: #ef4444;
+  border: 2px solid #ef4444;
+}
+
+.settings-btn-danger.outline:hover:not(:disabled) {
+  background-color: rgba(239, 68, 68, 0.1);
+}
+
+.settings-msg {
+  padding: 12px;
+  border-radius: 6px;
+  margin-bottom: 20px;
+  font-weight: 500;
+  text-align: center;
+}
+
+.settings-msg.success {
+  background-color: rgba(34, 197, 94, 0.1);
+  color: #15803d;
+  border: 1px solid rgba(34, 197, 94, 0.2);
+}
+
+.settings-msg.error {
+  background-color: rgba(239, 68, 68, 0.1);
+  color: #b91c1c;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+/* Switch styling for theme toggle */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 50px;
+  height: 24px;
+}
+
+.switch input { 
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  transition: .4s;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 16px;
+  width: 16px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  transition: .4s;
+}
+
+input:checked + .slider {
+  background-color: #1e3a8a;
+}
+
+input:focus + .slider {
+  box-shadow: 0 0 1px #1e3a8a;
+}
+
+input:checked + .slider:before {
+  transform: translateX(26px);
+}
+
+.slider.round {
+  border-radius: 34px;
+}
+
+.slider.round:before {
+  border-radius: 50%;
+}

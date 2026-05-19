@@ -72,6 +72,9 @@ class User(AbstractBaseUser, PermissionsMixin):
     # Email verification
     email_verified = models.BooleanField(default=False, db_index=True)
 
+    # Topics user wants notifications for
+    notification_topics = models.JSONField(default=list, blank=True)
+
     # Account lockout fields
     failed_login_attempts = models.PositiveIntegerField(default=0)
     locked_until = models.DateTimeField(null=True, blank=True)

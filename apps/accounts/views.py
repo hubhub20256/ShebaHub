@@ -503,3 +503,55 @@ def resend_verification(request):
     )
 
     return Response({'detail': 'Verification email sent.'}, status=status.HTTP_200_OK)
+
+
+@api_view(['PATCH'])
+@permission_classes([IsAuthenticated])
+def update_settings(request):
+    user = request.user
+    email = request.data.get('email')
+    topics = request.data.get('notification_topics')
+
+    if email and email != user.email:
+        if User.objects.filter(email=email).exists():
+            return Response({'detail': 'Email already in use.'}, status=status.HTTP_400_BAD_REQUEST)
+        user.email = email
+    
+    if topics is not None:
+        user.notification_topics = topics
+
+    user.save()
+    return Response({
+        'detail': 'Settings updated successfully.',
+        'email': user.email,
+        'notification_topics': user.notification_topics
+    })
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def change_password_view(request):
+    user = request.user
+    old_password = request.data.get('oldPassword')
+    new_password = request.data.get('newPassword')
+
+    if not old_password or not new_password:
+        return Response({'detail': 'Please provide both old and new passwords.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    if not user.check_password(old_password):
+        return Response({'detail': 'Old password is incorrect.'}, status=status.HTTP_400_BAD_REQUEST)
+    
+    if len(new_password) < 8:
+        return Response({'detail': 'Password must be at least 8 characters long.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    user.set_password(new_password)
+    user.save()
+    return Response({'detail': 'Password changed successfully.'})
+
+
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def delete_account_view(request):
+    user = request.user
+    user.delete()
+    return Response({'detail': 'Account deleted successfully.'}, status=status.HTTP_204_NO_CONTENT)
