@@ -186,6 +186,7 @@ const getAccordionContentStyle = (isOpen) => ({
 export default function Research() {
   usePageTitle("מחקר");
   const { user } = useAuth();
+  const savedResearchesKey = `savedResearches_${user?.id || 'guest'}`;
   const { refreshCount } = useNotifications();
   const { id } = useParams();
   const location = useLocation();
@@ -355,7 +356,7 @@ export default function Research() {
 
   useEffect(() => {
     const savedResearches = JSON.parse(
-      localStorage.getItem("savedResearches") || "[]"
+      localStorage.getItem(savedResearchesKey) || "[]"
     );
   
     const exists = savedResearches.some(
@@ -1342,14 +1343,14 @@ export default function Research() {
                     e.stopPropagation();
 
                     const savedResearches = JSON.parse(
-                      localStorage.getItem("savedResearches") || "[]"
+                      localStorage.getItem(savedResearchesKey) || "[]"
                     );
 
                     const exists = savedResearches.some((item) => item.id === data.id);
 
                     if (exists) {
                       const updated = savedResearches.filter((item) => item.id !== data.id);
-                      localStorage.setItem("savedResearches", JSON.stringify(updated));
+                      localStorage.setItem(savedResearchesKey, JSON.stringify(updated));
                       setIsSaved(false);
                       toast("המחקר הוסר מהשמורים");
                     } else {
@@ -1369,7 +1370,7 @@ export default function Research() {
                         rewards: data.rewards || "",
                       });
 
-                      localStorage.setItem("savedResearches", JSON.stringify(savedResearches));
+                      localStorage.setItem(savedResearchesKey, JSON.stringify(savedResearches));
                       setIsSaved(true);
                       toast.success("המחקר נשמר");
                     }

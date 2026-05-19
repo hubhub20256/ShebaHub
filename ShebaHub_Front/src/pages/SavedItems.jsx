@@ -1,19 +1,24 @@
 import { useState } from "react";
+import { useAuth } from "../context/AuthContext";
 import "../styles/SavedItems.css";
-import ResearchCard from "../components/ResearchCard";
+import ResearchCard from "../components/researchCard";
 import MentorsCard from "../components/mentorsCard";
 import ApprenticesCard from "../components/apprenticeCard";
 
 const SavedItems = () => {
   const [activeTab, setActiveTab] = useState("researches");
+  const { user } = useAuth();
+
+  const savedResearchesKey = `savedResearches_${user?.id || 'guest'}`;
+  const savedProfilesKey = `savedProfiles_${user?.id || 'guest'}`;
 
   const savedResearches = JSON.parse(
-    localStorage.getItem("savedResearches") || "[]"
+    localStorage.getItem(savedResearchesKey) || "[]"
   );
 
   const renderItems = () => {
     const savedProfiles = JSON.parse(
-      localStorage.getItem("savedProfiles") || "[]"
+      localStorage.getItem(savedProfilesKey) || "[]"
     );
   
     const savedMentors = savedProfiles.filter((item) => item.type === "mentor");

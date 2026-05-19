@@ -684,6 +684,7 @@ function Profile() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user, refreshUser } = useAuth();
+  const savedProfilesKey = `savedProfiles_${user?.id || 'guest'}`;
   const [mentorProfile, setMentorProfile] = useState(null);
   const [apprenticeProfile, setApprenticeProfile] = useState(null);
   const [activeRole, setActiveRole] = useState(null);
@@ -722,7 +723,7 @@ function Profile() {
 
   useEffect(() => {
     const savedProfiles = JSON.parse(
-      localStorage.getItem("savedProfiles") || "[]"
+      localStorage.getItem(savedProfilesKey) || "[]"
     );
   
     const exists = savedProfiles.some(
@@ -1368,7 +1369,7 @@ function Profile() {
               e.stopPropagation();
 
               const savedProfiles = JSON.parse(
-                localStorage.getItem("savedProfiles") || "[]"
+                localStorage.getItem(savedProfilesKey) || "[]"
               );
 
               const exists = savedProfiles.some(
@@ -1380,7 +1381,7 @@ function Profile() {
                   (item) => item.id !== userData?.id
                 );
 
-                localStorage.setItem("savedProfiles", JSON.stringify(updated));
+                localStorage.setItem(savedProfilesKey, JSON.stringify(updated));
 
                 setIsSaved(false);
                 toast("הפרופיל הוסר מהשמורים");
@@ -1400,7 +1401,7 @@ function Profile() {
                   department: userData?.department,
                 });
 
-                localStorage.setItem("savedProfiles", JSON.stringify(savedProfiles));
+                localStorage.setItem(savedProfilesKey, JSON.stringify(savedProfiles));
 
                 setIsSaved(true);
                 toast.success("הפרופיל נשמר");
