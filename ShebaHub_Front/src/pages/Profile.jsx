@@ -8,6 +8,9 @@ import usePageTitle from "../hooks/usePageTitle";
 import { validateFile } from "../utils/formValidation";
 import PublicProfile from "./PublicProfile";
 import ConfirmDialog from "../components/ConfirmDialog";
+import SaveOutlineIcon from "../assets/save-outline.png";
+import SaveFilledIcon from "../assets/save-filled.png";
+
 import {
   SPECIALTIES_BASE,
   SPECIALTIES_SUPER,
@@ -564,6 +567,7 @@ function DatePickerField({ label, value, onChange, minDate }) {
   const [currentDate, setCurrentDate] = useState(new Date());
   const popupRef = useRef(null);
 
+  
   useEffect(() => {
     function handleClickOutside(event) {
       if (popupRef.current && !popupRef.current.contains(event.target)) {
@@ -709,6 +713,7 @@ function Profile() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user, refreshUser } = useAuth();
+  const savedProfilesKey = `savedProfiles_${user?.id || 'guest'}`;
   const [mentorProfile, setMentorProfile] = useState(null);
   const [apprenticeProfile, setApprenticeProfile] = useState(null);
   const [activeRole, setActiveRole] = useState(null);
@@ -734,13 +739,29 @@ function Profile() {
   const [deleteProfileDialog, setDeleteProfileDialog] = useState(false);
   const [editErrors, setEditErrors] = useState({});
   const [mentorsList, setMentorsList] = useState([]);
+
+  const [isSaved, setIsSaved] = useState(false);
+
   const avatarFileInputRef = useRef(null);
   const documentFileInputRef = useRef(null);
   const avatarObjectUrlRef = useRef(null);
 
+
   const isMeAlias = id === "me";
   const isOwnProfile = !!user && (isMeAlias || id === user.id);
 
+  useEffect(() => {
+    const savedProfiles = JSON.parse(
+      localStorage.getItem(savedProfilesKey) || "[]"
+    );
+  
+    const exists = savedProfiles.some(
+      (item) => item.id === userData?.id
+    );
+  
+    setIsSaved(exists);
+  }, [userData]);
+  
   // If token/user is gone (logout / expired), redirect to login
   useEffect(() => {
     if (!isOwnProfile) return;
@@ -1369,6 +1390,62 @@ function Profile() {
       )}
 
       <div className="profile-header-card">
+        {!isOwnProfile && (
+          <button
+            type="button"
+            className={`save-detail-button-inline ${isSaved ? "saved" : ""}`}
+            onClick={(e) => {
+              e.stopPropagation();
+
+              const savedProfiles = JSON.parse(
+                localStorage.getItem(savedProfilesKey) || "[]"
+              );
+
+              const exists = savedProfiles.some(
+                (item) => item.id === userData?.id
+              );
+
+              if (exists) {
+                const updated = savedProfiles.filter(
+                  (item) => item.id !== userData?.id
+                );
+
+                localStorage.setItem(savedProfilesKey, JSON.stringify(updated));
+
+                setIsSaved(false);
+                toast("הפרופיל הוסר מהשמורים");
+              } else {
+                savedProfiles.push({
+                  id: userData?.id,
+                  type: activeRole,
+                  name: userData?.fullName || userData?.name,
+                  profileImage: userData?.profileImage || userData?.avatarUrl,
+                  specialty: userData?.specialty,
+                  degrees: userData?.degrees,
+                  isAvailableForResearch: userData?.isAvailableForResearch,
+                  medical_level: userData?.apprenticeStage || userData?.medical_level,
+                  Educational_institution: userData?.institution,
+                  school_beginner_year: userData?.startYear,
+                  gender: userData?.gender,
+                  department: userData?.department,
+                });
+
+                localStorage.setItem(savedProfilesKey, JSON.stringify(savedProfiles));
+
+                setIsSaved(true);
+                toast.success("הפרופיל נשמר");
+              }
+            }}
+            aria-label="שמירת פרופיל"
+          >
+            <img
+              src={isSaved ? SaveFilledIcon : SaveOutlineIcon}
+              alt="שמירה"
+            />
+          </button>
+        )}
+
+
         <div className="profile-avatar">
           {userData?.avatarUrl || userData?.avatar ? (
             <img

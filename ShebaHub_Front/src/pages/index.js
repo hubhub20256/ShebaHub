@@ -18,4 +18,5 @@ export { default as VerifyEmail } from "./VerifyEmail";
 export { default as Notifications } from "./Notifications";
 export { default as AdminDashboard } from "./AdminDashboard";
 export { default as TaskManager } from "./TaskManager";
+export { default as SavedItems } from "./SavedItems";
 export { default as Settings } from "./Settings";

@@ -294,6 +294,14 @@ const ProfileMenu = ({ closeParentMenu, onOpen, isOpen }) => {
             המחקרים שלי
           </Link>
 
+          <Link
+            to="/saved-items"
+            className="navbar-link profile-dropdown-link"
+            onClick={closeParentMenu}
+          >
+            השמורים שלי
+          </Link>
+
           {isMentor && (
             <>
               <Link
@@ -402,6 +410,7 @@ const DesktopNavbar = () => {
                 >
                   מחקרים
                 </Link>
+
               </>
             )}
 
@@ -604,6 +613,15 @@ const MobileNavbar = () => {
                 style={{ color: "var(--text-color)" }}
               >
                 המחקרים שלי
+              </Link>
+
+              <Link
+                to="/saved-items"
+                className="navbar-link"
+                onClick={closeAll}
+                style={{ color: "var(--text-color)" }}
+              >
+                השמורים שלי
               </Link>
 
               {isMentor && (

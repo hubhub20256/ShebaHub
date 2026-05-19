@@ -1,13 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import {
-  profilesAPI,
-  researchAPI,
-  messagesAPI,
-  API_BASE_URL,
-} from "../services/api";
+import toast from "react-hot-toast";
+import { profilesAPI, researchAPI, messagesAPI, API_BASE_URL } from "../services/api";
 import { useAuth } from "../context/AuthContext";
 import "../styles/Profile.css";
+import SaveOutlineIcon from "../assets/save-outline.png";
+import SaveFilledIcon from "../assets/save-filled.png";
 
 const THEME_COLOR = "#2C2C6C";
 
@@ -88,6 +86,7 @@ function PublicProfile() {
   const profileId = id;
   const navigate = useNavigate();
   const { user } = useAuth();
+  const savedProfilesKey = `savedProfiles_${user?.id || 'guest'}`;
   const [profileData, setProfileData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -105,7 +104,8 @@ function PublicProfile() {
   const [contactLoading, setContactLoading] = useState(false);
 
   // Toast message state
-  const [toast, setToast] = useState(null); // { type: "success" | "error", text: string }
+  const [profileToast, setProfileToast] = useState(null);
+  const [isSaved, setIsSaved] = useState(false);
 
   const currentUserIsMentor = user?.has_mentor_profile === true;
   const isOwnProfile =
@@ -180,8 +180,8 @@ function PublicProfile() {
   }, [showInviteModal, currentUserIsMentor]);
 
   const showToast = (type, text) => {
-    setToast({ type, text });
-    setTimeout(() => setToast(null), 4000);
+    setProfileToast({ type, text });
+    setTimeout(() => setProfileToast(null), 4000);
   };
 
   const handleInvite = async () => {
@@ -287,6 +287,18 @@ function PublicProfile() {
     }
   }
 
+  useEffect(() => {
+    const savedProfiles = JSON.parse(
+      localStorage.getItem(savedProfilesKey) || "[]"
+    );
+  
+    const exists = savedProfiles.some(
+      (item) => item.id === profileData?.id
+    );
+  
+    setIsSaved(exists);
+  }, [profileData]);
+  
   if (isLoading) {
     return (
       <div dir="rtl" className="profile-page">
@@ -313,6 +325,8 @@ function PublicProfile() {
   const isMentor = profileData.role === "mentor";
   const isApprentice = profileData.role === "apprentice";
 
+
+
   const showApprenticeSpecialty = (() => {
     if (!isApprentice) return false;
     if (profileData.apprenticeStage === "סטודנט") {
@@ -327,15 +341,10 @@ function PublicProfile() {
 
   return (
     <div dir="rtl" className="profile-page">
-      {toast && (
-        <div className={`profile-toast profile-toast--${toast.type}`}>
-          {toast.text}
-          <button
-            className="profile-toast-close"
-            onClick={() => setToast(null)}
-          >
-            ✕
-          </button>
+      {profileToast && (
+        <div className={`profile-toast profile-toast--${profileToast.type}`}>
+          {profileToast.text}
+          <button className="profile-toast-close" onClick={() => setProfileToast(null)}>✕</button>
         </div>
       )}
       <div style={{ marginBottom: "20px" }}>
@@ -356,6 +365,85 @@ function PublicProfile() {
       </div>
 
       <div className="profile-header-card">
+      {!isOwnProfile && (
+        <button
+          type="button"
+          className={`save-detail-button-inline ${isSaved ? "saved" : ""}`}
+          onClick={(e) => {
+            e.stopPropagation();
+
+            const savedProfiles = JSON.parse(
+              localStorage.getItem(savedProfilesKey) || "[]"
+            );
+
+            const exists = savedProfiles.some(
+              (item) => item.id === profileData?.id
+            );
+
+            if (exists) {
+              const updated = savedProfiles.filter(
+                (item) => item.id !== profileData?.id
+              );
+
+              localStorage.setItem(savedProfilesKey, JSON.stringify(updated));
+
+              setIsSaved(false);
+              toast("הפרופיל הוסר מהשמורים");
+          } else {
+            savedProfiles.push({
+              id: profileData?.id,
+              type: profileData?.role,
+              name: profileData?.name,
+              profileImage:
+                profileData?.profileImage || profileData?.avatarUrl || profileData?.avatar,
+            
+              specialty:
+                Array.isArray(profileData?.specialties_detail) &&
+                profileData.specialties_detail.length
+                  ? extractDisplay(profileData.specialties_detail)
+                  : getHebrewName(profileData, "specialty_detail"),
+            
+              degrees: formatDegrees(profileData),
+            
+              isAvailableForResearch: profileData?.isAvailableForResearch,
+            
+              medical_level:
+                getHebrewName(profileData, "apprenticeStage_detail") ||
+                profileData?.apprenticeStage ||
+                profileData?.medical_level,
+            
+              Educational_institution:
+                getHebrewName(profileData, "institution_detail") ||
+                profileData?.institution,
+            
+              school_beginner_year: profileData?.startYear,
+            
+              gender:
+                profileData?.gender === "female"
+                  ? "נקבה"
+                  : profileData?.gender === "male"
+                    ? "זכר"
+                    : profileData?.gender === "other"
+                      ? "אחר"
+                      : profileData?.gender || "לא צוין",
+            
+              department: profileData?.department,
+            });
+
+              localStorage.setItem(savedProfilesKey, JSON.stringify(savedProfiles));
+
+              setIsSaved(true);
+              toast.success("הפרופיל נשמר");
+            }
+          }}
+          aria-label="שמירת פרופיל"
+        >
+          <img
+            src={isSaved ? SaveFilledIcon : SaveOutlineIcon}
+            alt="שמירה"
+          />
+        </button>
+      )}
         <div className="profile-avatar">
           {profileData?.avatarUrl || profileData?.avatar ? (
             <img

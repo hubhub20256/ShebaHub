@@ -33,6 +33,8 @@ import LoadingSpinner from "../components/LoadingSpinner";
 import QrModal from "../components/QrModal";
 import ResearchChat from "./ResearchChat";
 import "../styles/Research.css";
+import SaveOutlineIcon from "../assets/save-outline.png";
+import SaveFilledIcon from "../assets/save-filled.png";
 
 const STATUS_MAP = {
   open: "פתוח",
@@ -124,11 +126,15 @@ const ResearchApprenticeCard = ({ apprentice, onClick, children }) => {
           <div className="rac-avatar-placeholder">
             <span>👤</span>
           </div>
+          
+
+          
         )}
       </div>
 
       {/* Name */}
       <h3 className="rac-name">{apprentice.name}</h3>
+      
 
       {/* Info rows */}
       <div className="rac-info">
@@ -157,6 +163,7 @@ const ResearchApprenticeCard = ({ apprentice, onClick, children }) => {
       {/* Action Buttons (Approve/Decline) */}
       {children && <div className="rac-actions-container">{children}</div>}
     </div>
+    
   );
 };
 
@@ -179,6 +186,7 @@ const getAccordionContentStyle = (isOpen) => ({
 export default function Research() {
   usePageTitle("מחקר");
   const { user } = useAuth();
+  const savedResearchesKey = `savedResearches_${user?.id || 'guest'}`;
   const { refreshCount } = useNotifications();
   const { id } = useParams();
   const location = useLocation();
@@ -216,6 +224,9 @@ export default function Research() {
   const [isShareQrOpen, setIsShareQrOpen] = useState(false);
   const shareMenuRef = useRef(null);
 
+  const [isSaved, setIsSaved] = useState(false);
+
+  
   useEffect(() => {
     let cancelled = false;
 
@@ -342,6 +353,18 @@ export default function Research() {
   }, [isShareMenuOpen]);
 
   const data = research;
+
+  useEffect(() => {
+    const savedResearches = JSON.parse(
+      localStorage.getItem(savedResearchesKey) || "[]"
+    );
+  
+    const exists = savedResearches.some(
+      (item) => item.id === data?.id
+    );
+  
+    setIsSaved(exists);
+  }, [data]);
 
   const researchShareUrl = useMemo(() => {
     const researchId = data?.id ?? id;
@@ -1120,10 +1143,12 @@ export default function Research() {
       <div style={styles.header}>
         <div style={styles.title}>{data.researchName}</div>
         <div style={styles.titleUnderline}></div>
+        
       </div>
 
       <div className="main-card research-detail-card" style={styles.card}>
         <div className="action-bar rd-action-bar" style={styles.actionBar}>
+       
           <div
             className="status-group"
             style={{
@@ -1133,6 +1158,7 @@ export default function Research() {
               flexWrap: "wrap",
             }}
           >
+
             {canEditThis ? (
               <select
                 value={data.status}
@@ -1174,6 +1200,8 @@ export default function Research() {
                   לא זמין להצטרפות (הצוות מלא)
                 </span>
               ) : (
+
+                
                 <button
                   onClick={handleToggleApplications}
                   style={{
@@ -1225,7 +1253,12 @@ export default function Research() {
 
           <div
             className="action-bar-controls"
-            style={{ display: "flex", gap: 10, alignItems: "center" }}
+            style={{
+              display: "flex",
+              gap: 10,
+              alignItems: "center",
+              flexDirection: "row-reverse",
+            }}
           >
             {showResearchDropdown && (
               <div
@@ -1302,6 +1335,54 @@ export default function Research() {
                 </select>
               </div>
             )}
+
+              {!canEditThis && (  
+                <button
+                  type="button"
+                  className={`save-research-button-inline ${isSaved ? "saved" : ""}`}                  onClick={(e) => {
+                    e.stopPropagation();
+
+                    const savedResearches = JSON.parse(
+                      localStorage.getItem(savedResearchesKey) || "[]"
+                    );
+
+                    const exists = savedResearches.some((item) => item.id === data.id);
+
+                    if (exists) {
+                      const updated = savedResearches.filter((item) => item.id !== data.id);
+                      localStorage.setItem(savedResearchesKey, JSON.stringify(updated));
+                      setIsSaved(false);
+                      toast("המחקר הוסר מהשמורים");
+                    } else {
+                      savedResearches.push({
+                        id: data.id,
+                        title: data.researchName,
+                        status: data.status,
+                        acceptingApplications: data.accepting_applications,
+                        isFull: data.isFull,
+                        fields: data.fields || [],
+                        mentors: data.mentors || [],
+                        description: data.description || "",
+                        apprenticesCount: data.apprenticesCount || "",
+                        startDate: data.startDate || "",
+                        hoursScope: data.hoursScope || "",
+                        duration: data.duration || "",
+                        rewards: data.rewards || "",
+                      });
+
+                      localStorage.setItem(savedResearchesKey, JSON.stringify(savedResearches));
+                      setIsSaved(true);
+                      toast.success("המחקר נשמר");
+                    }
+                  }}
+                  aria-label="שמירת מחקר"
+                >
+                <img
+                  src={isSaved ? SaveFilledIcon : SaveOutlineIcon}
+                  alt="שמירה"
+                />
+                </button>
+              )}
 
             <div className="rd-share" ref={shareMenuRef}>
               <button
@@ -2782,8 +2863,11 @@ const styles = {
     fontFamily: "Rubik, system-ui, sans-serif",
     color: THEME_COLOR,
   },
-  header: { textAlign: "center", marginBottom: 24 },
-  title: { fontSize: 24, fontWeight: 800, marginBottom: 8, lineHeight: 1.2 },
+  header: {
+    textAlign: "center",
+    marginBottom: 24,
+    position: "relative",
+  },  title: { fontSize: 24, fontWeight: 800, marginBottom: 8, lineHeight: 1.2 },
   titleUnderline: {
     width: 50,
     height: 4,

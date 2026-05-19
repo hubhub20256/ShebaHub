@@ -2,6 +2,7 @@ import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 
 import { useAuth } from "./context/AuthContext";
+import { Toaster } from "react-hot-toast";
 
 // We move the page imports here because this is where they are used
 import {
@@ -25,6 +26,7 @@ import {
   Notifications,
   AdminDashboard,
   TaskManager,
+  SavedItems,
   Settings,
 } from "./pages";
 
@@ -47,6 +49,9 @@ const RedirectIfAuth = ({ children }) => {
 
 function App() {
   return (
+    <>
+      <Toaster position="top-center" />
+
     <Routes>
       {/* The Layout wraps all child routes */}
       <Route element={<Layout />}>
@@ -159,10 +164,20 @@ function App() {
           }
         />
 
+        <Route
+          path="/saved-items"
+          element={
+            <RequireAuth>
+              <SavedItems />
+            </RequireAuth>
+          }
+        />
+
         {/* 404 catch-all */}
         <Route path="*" element={<NotFound />} />
       </Route>
     </Routes>
+    </>
   );
 }
 
