@@ -10,9 +10,9 @@ export default function Settings() {
   const navigate = useNavigate();
 
   // Settings states
-  const [email, setEmail] = useState("");
   const [oldPassword, setOldPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
+  const [confirmNewPassword, setConfirmNewPassword] = useState("");
   const [topics, setTopics] = useState("");
   const [theme, setTheme] = useState(localStorage.getItem("theme") || "light");
 
@@ -24,7 +24,6 @@ export default function Settings() {
 
   useEffect(() => {
     if (user) {
-      setEmail(user.email || "");
       if (user.notification_topics) {
         setTopics(user.notification_topics.join(", "));
       }
@@ -51,7 +50,7 @@ export default function Settings() {
         .split(",")
         .map((t) => t.trim())
         .filter((t) => t);
-      await authAPI.updateSettings({ email, notification_topics: topicArray });
+      await authAPI.updateSettings({ notification_topics: topicArray });
       setMessage("הגדרות עודכנו בהצלחה. יש לרענן כדי לראות שינויים או להתחבר מחדש במידת הצורך.");
       // We might need to refresh auth context here ideally.
     } catch (err) {
@@ -63,6 +62,10 @@ export default function Settings() {
 
   const handleChangePassword = async (e) => {
     e.preventDefault();
+    if (newPassword !== confirmNewPassword) {
+      setError("הסיסמאות החדשות אינן תואמות.");
+      return;
+    }
     setLoading(true);
     setMessage("");
     setError("");
@@ -71,6 +74,7 @@ export default function Settings() {
       setMessage("הסיסמה שונתה בהצלחה.");
       setOldPassword("");
       setNewPassword("");
+      setConfirmNewPassword("");
     } catch (err) {
       setError(err?.data?.detail || "שגיאה בשינוי סיסמה.");
     } finally {
@@ -154,17 +158,8 @@ export default function Settings() {
         </section>
 
         <section className="settings-section">
-          <h2>פרטים כלליים והתראות</h2>
+          <h2>התראות</h2>
           <form onSubmit={handleUpdateEmailAndTopics} className="settings-form">
-            <div className="form-group">
-              <label>דואר אלקטרוני</label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-            </div>
             <div className="form-group">
               <label>נושאים לקבלת התראות מחקר (מופרדים בפסיק)</label>
               <input
@@ -198,6 +193,15 @@ export default function Settings() {
                 type="password"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
+                required
+              />
+            </div>
+            <div className="form-group">
+              <label>אימות סיסמה חדשה</label>
+              <input
+                type="password"
+                value={confirmNewPassword}
+                onChange={(e) => setConfirmNewPassword(e.target.value)}
                 required
               />
             </div>

@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { adminAPI } from "../../services/api";
+import ConfirmDialog from "../../components/ConfirmDialog";
 
 const GENDER_OPTIONS = [
   { value: "", label: "---" },
@@ -23,7 +24,7 @@ const BULK_ACTIONS = [
   { value: "force_verify", label: "אמת אימייל" },
 ];
 
-function EditUserModal({ user, onSave, onCancel }) {
+function EditUserModal({ user, onSave, onCancel, onDeleteRequest }) {
   const [form, setForm] = useState(() => {
     const initial = {};
     for (const f of EDIT_FIELDS) {
@@ -108,6 +109,9 @@ function EditUserModal({ user, onSave, onCancel }) {
           <button className="admin-modal-confirm" disabled={saving} onClick={handleSubmit}>
             {saving ? "שומר..." : "שמור"}
           </button>
+          <button className="admin-btn admin-btn-reject" style={{ marginLeft: "auto" }} onClick={() => onDeleteRequest(user)} type="button">
+            מחק משתמש
+          </button>
           <button className="admin-modal-cancel" onClick={onCancel}>ביטול</button>
         </div>
       </div>
@@ -125,6 +129,29 @@ export default function AdminUsers() {
   const [editUser, setEditUser] = useState(null);
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [bulkAction, setBulkAction] = useState("deactivate");
+  const [confirmDialog, setConfirmDialog] = useState(null);
+
+  const requestDeleteUser = (user) => {
+    setConfirmDialog({
+      title: "מחיקת משתמש",
+      message: `האם את/ה בטוח/ה שברצונך למחוק את המשתמש ${user.firstName} ${user.lastName} (${user.email})? פעולה זו לא ניתנת לביטול.`,
+      onConfirm: () => handleDeleteUser(user.id),
+    });
+  };
+
+  const handleDeleteUser = async (id) => {
+    setConfirmDialog(null);
+    setBusy(true);
+    try {
+      await adminAPI.deleteUser(id);
+      setEditUser(null);
+      fetchData();
+    } catch (err) {
+      setError(err?.data?.detail || "שגיאה במחיקת המשתמש");
+    } finally {
+      setBusy(false);
+    }
+  };
 
   const fetchData = useCallback(() => {
     setLoading(true);
@@ -221,6 +248,18 @@ export default function AdminUsers() {
             fetchData();
           }}
           onCancel={() => setEditUser(null)}
+          onDeleteRequest={requestDeleteUser}
+        />
+      )}
+
+      {confirmDialog && (
+        <ConfirmDialog
+          title={confirmDialog.title}
+          message={confirmDialog.message}
+          onConfirm={confirmDialog.onConfirm}
+          onCancel={() => setConfirmDialog(null)}
+          confirmText="כן, מחק"
+          cancelText="ביטול"
         />
       )}
 
@@ -301,9 +340,8 @@ export default function AdminUsers() {
                   </td>
                   <td>
                     <span
-                      className={`admin-badge ${
-                        u.is_active ? "admin-badge-active" : "admin-badge-inactive"
-                      }`}
+                      className={`admin-badge ${u.is_active ? "admin-badge-active" : "admin-badge-inactive"
+                        }`}
                     >
                       {u.is_active ? "פעיל" : "מושבת"}
                     </span>
@@ -313,12 +351,12 @@ export default function AdminUsers() {
                     {u.is_superuser
                       ? "סופר-אדמין"
                       : u.is_staff
-                      ? "אדמין"
-                      : u.has_mentor_profile
-                      ? "מנחה"
-                      : u.has_student_profile
-                      ? "סטודנט"
-                      : "ללא פרופיל"}
+                        ? "אדמין"
+                        : u.has_mentor_profile
+                          ? "מנחה"
+                          : u.has_student_profile
+                            ? "סטודנט"
+                            : "ללא פרופיל"}
                   </td>
                   <td>
                     <div className="admin-actions">
