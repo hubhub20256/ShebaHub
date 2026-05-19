@@ -38,7 +38,7 @@ const START_YEARS = Array.from({ length: 11 }, (_, i) => ({
 }));
 
 // Keep degrees list tight (matches current UX expectations)
-const DEGREE_OPTIONS = ["MD", "PhD", "MSc", "MPH", "MBA"];
+const DEGREE_OPTIONS = ["BSc", "MD", "PhD", "MSc", "MPH", "MBA"];
 
 function sanitizeDegrees(value) {
   const degrees = Array.isArray(value) ? value : [];
@@ -50,6 +50,7 @@ const ACADEMIC_RANKS = [
   { v: "סטאז׳", t: "סטאז׳" },
   { v: "מתמחה", t: "מתמחה" },
   { v: "מומחה/ית", t: "מומחה/ית" },
+  { v: "אחר", t: "אחר" },
 ];
 
 const APPRENTICE_STAGES = [
@@ -59,7 +60,7 @@ const APPRENTICE_STAGES = [
   { v: "סטאז׳ר", t: "סטאז׳ר" },
   { v: "אחרי סטאז׳", t: "אחרי סטאז׳" },
   { v: "מתמחה", t: "מתמחה" },
-  { v: "רופא מתמחה", t: "רופא מתמחה" },
+  { v: "רופא מומחה", t: "רופא מומחה" },
   { v: "אחר", t: "אחר" },
 ];
 
@@ -248,10 +249,24 @@ function normalizeProfileForDraft(profile) {
       resolveField(profile, "institution"),
       INSTITUTIONS,
     ),
-    academicRank: findBestMatch(
-      resolveField(profile, "academicRank"),
-      ACADEMIC_RANKS,
-    ),
+    academicRank: (() => {
+      const raw = resolveField(profile, "academicRank");
+      const normalized = findBestMatch(raw, ACADEMIC_RANKS);
+      const matched = ACADEMIC_RANKS.some((o) => o.v === normalized && normalized !== "");
+      return matched ? normalized : raw ? "אחר" : "";
+    })(),
+    academicRankOther: (() => {
+      const raw = resolveField(profile, "academicRank");
+      const normalized = findBestMatch(raw, ACADEMIC_RANKS);
+      const matched = ACADEMIC_RANKS.some((o) => o.v === normalized && normalized !== "");
+      return matched ? "" : raw || "";
+    })(),
+    _academicRankOther: (() => {
+      const raw = resolveField(profile, "academicRank");
+      const normalized = findBestMatch(raw, ACADEMIC_RANKS);
+      const matched = ACADEMIC_RANKS.some((o) => o.v === normalized && normalized !== "");
+      return !!raw && !matched;
+    })(),
     apprenticeStage: findBestMatch(
       resolveField(profile, "apprenticeStage"),
       APPRENTICE_STAGES,
@@ -693,6 +708,8 @@ const INITIAL_DRAFT = {
   yearOfStudy: "",
   startYear: "",
   isShebaEmployee: "",
+  academicRankOther: "",
+  _academicRankOther: false,
   hasResearchExperience: "",
   researchExperienceDetails: "",
   workType: "",
@@ -1101,6 +1118,12 @@ function Profile() {
           draft.specialtyGroups.length > 0) ||
         !!draft.specialtyGroup;
       if (!hasGroup) errs.specialtyGroup = "יש לבחור לפחות קטגוריה אחת";
+      if (!draft.academicRank && !draft._academicRankOther) {
+        errs.academicRank = "שדה חובה";
+      }
+      if (draft._academicRankOther && !draft.academicRankOther?.trim()) {
+        errs.academicRankOther = "יש להזין שלב בהכשרה";
+      }
     }
     if (isApprentice) {
       if (!draft.apprenticeStage) errs.apprenticeStage = "שדה חובה";
@@ -1134,19 +1157,24 @@ function Profile() {
           ? profilesAPI.updateMentorProfile
           : profilesAPI.updateStudentProfile;
       // Strip file objects from recommenders before sending as JSON
+      const { academicRankOther, _academicRankOther, ...draftBase } = draft;
       const draftToSend = {
-        ...draft,
+        ...draftBase,
         // Send both for compatibility: specialtyGroup (first of array) and specialtyGroups (full array)
         specialtyGroup:
-          Array.isArray(draft.specialtyGroups) &&
-          draft.specialtyGroups.length > 0
-            ? draft.specialtyGroups[0]
-            : draft.specialtyGroup || "",
-        specialtyGroups: Array.isArray(draft.specialtyGroups)
-          ? draft.specialtyGroups
-          : draft.specialtyGroup
-            ? [draft.specialtyGroup]
+          Array.isArray(draftBase.specialtyGroups) &&
+          draftBase.specialtyGroups.length > 0
+            ? draftBase.specialtyGroups[0]
+            : draftBase.specialtyGroup || "",
+        specialtyGroups: Array.isArray(draftBase.specialtyGroups)
+          ? draftBase.specialtyGroups
+          : draftBase.specialtyGroup
+            ? [draftBase.specialtyGroup]
             : [],
+        academicRank:
+          _academicRankOther && academicRankOther?.trim()
+            ? academicRankOther.trim()
+            : draftBase.academicRank,
         // Clear university affiliation if rank is ללא
         universityAffiliation:
           !draft.universityRank || draft.universityRank === "ללא"
@@ -2199,9 +2227,23 @@ function Profile() {
                   <label style={styles.label}>שלב בהכשרה הרפואית</label>
                   <select
                     value={draft.academicRank}
-                    onChange={(e) =>
-                      handleFieldChange("academicRank", e.target.value)
-                    }
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (value === "אחר") {
+                        setDraft((prev) => ({
+                          ...prev,
+                          academicRank: "אחר",
+                          _academicRankOther: true,
+                        }));
+                      } else {
+                        setDraft((prev) => ({
+                          ...prev,
+                          academicRank: value,
+                          _academicRankOther: false,
+                          academicRankOther: "",
+                        }));
+                      }
+                    }}
                     style={styles.select}
                   >
                     {ACADEMIC_RANKS.map((opt) => (
@@ -2210,7 +2252,31 @@ function Profile() {
                       </option>
                     ))}
                   </select>
+                  {(editErrors.academicRank || editErrors.academicRankOther) && (
+                    <div style={{ color: "#ef67a0", fontSize: 12, marginTop: 4 }}>
+                      {editErrors.academicRank || editErrors.academicRankOther}
+                    </div>
+                  )}
                 </div>
+                {draft._academicRankOther && (
+                  <div style={styles.formSection}>
+                    <label style={styles.label}>שלב אחר בהכשרה</label>
+                    <input
+                      type="text"
+                      value={draft.academicRankOther || ""}
+                      onChange={(e) =>
+                        handleFieldChange("academicRankOther", e.target.value)
+                      }
+                      style={{
+                        ...styles.input,
+                        ...(editErrors.academicRankOther
+                          ? { borderColor: "#ef67a0" }
+                          : {}),
+                      }}
+                      placeholder="הקלד/י שלב בהכשרה"
+                    />
+                  </div>
+                )}
 
                 <div style={styles.formSection}>
                   <label style={styles.label}>מקום עבודה</label>

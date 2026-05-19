@@ -21,7 +21,7 @@ const APPRENTICE_STAGE_OPTIONS = [
   "סטאז׳ר",
   "אחרי סטאז׳",
   "מתמחה",
-  "רופא מתמחה",
+  "רופא מומחה",
   "אחר",
 ];
 
@@ -287,8 +287,8 @@ export default function Apprentices() {
     return groups;
   }, [selectedFilters.medical_level]);
 
-  const hasActiveFilters = Object.entries(selectedFilters).some(
-    ([, value]) => Array.isArray(value) ? value.length > 0 : value !== "",
+    const hasActiveFilters = Object.entries(selectedFilters).some(([, value]) =>
+    Array.isArray(value) ? value.length > 0 : value !== "",
   );
 
   const filtersConfig = filterGroups.map((group) => ({
