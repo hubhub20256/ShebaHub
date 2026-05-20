@@ -1,0 +1,127 @@
+.qr-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(
+    circle at 50% 18%,
+    rgba(56, 86, 163, 0.24),
+    rgba(11, 19, 43, 0.72)
+  );
+  backdrop-filter: blur(4px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+  padding: 16px;
+}
+
+.qr-modal-card {
+  --qr-modal-theme: #1f2f63;
+  --qr-modal-accent: #6cd5bf;
+
+  background: linear-gradient(
+    160deg,
+    rgba(255, 255, 255, 0.99),
+    rgba(244, 248, 255, 0.98)
+  );
+  padding: 28px 30px;
+  border-radius: 18px;
+  border: 1px solid rgba(90, 116, 178, 0.2);
+  max-width: 440px;
+  width: 90%;
+  box-shadow: 0 26px 64px rgba(14, 24, 56, 0.36);
+  direction: rtl;
+  text-align: center;
+}
+
+.qr-modal-title {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: var(--qr-modal-theme);
+  margin-bottom: 10px;
+}
+
+.qr-modal-description {
+  font-size: 0.95rem;
+  color: #46557f;
+  margin-bottom: 18px;
+  line-height: 1.6;
+}
+
+.qr-modal-qr-wrap {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.qr-modal-qr-box {
+  background: #ffffff;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(90, 116, 178, 0.2);
+}
+
+.qr-modal-link {
+  display: inline-block;
+  max-width: 100%;
+  margin-bottom: 20px;
+  color: var(--qr-modal-theme);
+  font-size: 0.84rem;
+  word-break: break-all;
+  text-decoration: none;
+}
+
+.qr-modal-actions {
+  display: flex;
+  justify-content: center;
+}
+
+.qr-modal-close-btn {
+  padding: 10px 20px;
+  border-radius: 20px;
+  background: #ffffff;
+  color: var(--qr-modal-accent);
+  border: 1px solid var(--qr-modal-accent);
+  cursor: pointer;
+  font-weight: 600;
+  transition: opacity 0.2s;
+}
+
+.qr-modal-close-btn:hover {
+  opacity: 0.9;
+}
+
+@media (max-width: 480px) {
+  .qr-modal-card {
+    padding: 24px 22px;
+  }
+}
+
+/* ===== DARK MODE ===== */
+[data-theme="dark"] .qr-modal-card {
+  --qr-modal-theme: #8fa4e6;
+  background: linear-gradient(
+    160deg,
+    rgba(22, 22, 22, 0.99),
+    rgba(17, 17, 17, 0.98)
+  );
+  border-color: var(--border-color);
+  box-shadow: 0 26px 64px rgba(0, 0, 0, 0.6);
+}
+
+[data-theme="dark"] .qr-modal-description {
+  color: #94a3b8;
+}
+
+[data-theme="dark"] .qr-modal-qr-box {
+  background: #1d1d1d;
+  border-color: var(--border-color);
+}
+
+[data-theme="dark"] .qr-modal-close-btn {
+  background: var(--card-bg);
+  color: var(--qr-modal-accent);
+  border-color: var(--qr-modal-accent);
+}

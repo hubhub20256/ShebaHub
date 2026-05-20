@@ -1,0 +1,336 @@
+/* * ===================================================================================
+ * 📘 NAVBAR STYLING DOCUMENTATION
+ * ===================================================================================
+ */
+
+/* --- Main Layout --- */
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  direction: ltr;
+
+  /* more "product" sizing */
+  height: 64px;
+  padding: 0 24px;
+  box-sizing: border-box; /* ✅ חשוב */
+
+  /* glassy professional look */
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px);
+
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+[data-theme="dark"] .navbar {
+  background: #121212 !important;
+  border-bottom: 1px solid #333;
+  backdrop-filter: none;
+}
+
+[data-theme="dark"] .navbar-logo-image {
+  content: url("../assets/ShebaNavbarLogoDarkTextWhite.png");
+  filter: none;
+}
+
+/* ✅ חשוב: מבטל "רווח תחתון" של תמונה (inline baseline) שגורם לכל ה-navbar להיראות כאילו ירד */
+.navbar-logo-container {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  height: 100%;
+  line-height: 0; /* ✅ */
+}
+
+.navbar-logo-image {
+  height: 120px;
+  width: auto;
+  object-fit: contain;
+  display: block;
+}
+
+/* --- Navigation Links (Desktop) --- */
+.navbar-links {
+  display: contents;
+}
+
+/* Groups */
+.navbar-group {
+  display: flex;
+  gap: 1.5rem;
+  align-items: center;
+  flex-direction: row;
+}
+
+/* --- DESKTOP SPECIFIC FIXES (Ordering & Centering) --- */
+@media (min-width: 769px) {
+  .navbar-links .navbar-group:first-child {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    flex-direction: row-reverse;
+  }
+
+  .navbar-links .navbar-group:last-child {
+    flex-direction: row;
+  }
+}
+
+.navbar-link {
+  text-decoration: none;
+  color: #1f1f4d;
+  font-weight: 600;
+  font-size: 1.05rem;
+  white-space: nowrap;
+
+  padding: 8px 12px;
+  border-radius: 10px;
+
+  transition: background 0.2s ease, color 0.2s ease;
+
+  position: relative;
+}
+
+.navbar-link:hover {
+  background: rgba(44, 44, 108, 0.08);
+}
+
+.navbar-link:hover::after {
+  content: "";
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: 4px;
+  height: 2px;
+  border-radius: 2px;
+  background: rgba(44, 44, 108, 0.55);
+}
+
+[data-theme="dark"] .navbar-profile-icon img {
+  filter: brightness(0) invert(1);
+}
+
+[data-theme="dark"] .navbar-profile-icon {
+  filter: brightness(0) invert(1);
+}
+
+/* --- Hamburger Menu Icon (Default: Hidden) --- */
+.hamburger-menu {
+  display: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  flex-direction: column;
+  gap: 5px;
+  padding: 0.5rem;
+  z-index: 1001;
+}
+
+.hamburger-line {
+  width: 25px;
+  height: 3px;
+  background-color: #333;
+  border-radius: 2px;
+  transition: all 0.3s ease;
+}
+
+/* --- Profile Dropdown (Desktop - Floating) --- */
+.profile-dropdown {
+  position: absolute;
+  top: calc(100% + 15px);
+  right: -10px;
+  min-width: 220px;
+  background: var(--card-bg, #fff);
+  border: 1px solid var(--border-color, #eee);
+  border-radius: 12px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
+  z-index: 9999;
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+  padding: 10px 0;
+  overflow: hidden;
+}
+
+.profile-dropdown-link {
+  padding: 10px 20px !important;
+  display: block !important;
+  color: var(--text-color) !important;
+  border-bottom: none !important;
+  text-align: right;
+}
+
+.profile-dropdown-link:hover {
+  background: rgba(44, 44, 108, 0.08);
+}
+
+.profile-logout-link {
+  color: red !important;
+  border-top: 1px solid var(--border-color) !important;
+}
+
+/* --- Mobile Rules (<768px) --- */
+@media (max-width: 768px) {
+
+  /* Shrink logo on mobile to fit the 56px navbar */
+  .navbar-logo-image {
+    height: 50px;
+  }
+
+  /* Navbar needs to be able to grow on mobile when menu opens */
+  .navbar.mobile-view {
+    height: auto;
+    min-height: 56px;
+    flex-wrap: wrap;
+    padding: 0 12px;
+  }
+
+  /* Header row items need to be 56px tall and centered */
+  .navbar.mobile-view > .navbar-logo-container,
+  .navbar.mobile-view > .mobile-actions {
+    min-height: 56px;
+    display: flex;
+    align-items: center;
+  }
+
+  .mobile-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .mobile-profile-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .mobile-actions .navbar-profile-icon img {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    object-fit: cover;
+    display: block;
+    cursor: pointer;
+  }
+
+  .hamburger-menu {
+    display: flex;
+  }
+
+  /* Single unified dropdown for both profile and hamburger menu */
+  .mobile-dropdown,
+  .navbar-links {
+    display: flex;
+    width: 100%;
+    margin-left: 0;
+    
+    /* Ensure menu is in document flow (push content pattern) */
+    position: relative;
+    flex-basis: 100%;
+    order: 3; /* Ensures menu appears below the header row */
+
+    /* Menu Appearance */
+    background: var(--bg-color, rgba(255, 255, 255, 0.95));
+    backdrop-filter: blur(10px);
+
+    border-top: 1px solid transparent;
+    box-shadow: none;
+
+    flex-direction: column;
+    align-items: center;
+    padding: 0;
+    max-height: 0;
+    overflow: hidden;
+    gap: 0;
+    transition: max-height 0.6s cubic-bezier(0.4, 0, 0.2, 1), 
+                padding 0.6s ease,
+                border-color 0.6s ease;
+  }
+
+  .mobile-dropdown.active,
+  .navbar-links.active {
+    max-height: 500px; /* Fixed max height for smoother animation */
+    /* Open state */
+    padding: 0.75rem 0;
+    border-top-color: var(--border-color, #eee);
+    overflow-y: auto;
+  }
+
+  .mobile-dropdown .navbar-link {
+    display: block;
+    padding: 0.8rem 0;
+    width: 100%;
+    text-align: center;
+    border-bottom: 1px solid var(--border-color, #eee);
+  }
+
+  .mobile-dropdown .navbar-link:last-child {
+    border-bottom: none;
+  }
+
+  .mobile-dropdown .profile-logout-link {
+    color: red !important;
+  }
+
+  /* Vertical Stacking for Groups/Links */
+  .navbar-group {
+    flex-direction: column;
+    width: 100%;
+    gap: 0;
+  }
+
+  .navbar-link {
+    display: block;
+    padding: 0.8rem 0;
+    width: 100%;
+    text-align: center;
+    border-bottom: 1px solid #eee;
+  }
+
+  .navbar-group:last-child .navbar-link:last-child {
+    border-bottom: none;
+  }
+
+  .hamburger-menu.open .hamburger-line:nth-child(1) {
+    transform: rotate(45deg) translate(5px, 6px);
+  }
+
+  .hamburger-menu.open .hamburger-line:nth-child(2) {
+    opacity: 0;
+  }
+
+  .hamburger-menu.open .hamburger-line:nth-child(3) {
+    transform: rotate(-45deg) translate(5px, -6px);
+  }
+
+  [data-theme="dark"] .navbar-link {
+    border-bottom-color: var(--border-color);
+  }
+}
+
+/* ===== DARK MODE - Links & Hamburger ===== */
+[data-theme="dark"] .navbar-link {
+  color: var(--text-color);
+}
+
+[data-theme="dark"] .navbar-link:hover {
+  background: rgba(230, 236, 255, 0.08);
+}
+
+[data-theme="dark"] .navbar-link:hover::after {
+  background: rgba(230, 236, 255, 0.35);
+}
+
+[data-theme="dark"] .hamburger-line {
+  background-color: var(--text-color);
+}
+
+[data-theme="dark"] .profile-dropdown-link:hover {
+  background: rgba(230, 236, 255, 0.08);
+}

@@ -1,0 +1,375 @@
+
+html,
+body,
+#root {
+  min-height: 100%;
+  margin: 0;
+  background: #ffffff;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+.home-page {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  min-height: calc(100vh - 132px);
+  padding: 4rem 0 0;
+
+  background:
+    radial-gradient(
+      circle at top left,
+      rgba(230, 0, 126, 0.16) 0%,
+      transparent 35%
+    ),
+    radial-gradient(
+      circle at bottom right,
+      rgba(45, 150, 177, 0.18) 0%,
+      transparent 40%
+    ),
+    linear-gradient(
+      180deg,
+      #f7fbff 0%,
+      #eef5f8 50%,
+      #f7fbff 100%
+    );
+}
+
+/* Background Blobs for depth */
+.bg-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  z-index: 0;
+  opacity: 0.15;
+  pointer-events: none;
+}
+
+.pink-blob {
+  width: 400px;
+  height: 400px;
+  background: var(--sheba-pink);
+  top: -100px;
+  left: -100px;
+}
+
+.blue-blob {
+  width: 500px;
+  height: 500px;
+  background: var(--sheba-hub-color);
+  bottom: -100px;
+  right: -100px;
+}
+
+.home-container {
+  position: relative;
+  z-index: 1;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+/* Hero Layout */
+.hero-section {
+  display: flex;
+  align-items: center;
+  gap: 4rem;
+  margin-bottom: 6rem;
+}
+
+.hero-content {
+  flex: 1;
+}
+/* 
+.hero-title {
+  font-size: 2.8rem;
+  font-weight: 800;
+  line-height: 1.15;
+
+  color: #000000;
+
+  margin-bottom: 1rem;
+} */
+
+/*  */
+
+.hero-title {
+  display: flex;
+  flex-direction: column;
+
+  align-items: center;
+
+  gap: 0.8rem;
+
+  margin-bottom: 2rem;
+
+  line-height: 1.1;
+
+  text-align: center;
+}
+
+.hero-title-text {
+  font-size: 1.15rem;
+  font-weight: 700;
+
+  color: #908a8a;
+}
+
+
+
+.brand-wrapper {
+  display: block;
+
+  font-size: 2.9rem;
+  font-weight: 900;
+
+  letter-spacing: -2px;
+
+  line-height: 1;
+}
+
+
+.brand-sheba {
+  color: var(--sheba-pink);
+}
+
+.brand-hub {
+  color: var(--sheba-hub-color);
+}
+
+/*  */
+.brand-wrapper {
+  display: block;
+
+  margin-top: 0.6rem;
+
+  font-size: 4.2rem;
+  font-weight: 900;
+  letter-spacing: -3px;
+}
+
+.brand-sheba {
+  color: var(--sheba-pink);
+}
+
+.brand-hub {
+  color: var(--sheba-hub-color);
+}
+
+.hero-subtitle {
+  max-width: 640px;
+
+  margin: 1.8rem 0 2.8rem;
+
+  padding: 1.4rem 1.6rem;
+
+  font-size: 1.15rem;
+  line-height: 2;
+  font-weight: 400;
+
+  color: #000000;
+
+  background: linear-gradient(
+    180deg,
+    rgba(255, 254, 254, 0.35),
+    rgba(255, 255, 255, 0.08)
+  );
+
+  backdrop-filter: blur(4px);
+
+  border: 1px solid rgba(255, 255, 255, 0.18);
+
+  border-radius: 18px;
+
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.04);
+}
+
+.subtitle-highlight {
+  color: #00010c;
+  font-weight: 700;
+}
+
+
+/* Hero Image with Multi Border Accent */
+.hero-image-wrapper {
+  flex: 1;
+  position: relative;
+  padding: 32px;
+}
+
+.main-hero-img {
+  width: 100%;
+  height: 450px;
+  object-fit: cover;
+  border-radius: 40px;
+  box-shadow: var(--soft-shadow);
+  position: relative;
+  z-index: 5;
+}
+
+/* מסגרת טורקיז */
+.image-border-accent {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: calc(100% - 32px);
+  height: calc(100% - 32px);
+  border: 2px solid var(--sheba-hub-color);
+  border-radius: 40px;
+  z-index: 1;
+  transform: rotate(-2deg);
+}
+
+/* מסגרת ורודה */
+.hero-image-wrapper::before {
+  content: "";
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: calc(100% - 32px);
+  height: calc(100% - 32px);
+  border: 2px solid var(--sheba-pink);
+  border-radius: 40px;
+  z-index: 2;
+  transform: rotate(0deg);
+}
+
+/* מסגרת כחולה */
+.hero-image-wrapper::after {
+  content: "";
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  width: calc(100% - 32px);
+  height: calc(100% - 32px);
+  border: 2px solid var(--sheba-dark-blue);
+  border-radius: 40px;
+  z-index: 3;
+  transform: rotate(2deg);
+}
+
+/* Vision Cards */
+.vision-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2rem;
+  margin-bottom: 4rem;
+}
+
+.vision-card {
+  background: var(--glass-bg);
+  backdrop-filter: blur(10px);
+  padding: 2.5rem;
+  border-radius: 30px;
+  border: 2px solid rgba(45, 150, 177, 0.25);
+  box-shadow: var(--soft-shadow);
+
+  transition:
+    transform 0.3s ease,
+    border-color 0.3s ease;
+}
+
+.vision-card:hover {
+  transform: translateY(-10px);
+  border-color: var(--sheba-dark-blue);
+}
+
+.vision-card h3 {
+  color: var(--sheba-dark-blue);
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+/* הסתרת אייקונים */
+.vision-card .card-icon,
+.vision-card svg,
+.vision-card i {
+  display: none !important;
+}
+
+/* לוגואים */
+
+/* אזור הלוגואים */
+.hero-logos {
+  display: flex;
+  align-items: center;
+  gap: 2.5rem;
+  margin-top: 2rem;
+
+  /* הזזה שמאלה/ימינה יחסית לטקסט */
+  margin-right: -2rem;
+}
+
+
+/* ברירת מחדל */
+.partner-logo {
+  height: 50px;
+  width: auto;
+
+  filter: grayscale(100%);
+  opacity: 0.7;
+
+  transition: 0.3s;
+}
+
+/* לוגו שיבא גדול יותר */
+.partner-logo.sheba-logo {
+  height: 150px;
+  
+}
+
+/* hover */
+.partner-logo:hover {
+  filter: grayscale(0%);
+  opacity: 1;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 968px) {
+  .hero-section {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .vision-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .hero-logos {
+    justify-content: center;
+  }
+
+  .hero-image-wrapper {
+    width: 100%;
+  }
+}
+
+/* ===== DARK MODE ===== */
+[data-theme="dark"] .hero-title-text {
+  color: #b0b0b0;
+}
+
+[data-theme="dark"] .hero-subtitle {
+  color: var(--text-color);
+  background: linear-gradient(
+    180deg,
+    rgba(22, 22, 22, 0.35),
+    rgba(17, 17, 17, 0.08)
+  );
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="dark"] .subtitle-highlight {
+  color: var(--primary-color);
+}
+
+[data-theme="dark"] .vision-card {
+  background: var(--card-bg);
+  border-color: var(--border-color);
+}
+
+[data-theme="dark"] .vision-card h3 {
+  color: var(--text-color);
+}

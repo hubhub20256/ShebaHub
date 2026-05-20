@@ -1,0 +1,330 @@
+ERROR 2026-03-05 13:12:45,768 log 454312 125088473724608 Internal Server Error: /api/research/me/
+Traceback (most recent call last):
+  File "/home/shebahub/ShebaHub_Backend/venv/lib/python3.12/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/shebahub/ShebaHub_Backend/venv/lib/python3.12/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/shebahub/ShebaHub_Backend/venv/lib/python3.12/site-packages/django/views/decorators/csrf.py", line 56, in wrapper_view
+    return view_func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/shebahub/ShebaHub_Backend/venv/lib/python3.12/site-packages/django/views/generic/base.py", line 104, in view
+    return self.dispatch(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/shebahub/ShebaHub_Backend/venv/lib/python3.12/site-packages/rest_framework/views.py", line 509, in dispatch
+    response = self.handle_exception(exc)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/shebahub/ShebaHub_Backend/venv/lib/python3.12/site-packages/rest_framework/views.py", line 469, in handle_exception
+    self.raise_uncaught_exception(exc)
+  File "/home/shebahub/ShebaHub_Backend/venv/lib/python3.12/site-packages/rest_framework/views.py", line 480, in raise_uncaught_exception
+    raise exc
+  File "/home/shebahub/ShebaHub_Backend/venv/lib/python3.12/site-packages/rest_framework/views.py", line 506, in dispatch
+    response = handler(request, *args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/shebahub/ShebaHub_Backend/venv/lib/python3.12/site-packages/rest_framework/decorators.py", line 50, in handler
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/shebahub/ShebaHub_Backend/apps/research/views.py", line 185, in my_researches
+    if not serializer.is_valid():
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/shebahub/ShebaHub_Backend/venv/lib/python3.12/site-packages/rest_framework/serializers.py", line 227, in is_valid
+    self._validated_data = self.run_validation(self.initial_data)
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/shebahub/ShebaHub_Backend/venv/lib/python3.12/site-packages/rest_framework/serializers.py", line 426, in run_validation
+    value = self.to_internal_value(data)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/shebahub/ShebaHub_Backend/apps/research/serializers.py", line 172, in to_internal_value
+    ret = super().to_internal_value(data)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/shebahub/ShebaHub_Backend/venv/lib/python3.12/site-packages/rest_framework/serializers.py", line 485, in to_internal_value
+    validated_value = validate_method(validated_value)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/shebahub/ShebaHub_Backend/apps/research/serializers.py", line 228, in validate_contract
+    is_valid, error_message = validate_upload(value)
+                              ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/shebahub/ShebaHub_Backend/apps/profiles/file_security.py", line 211, in validate_upload
+    audit_logger.warning(
+  File "/usr/lib/python3.12/logging/__init__.py", line 1551, in warning
+    self._log(WARNING, msg, args, **kwargs)
+  File "/usr/lib/python3.12/logging/__init__.py", line 1682, in _log
+    record = self.makeRecord(self.name, level, fn, lno, msg, args,
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/logging/__init__.py", line 1656, in makeRecord
+    raise KeyError("Attempt to overwrite %r in LogRecord" % key)
+KeyError: "Attempt to overwrite 'filename' in LogRecord"
+ERROR 2026-03-05 13:12:48,706 log 454312 125088473724608 Internal Server Error: /api/research/me/
+Traceback (most recent call last):
+  File "/home/shebahub/ShebaHub_Backend/venv/lib/python3.12/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/shebahub/ShebaHub_Backend/venv/lib/python3.12/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/shebahub/ShebaHub_Backend/venv/lib/python3.12/site-packages/django/views/decorators/csrf.py", line 56, in wrapper_view
+    return view_func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/shebahub/ShebaHub_Backend/venv/lib/python3.12/site-packages/django/views/generic/base.py", line 104, in view
+    return self.dispatch(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/shebahub/ShebaHub_Backend/venv/lib/python3.12/site-packages/rest_framework/views.py", line 509, in dispatch
+    response = self.handle_exception(exc)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/shebahub/ShebaHub_Backend/venv/lib/python3.12/site-packages/rest_framework/views.py", line 469, in handle_exception
+    self.raise_uncaught_exception(exc)
+  File "/home/shebahub/ShebaHub_Backend/venv/lib/python3.12/site-packages/rest_framework/views.py", line 480, in raise_uncaught_exception
+    raise exc
+  File "/home/shebahub/ShebaHub_Backend/venv/lib/python3.12/site-packages/rest_framework/views.py", line 506, in dispatch
+    response = handler(request, *args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/shebahub/ShebaHub_Backend/venv/lib/python3.12/site-packages/rest_framework/decorators.py", line 50, in handler
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/shebahub/ShebaHub_Backend/apps/research/views.py", line 185, in my_researches
+    if not serializer.is_valid():
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/shebahub/ShebaHub_Backend/venv/lib/python3.12/site-packages/rest_framework/serializers.py", line 227, in is_valid
+    self._validated_data = self.run_validation(self.initial_data)
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/shebahub/ShebaHub_Backend/venv/lib/python3.12/site-packages/rest_framework/serializers.py", line 426, in run_validation
+    value = self.to_internal_value(data)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/shebahub/ShebaHub_Backend/apps/research/serializers.py", line 172, in to_internal_value
+    ret = super().to_internal_value(data)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/shebahub/ShebaHub_Backend/venv/lib/python3.12/site-packages/rest_framework/serializers.py", line 485, in to_internal_value
+    validated_value = validate_method(validated_value)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/shebahub/ShebaHub_Backend/apps/research/serializers.py", line 228, in validate_contract
+    is_valid, error_message = validate_upload(value)
+                              ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/shebahub/ShebaHub_Backend/apps/profiles/file_security.py", line 211, in validate_upload
+    audit_logger.warning(
+  File "/usr/lib/python3.12/logging/__init__.py", line 1551, in warning
+    self._log(WARNING, msg, args, **kwargs)
+  File "/usr/lib/python3.12/logging/__init__.py", line 1682, in _log
+    record = self.makeRecord(self.name, level, fn, lno, msg, args,
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/logging/__init__.py", line 1656, in makeRecord
+    raise KeyError("Attempt to overwrite %r in LogRecord" % key)
+KeyError: "Attempt to overwrite 'filename' in LogRecord"
+ERROR 2026-03-05 13:13:36,808 log 454312 125088473724608 Internal Server Error: /api/research/me/
+Traceback (most recent call last):
+  File "/home/shebahub/ShebaHub_Backend/venv/lib/python3.12/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/shebahub/ShebaHub_Backend/venv/lib/python3.12/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/shebahub/ShebaHub_Backend/venv/lib/python3.12/site-packages/django/views/decorators/csrf.py", line 56, in wrapper_view
+    return view_func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/shebahub/ShebaHub_Backend/venv/lib/python3.12/site-packages/django/views/generic/base.py", line 104, in view
+    return self.dispatch(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/shebahub/ShebaHub_Backend/venv/lib/python3.12/site-packages/rest_framework/views.py", line 509, in dispatch
+    response = self.handle_exception(exc)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/shebahub/ShebaHub_Backend/venv/lib/python3.12/site-packages/rest_framework/views.py", line 469, in handle_exception
+    self.raise_uncaught_exception(exc)
+  File "/home/shebahub/ShebaHub_Backend/venv/lib/python3.12/site-packages/rest_framework/views.py", line 480, in raise_uncaught_exception
+    raise exc
+  File "/home/shebahub/ShebaHub_Backend/venv/lib/python3.12/site-packages/rest_framework/views.py", line 506, in dispatch
+    response = handler(request, *args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/shebahub/ShebaHub_Backend/venv/lib/python3.12/site-packages/rest_framework/decorators.py", line 50, in handler
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/shebahub/ShebaHub_Backend/apps/research/views.py", line 185, in my_researches
+    if not serializer.is_valid():
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/shebahub/ShebaHub_Backend/venv/lib/python3.12/site-packages/rest_framework/serializers.py", line 227, in is_valid
+    self._validated_data = self.run_validation(self.initial_data)
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/shebahub/ShebaHub_Backend/venv/lib/python3.12/site-packages/rest_framework/serializers.py", line 426, in run_validation
+    value = self.to_internal_value(data)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/shebahub/ShebaHub_Backend/apps/research/serializers.py", line 172, in to_internal_value
+    ret = super().to_internal_value(data)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/shebahub/ShebaHub_Backend/venv/lib/python3.12/site-packages/rest_framework/serializers.py", line 485, in to_internal_value
+    validated_value = validate_method(validated_value)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/shebahub/ShebaHub_Backend/apps/research/serializers.py", line 228, in validate_contract
+    is_valid, error_message = validate_upload(value)
+                              ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/shebahub/ShebaHub_Backend/apps/profiles/file_security.py", line 211, in validate_upload
+    audit_logger.warning(
+  File "/usr/lib/python3.12/logging/__init__.py", line 1551, in warning
+    self._log(WARNING, msg, args, **kwargs)
+  File "/usr/lib/python3.12/logging/__init__.py", line 1682, in _log
+    record = self.makeRecord(self.name, level, fn, lno, msg, args,
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/logging/__init__.py", line 1656, in makeRecord
+    raise KeyError("Attempt to overwrite %r in LogRecord" % key)
+KeyError: "Attempt to overwrite 'filename' in LogRecord"
+ERROR 2026-03-05 13:13:48,217 log 454312 125088498902720 Internal Server Error: /api/research/me/
+Traceback (most recent call last):
+  File "/home/shebahub/ShebaHub_Backend/venv/lib/python3.12/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/shebahub/ShebaHub_Backend/venv/lib/python3.12/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/shebahub/ShebaHub_Backend/venv/lib/python3.12/site-packages/django/views/decorators/csrf.py", line 56, in wrapper_view
+    return view_func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/shebahub/ShebaHub_Backend/venv/lib/python3.12/site-packages/django/views/generic/base.py", line 104, in view
+    return self.dispatch(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/shebahub/ShebaHub_Backend/venv/lib/python3.12/site-packages/rest_framework/views.py", line 509, in dispatch
+    response = self.handle_exception(exc)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/shebahub/ShebaHub_Backend/venv/lib/python3.12/site-packages/rest_framework/views.py", line 469, in handle_exception
+    self.raise_uncaught_exception(exc)
+  File "/home/shebahub/ShebaHub_Backend/venv/lib/python3.12/site-packages/rest_framework/views.py", line 480, in raise_uncaught_exception
+    raise exc
+  File "/home/shebahub/ShebaHub_Backend/venv/lib/python3.12/site-packages/rest_framework/views.py", line 506, in dispatch
+    response = handler(request, *args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/shebahub/ShebaHub_Backend/venv/lib/python3.12/site-packages/rest_framework/decorators.py", line 50, in handler
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/shebahub/ShebaHub_Backend/apps/research/views.py", line 185, in my_researches
+    if not serializer.is_valid():
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/shebahub/ShebaHub_Backend/venv/lib/python3.12/site-packages/rest_framework/serializers.py", line 227, in is_valid
+    self._validated_data = self.run_validation(self.initial_data)
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/shebahub/ShebaHub_Backend/venv/lib/python3.12/site-packages/rest_framework/serializers.py", line 426, in run_validation
+    value = self.to_internal_value(data)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/shebahub/ShebaHub_Backend/apps/research/serializers.py", line 172, in to_internal_value
+    ret = super().to_internal_value(data)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/shebahub/ShebaHub_Backend/venv/lib/python3.12/site-packages/rest_framework/serializers.py", line 485, in to_internal_value
+    validated_value = validate_method(validated_value)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/shebahub/ShebaHub_Backend/apps/research/serializers.py", line 228, in validate_contract
+    is_valid, error_message = validate_upload(value)
+                              ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/shebahub/ShebaHub_Backend/apps/profiles/file_security.py", line 211, in validate_upload
+    audit_logger.warning(
+  File "/usr/lib/python3.12/logging/__init__.py", line 1551, in warning
+    self._log(WARNING, msg, args, **kwargs)
+  File "/usr/lib/python3.12/logging/__init__.py", line 1682, in _log
+    record = self.makeRecord(self.name, level, fn, lno, msg, args,
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/logging/__init__.py", line 1656, in makeRecord
+    raise KeyError("Attempt to overwrite %r in LogRecord" % key)
+KeyError: "Attempt to overwrite 'filename' in LogRecord"
+ERROR 2026-03-05 13:13:57,491 log 454312 125088498902720 Internal Server Error: /api/research/me/
+Traceback (most recent call last):
+  File "/home/shebahub/ShebaHub_Backend/venv/lib/python3.12/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/shebahub/ShebaHub_Backend/venv/lib/python3.12/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/shebahub/ShebaHub_Backend/venv/lib/python3.12/site-packages/django/views/decorators/csrf.py", line 56, in wrapper_view
+    return view_func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/shebahub/ShebaHub_Backend/venv/lib/python3.12/site-packages/django/views/generic/base.py", line 104, in view
+    return self.dispatch(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/shebahub/ShebaHub_Backend/venv/lib/python3.12/site-packages/rest_framework/views.py", line 509, in dispatch
+    response = self.handle_exception(exc)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/shebahub/ShebaHub_Backend/venv/lib/python3.12/site-packages/rest_framework/views.py", line 469, in handle_exception
+    self.raise_uncaught_exception(exc)
+  File "/home/shebahub/ShebaHub_Backend/venv/lib/python3.12/site-packages/rest_framework/views.py", line 480, in raise_uncaught_exception
+    raise exc
+  File "/home/shebahub/ShebaHub_Backend/venv/lib/python3.12/site-packages/rest_framework/views.py", line 506, in dispatch
+    response = handler(request, *args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/shebahub/ShebaHub_Backend/venv/lib/python3.12/site-packages/rest_framework/decorators.py", line 50, in handler
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/shebahub/ShebaHub_Backend/apps/research/views.py", line 185, in my_researches
+    if not serializer.is_valid():
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/shebahub/ShebaHub_Backend/venv/lib/python3.12/site-packages/rest_framework/serializers.py", line 227, in is_valid
+    self._validated_data = self.run_validation(self.initial_data)
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/shebahub/ShebaHub_Backend/venv/lib/python3.12/site-packages/rest_framework/serializers.py", line 426, in run_validation
+    value = self.to_internal_value(data)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/shebahub/ShebaHub_Backend/apps/research/serializers.py", line 172, in to_internal_value
+    ret = super().to_internal_value(data)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/shebahub/ShebaHub_Backend/venv/lib/python3.12/site-packages/rest_framework/serializers.py", line 485, in to_internal_value
+    validated_value = validate_method(validated_value)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/shebahub/ShebaHub_Backend/apps/research/serializers.py", line 228, in validate_contract
+    is_valid, error_message = validate_upload(value)
+                              ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/shebahub/ShebaHub_Backend/apps/profiles/file_security.py", line 211, in validate_upload
+    audit_logger.warning(
+  File "/usr/lib/python3.12/logging/__init__.py", line 1551, in warning
+    self._log(WARNING, msg, args, **kwargs)
+  File "/usr/lib/python3.12/logging/__init__.py", line 1682, in _log
+    record = self.makeRecord(self.name, level, fn, lno, msg, args,
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/logging/__init__.py", line 1656, in makeRecord
+    raise KeyError("Attempt to overwrite %r in LogRecord" % key)
+KeyError: "Attempt to overwrite 'filename' in LogRecord"
+ERROR 2026-03-05 13:13:59,306 log 454312 125088473724608 Internal Server Error: /api/research/me/
+Traceback (most recent call last):
+  File "/home/shebahub/ShebaHub_Backend/venv/lib/python3.12/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/shebahub/ShebaHub_Backend/venv/lib/python3.12/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/shebahub/ShebaHub_Backend/venv/lib/python3.12/site-packages/django/views/decorators/csrf.py", line 56, in wrapper_view
+    return view_func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/shebahub/ShebaHub_Backend/venv/lib/python3.12/site-packages/django/views/generic/base.py", line 104, in view
+    return self.dispatch(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/shebahub/ShebaHub_Backend/venv/lib/python3.12/site-packages/rest_framework/views.py", line 509, in dispatch
+    response = self.handle_exception(exc)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/shebahub/ShebaHub_Backend/venv/lib/python3.12/site-packages/rest_framework/views.py", line 469, in handle_exception
+    self.raise_uncaught_exception(exc)
+  File "/home/shebahub/ShebaHub_Backend/venv/lib/python3.12/site-packages/rest_framework/views.py", line 480, in raise_uncaught_exception
+    raise exc
+  File "/home/shebahub/ShebaHub_Backend/venv/lib/python3.12/site-packages/rest_framework/views.py", line 506, in dispatch
+    response = handler(request, *args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/shebahub/ShebaHub_Backend/venv/lib/python3.12/site-packages/rest_framework/decorators.py", line 50, in handler
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/shebahub/ShebaHub_Backend/apps/research/views.py", line 185, in my_researches
+    if not serializer.is_valid():
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/shebahub/ShebaHub_Backend/venv/lib/python3.12/site-packages/rest_framework/serializers.py", line 227, in is_valid
+    self._validated_data = self.run_validation(self.initial_data)
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/shebahub/ShebaHub_Backend/venv/lib/python3.12/site-packages/rest_framework/serializers.py", line 426, in run_validation
+    value = self.to_internal_value(data)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/shebahub/ShebaHub_Backend/apps/research/serializers.py", line 172, in to_internal_value
+    ret = super().to_internal_value(data)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/shebahub/ShebaHub_Backend/venv/lib/python3.12/site-packages/rest_framework/serializers.py", line 485, in to_internal_value
+    validated_value = validate_method(validated_value)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/shebahub/ShebaHub_Backend/apps/research/serializers.py", line 228, in validate_contract
+    is_valid, error_message = validate_upload(value)
+                              ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/shebahub/ShebaHub_Backend/apps/profiles/file_security.py", line 211, in validate_upload
+    audit_logger.warning(
+  File "/usr/lib/python3.12/logging/__init__.py", line 1551, in warning
+    self._log(WARNING, msg, args, **kwargs)
+  File "/usr/lib/python3.12/logging/__init__.py", line 1682, in _log
+    record = self.makeRecord(self.name, level, fn, lno, msg, args,
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/logging/__init__.py", line 1656, in makeRecord
+    raise KeyError("Attempt to overwrite %r in LogRecord" % key)
+KeyError: "Attempt to overwrite 'filename' in LogRecord"
