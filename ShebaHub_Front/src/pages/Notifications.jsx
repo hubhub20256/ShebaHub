@@ -51,11 +51,7 @@ const Notifications = () => {
   }, [clearCount]);
 
   const handleClick = (msg) => {
-    if (msg.research_id) {
-      navigate(`/research/${msg.research_id}`);
-    } else {
-      setExpandedId((prev) => (prev === msg.id ? null : msg.id));
-    }
+    setExpandedId((prev) => (prev === msg.id ? null : msg.id));
   };
 
   const showToast = (type, text) => {
@@ -159,16 +155,27 @@ const Notifications = () => {
                 {expandedId === msg.id && (
                   <>
                     <div className="notification-body">{msg.body}</div>
-                    {msg.notification_type === "contact" && msg.senderId && (
-                      <div className="notification-reply-row">
+                    <div className="notification-reply-row" style={{ display: 'flex', gap: '10px' }}>
+                      {msg.senderId && (
                         <button
                           className="notification-reply-btn"
                           onClick={(e) => handleReplyOpen(msg, e)}
                         >
                           <FaReply style={{ marginLeft: 4 }} /> השב
                         </button>
-                      </div>
-                    )}
+                      )}
+                      {msg.research_id && (
+                        <button
+                          className="notification-reply-btn"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/research/${msg.research_id}`);
+                          }}
+                        >
+                          צפה במחקר
+                        </button>
+                      )}
+                    </div>
                   </>
                 )}
               </div>
