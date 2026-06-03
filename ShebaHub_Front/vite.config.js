@@ -9,10 +9,10 @@ export default defineConfig({
     rollupOptions: {
       plugins: [
         license({
-          banner: `/*! This software includes third-party open-source code. For license details, see /LICENSES.TXT */`,
+          banner: `/*! This software includes third-party open-source code. For license details, see /licenses.txt */`,
           thirdParty: {
             output: {
-              file: "dist/LICENSES.TXT",
+              file: "dist/licenses.txt",
             },
           },
         }),

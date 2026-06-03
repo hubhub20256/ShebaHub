@@ -1,9 +1,20 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import usePageTitle from "../hooks/usePageTitle";
+import { publicAPI } from "../services/api";
 import "../styles/About.css";
 
 const About = () => {
   usePageTitle("אודות | ShebaHub");
+
+  const [stats, setStats] = useState({
+    registered_mentors: 0,
+    registered_students: 0,
+    total_researches: 0,
+  });
+
+  useEffect(() => {
+    publicAPI.getStats().then(setStats).catch(() => {});
+  }, []);
 
   const problemItems = [
     "חוקרים מקדישים זמן רב למשימות חוזרות שאינן דורשות מומחיות מחקרית.",
@@ -18,18 +29,9 @@ const About = () => {
   ];
 
   const statsItems = [
-    {
-      title: "מנחים",
-      value: "",
-    },
-    {
-      title: "מתלמדים",
-      value: "",
-    },
-    {
-      title: "מחקרים",
-      value: "",
-    },
+    { title: "מנחים", value: stats.registered_mentors },
+    { title: "מתלמדים", value: stats.registered_students },
+    { title: "מחקרים", value: stats.total_researches },
   ];
 
   const values = [

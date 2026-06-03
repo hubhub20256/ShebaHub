@@ -27,6 +27,10 @@ urlpatterns = [
     path("users/<uuid:pk>/reactivate/", views.reactivate_user, name="admin-user-reactivate"),
     path("users/<uuid:pk>/force-verify/", views.force_verify_user, name="admin-user-force-verify"),
 
+    # Admin profile deletion
+    path("profiles/student/<uuid:user_id>/", views.admin_delete_student_profile, name="admin-delete-student-profile"),
+    path("profiles/mentor/<uuid:user_id>/", views.admin_delete_mentor_profile, name="admin-delete-mentor-profile"),
+
     # Audit logs
     path("logs/export/", views.export_logs_csv, name="admin-logs-export"),
     path("logs/", views.list_logs, name="admin-logs"),

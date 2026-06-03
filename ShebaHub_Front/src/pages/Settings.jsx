@@ -251,6 +251,7 @@ export default function Settings() {
 
       {confirmDialog && (
         <ConfirmDialog
+          isOpen={true}
           title={confirmDialog.title}
           message={confirmDialog.message}
           onConfirm={confirmDialog.onConfirm}

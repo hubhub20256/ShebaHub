@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import toast from "react-hot-toast";
-import { profilesAPI, researchAPI, messagesAPI, API_BASE_URL } from "../services/api";
+import { profilesAPI, researchAPI, messagesAPI, savedItemsAPI, API_BASE_URL } from "../services/api";
 import { useAuth } from "../context/AuthContext";
 import "../styles/Profile.css";
 import SaveOutlineIcon from "../assets/save-outline.png";
@@ -86,7 +86,6 @@ function PublicProfile() {
   const profileId = id;
   const navigate = useNavigate();
   const { user } = useAuth();
-  const savedProfilesKey = `savedProfiles_${user?.id || 'guest'}`;
   const [profileData, setProfileData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -106,6 +105,7 @@ function PublicProfile() {
   // Toast message state
   const [profileToast, setProfileToast] = useState(null);
   const [isSaved, setIsSaved] = useState(false);
+  const [savedItemId, setSavedItemId] = useState(null);
 
   const currentUserIsMentor = user?.has_mentor_profile === true;
   const isOwnProfile =
@@ -288,16 +288,14 @@ function PublicProfile() {
   }
 
   useEffect(() => {
-    const savedProfiles = JSON.parse(
-      localStorage.getItem(savedProfilesKey) || "[]"
-    );
-  
-    const exists = savedProfiles.some(
-      (item) => item.id === profileData?.id
-    );
-  
-    setIsSaved(exists);
-  }, [profileData]);
+    if (!profileData?.id || !user) return;
+    const contentType = profileData?.role === "mentor" ? "mentor_profile" : "student_profile";
+    savedItemsAPI.list(contentType).then((items) => {
+      const match = items.find((item) => String(item.objectId) === String(profileData.id));
+      setIsSaved(!!match);
+      setSavedItemId(match ? match.id : null);
+    }).catch(() => {});
+  }, [profileData, user]);
   
   if (isLoading) {
     return (
@@ -369,71 +367,31 @@ function PublicProfile() {
         <button
           type="button"
           className={`save-detail-button-inline ${isSaved ? "saved" : ""}`}
-          onClick={(e) => {
+          onClick={async (e) => {
             e.stopPropagation();
-
-            const savedProfiles = JSON.parse(
-              localStorage.getItem(savedProfilesKey) || "[]"
-            );
-
-            const exists = savedProfiles.some(
-              (item) => item.id === profileData?.id
-            );
-
-            if (exists) {
-              const updated = savedProfiles.filter(
-                (item) => item.id !== profileData?.id
-              );
-
-              localStorage.setItem(savedProfilesKey, JSON.stringify(updated));
-
-              setIsSaved(false);
-              toast("הפרופיל הוסר מהשמורים");
-          } else {
-            savedProfiles.push({
-              id: profileData?.id,
-              type: profileData?.role,
-              name: profileData?.name,
-              profileImage:
-                profileData?.profileImage || profileData?.avatarUrl || profileData?.avatar,
-            
-              specialty:
-                Array.isArray(profileData?.specialties_detail) &&
-                profileData.specialties_detail.length
-                  ? extractDisplay(profileData.specialties_detail)
-                  : getHebrewName(profileData, "specialty_detail"),
-            
-              degrees: formatDegrees(profileData),
-            
-              isAvailableForResearch: profileData?.isAvailableForResearch,
-            
-              medical_level:
-                getHebrewName(profileData, "apprenticeStage_detail") ||
-                profileData?.apprenticeStage ||
-                profileData?.medical_level,
-            
-              Educational_institution:
-                getHebrewName(profileData, "institution_detail") ||
-                profileData?.institution,
-            
-              school_beginner_year: profileData?.startYear,
-            
-              gender:
-                profileData?.gender === "female"
-                  ? "נקבה"
-                  : profileData?.gender === "male"
-                    ? "זכר"
-                    : profileData?.gender === "other"
-                      ? "אחר"
-                      : profileData?.gender || "לא צוין",
-            
-              department: profileData?.department,
-            });
-
-              localStorage.setItem(savedProfilesKey, JSON.stringify(savedProfiles));
-
-              setIsSaved(true);
-              toast.success("הפרופיל נשמר");
+            const contentType = profileData?.role === "mentor" ? "mentor_profile" : "student_profile";
+            try {
+              if (isSaved && savedItemId) {
+                await savedItemsAPI.remove(savedItemId);
+                setIsSaved(false);
+                setSavedItemId(null);
+                toast("הפרופיל הוסר מהשמורים");
+              } else {
+                const result = await savedItemsAPI.save(contentType, profileData.id);
+                setIsSaved(true);
+                setSavedItemId(result.id);
+                toast.success("הפרופיל נשמר");
+              }
+            } catch (err) {
+              if (err?.status === 409) {
+                setIsSaved(true);
+                savedItemsAPI.list(contentType).then((items) => {
+                  const match = items.find((item) => String(item.objectId) === String(profileData.id));
+                  if (match) setSavedItemId(match.id);
+                }).catch(() => {});
+              } else {
+                toast.error("שגיאה בשמירת הפרופיל");
+              }
             }
           }}
           aria-label="שמירת פרופיל"

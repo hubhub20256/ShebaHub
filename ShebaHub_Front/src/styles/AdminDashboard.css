@@ -597,3 +597,43 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* ===== DARK MODE - Action Buttons ===== */
+[data-theme="dark"] .admin-btn-approve {
+  background: #2f855a;
+  color: #c6f6d5;
+}
+
+[data-theme="dark"] .admin-btn-reject {
+  background: #c53030;
+  color: #fed7d7;
+}
+
+[data-theme="dark"] .admin-btn-flag {
+  background: #b7791f;
+  color: #fefcbf;
+}
+
+[data-theme="dark"] .admin-btn-delete {
+  background: #4a5568;
+  color: #e2e8f0;
+}
+
+[data-theme="dark"] .admin-btn-restore {
+  background: #2b6cb0;
+  color: #bee3f8;
+}
+
+[data-theme="dark"] .admin-btn-verify {
+  background: #0987a0;
+  color: #c4f1f9;
+}
+
+[data-theme="dark"] .admin-btn-edit {
+  background: #6b46c1;
+  color: #e9d8fd;
+}
+
+[data-theme="dark"] .admin-error {
+  color: #fc8181;
+}

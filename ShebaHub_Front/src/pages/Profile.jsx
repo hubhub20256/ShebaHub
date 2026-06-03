@@ -3,7 +3,7 @@ import { useNavigate, useParams, Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import QrModal from "../components/QrModal";
 import { useAuth } from "../context/AuthContext";
-import { profilesAPI, API_BASE_URL } from "../services/api";
+import { profilesAPI, savedItemsAPI, API_BASE_URL } from "../services/api";
 import usePageTitle from "../hooks/usePageTitle";
 import { validateFile } from "../utils/formValidation";
 import PublicProfile from "./PublicProfile";
@@ -730,7 +730,6 @@ function Profile() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user, refreshUser } = useAuth();
-  const savedProfilesKey = `savedProfiles_${user?.id || 'guest'}`;
   const [mentorProfile, setMentorProfile] = useState(null);
   const [apprenticeProfile, setApprenticeProfile] = useState(null);
   const [activeRole, setActiveRole] = useState(null);
@@ -758,6 +757,7 @@ function Profile() {
   const [mentorsList, setMentorsList] = useState([]);
 
   const [isSaved, setIsSaved] = useState(false);
+  const [savedItemId, setSavedItemId] = useState(null);
 
   const avatarFileInputRef = useRef(null);
   const documentFileInputRef = useRef(null);
@@ -768,16 +768,14 @@ function Profile() {
   const isOwnProfile = !!user && (isMeAlias || id === user.id);
 
   useEffect(() => {
-    const savedProfiles = JSON.parse(
-      localStorage.getItem(savedProfilesKey) || "[]"
-    );
-  
-    const exists = savedProfiles.some(
-      (item) => item.id === userData?.id
-    );
-  
-    setIsSaved(exists);
-  }, [userData]);
+    if (!userData?.id || !user || isOwnProfile) return;
+    const contentType = activeRole === "mentor" ? "mentor_profile" : "student_profile";
+    savedItemsAPI.list(contentType).then((items) => {
+      const match = items.find((item) => String(item.objectId) === String(userData.id));
+      setIsSaved(!!match);
+      setSavedItemId(match ? match.id : null);
+    }).catch(() => {});
+  }, [userData, user, isOwnProfile, activeRole]);
   
   // If token/user is gone (logout / expired), redirect to login
   useEffect(() => {
@@ -1422,46 +1420,31 @@ function Profile() {
           <button
             type="button"
             className={`save-detail-button-inline ${isSaved ? "saved" : ""}`}
-            onClick={(e) => {
+            onClick={async (e) => {
               e.stopPropagation();
-
-              const savedProfiles = JSON.parse(
-                localStorage.getItem(savedProfilesKey) || "[]"
-              );
-
-              const exists = savedProfiles.some(
-                (item) => item.id === userData?.id
-              );
-
-              if (exists) {
-                const updated = savedProfiles.filter(
-                  (item) => item.id !== userData?.id
-                );
-
-                localStorage.setItem(savedProfilesKey, JSON.stringify(updated));
-
-                setIsSaved(false);
-                toast("הפרופיל הוסר מהשמורים");
-              } else {
-                savedProfiles.push({
-                  id: userData?.id,
-                  type: activeRole,
-                  name: userData?.fullName || userData?.name,
-                  profileImage: userData?.profileImage || userData?.avatarUrl,
-                  specialty: userData?.specialty,
-                  degrees: userData?.degrees,
-                  isAvailableForResearch: userData?.isAvailableForResearch,
-                  medical_level: userData?.apprenticeStage || userData?.medical_level,
-                  Educational_institution: userData?.institution,
-                  school_beginner_year: userData?.startYear,
-                  gender: userData?.gender,
-                  department: userData?.department,
-                });
-
-                localStorage.setItem(savedProfilesKey, JSON.stringify(savedProfiles));
-
-                setIsSaved(true);
-                toast.success("הפרופיל נשמר");
+              const contentType = activeRole === "mentor" ? "mentor_profile" : "student_profile";
+              try {
+                if (isSaved && savedItemId) {
+                  await savedItemsAPI.remove(savedItemId);
+                  setIsSaved(false);
+                  setSavedItemId(null);
+                  toast("הפרופיל הוסר מהשמורים");
+                } else {
+                  const result = await savedItemsAPI.save(contentType, userData.id);
+                  setIsSaved(true);
+                  setSavedItemId(result.id);
+                  toast.success("הפרופיל נשמר");
+                }
+              } catch (err) {
+                if (err?.status === 409) {
+                  setIsSaved(true);
+                  savedItemsAPI.list(contentType).then((items) => {
+                    const match = items.find((item) => String(item.objectId) === String(userData.id));
+                    if (match) setSavedItemId(match.id);
+                  }).catch(() => {});
+                } else {
+                  toast.error("שגיאה בשמירת הפרופיל");
+                }
               }
             }}
             aria-label="שמירת פרופיל"

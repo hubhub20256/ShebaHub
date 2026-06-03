@@ -1,6 +1,6 @@
 // API Service for Backend Communication
-//export const API_BASE_URL = 'https://shebahub.hitheal.org.il:8085/api';
-export const API_BASE_URL = "http://localhost:8000/api";
+export const API_BASE_URL = 'https://shebahub.hitheal.org.il:8085/api';
+//export const API_BASE_URL = "http://localhost:8000/api";
 
 // ---------------- Token helpers ----------------
 const decodeJwtPayload = (token) => {
@@ -458,7 +458,10 @@ const buildResearchFormData = (data, options = {}) => {
 
 export const researchAPI = {
   // Authenticated read
-  listResearches: () => apiRequest("/research/"),
+  listResearches: (params = {}) => {
+    const queryString = new URLSearchParams(params).toString();
+    return apiRequest(`/research/${queryString ? "?" + queryString : ""}`);
+  },
   getResearch: (id) => apiRequest(`/research/${id}/`),
 
   // Authenticated read: approved applicants list (for real research view)
@@ -817,6 +820,34 @@ export const adminAPI = {
       method: "POST",
       body: { new_status, note: note || undefined },
     }),
+
+  // Admin profile deletion (by user ID)
+  deleteStudentProfileByUserId: (userId) =>
+    apiRequest(`/admin-panel/profiles/student/${userId}/`, { method: "DELETE" }),
+  deleteMentorProfileByUserId: (userId) =>
+    apiRequest(`/admin-panel/profiles/mentor/${userId}/`, { method: "DELETE" }),
+};
+
+// ============== SAVED ITEMS API ==============
+
+export const savedItemsAPI = {
+  list: (type) => {
+    const qs = type ? `?type=${encodeURIComponent(type)}` : "";
+    return apiRequest(`/saved-items/${qs}`);
+  },
+  save: (contentType, objectId) =>
+    apiRequest("/saved-items/", {
+      method: "POST",
+      body: { contentType, objectId: String(objectId) },
+    }),
+  remove: (id) =>
+    apiRequest(`/saved-items/${id}/`, { method: "DELETE" }),
+};
+
+// ============== PUBLIC API ==============
+
+export const publicAPI = {
+  getStats: () => apiRequest("/public/stats/", { auth: false }),
 };
 
 export default {
@@ -826,4 +857,6 @@ export default {
   reference: referenceAPI,
   messages: messagesAPI,
   admin: adminAPI,
+  savedItems: savedItemsAPI,
+  public: publicAPI,
 };

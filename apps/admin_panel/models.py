@@ -66,6 +66,8 @@ class AdminActionLog(models.Model):
         ANNOUNCEMENT_DEACTIVATE = "announcement_deactivate", "Announcement Deactivated"
         USER_EDIT = "user_edit", "User Edited"
         APPLICATION_OVERRIDE = "application_override", "Application Status Overridden"
+        USER_DELETE = "user_delete", "User Deleted"
+        PROFILE_DELETE = "profile_delete", "Profile Deleted"
 
     admin = models.ForeignKey(
         settings.AUTH_USER_MODEL,

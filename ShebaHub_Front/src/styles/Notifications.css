@@ -272,6 +272,15 @@
   border-color: #dc2626;
 }
 
+[data-theme="dark"] .notification-item.unread {
+  background: rgba(108, 213, 191, 0.08);
+  border-right-color: var(--primary-color);
+}
+
+[data-theme="dark"] .notification-item:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
 /* Clickable research link */
 .notification-research-link {
   font-size: 0.8rem;

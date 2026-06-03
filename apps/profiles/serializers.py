@@ -16,7 +16,7 @@ from datetime import date
 from rest_framework import serializers
 # Only allow a constrained set of academic degree names from the frontend
 # (prevents unsupported options like Post-Doc/"התמחות" from being saved).
-ALLOWED_DEGREE_NAMES = {"MD", "PhD", "MSc", "MPH", "MBA"}
+ALLOWED_DEGREE_NAMES = {"BSc", "MD", "PhD", "MSc", "MPH", "MBA"}
 # Sentinel value indicating the user has no prior degree – frontend sends this
 # as a degree selection; backend interprets it as "skip degree validation, store none".
 NO_DEGREE_SENTINEL = "ללא תואר קודם"
@@ -853,6 +853,9 @@ class MentorProfileSerializer(serializers.ModelSerializer):
             'recommenders',
             'linkedinUrl',
 
+            # אחר התמחות
+            'specialty_other',
+
             # דרגה אקדמית ושיוך אוניברסיטאי
             'universityRank',
             'universityAffiliation',
@@ -868,6 +871,7 @@ class MentorProfileSerializer(serializers.ModelSerializer):
             'personalAcademicDescription': {'max_length': 5000},
             'universityRank': {'max_length': 255},
             'universityAffiliation': {'max_length': 255},
+            'specialty_other': {'max_length': 255, 'required': False, 'allow_blank': True},
         }
 
     def to_internal_value(self, data):
