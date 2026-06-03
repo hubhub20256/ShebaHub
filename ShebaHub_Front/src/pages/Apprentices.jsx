@@ -167,7 +167,7 @@ export default function Apprentices() {
         "";
 
       const apprenticeDegrees = Array.isArray(s.degrees_detail)
-        ? s.degrees_detail.map(d => d.name).filter(Boolean)
+        ? s.degrees_detail.map(d => d.name_he || d.name).filter(Boolean)
         : Array.isArray(s.degrees)
           ? s.degrees
           : [];
@@ -178,12 +178,12 @@ export default function Apprentices() {
         gender: s.genderDisplay || s.gender || "",
         email: s.email || "",
 
-        medical_level: s.apprenticeStage_detail?.name || s.apprenticeStage || "",
+        medical_level: s.apprenticeStage_detail?.name_he || s.apprenticeStage_detail?.name || s.apprenticeStage || "",
         school_beginner_year: s.startYear ? String(s.startYear) : "",
         yearOfStudy: s.yearOfStudy || "",
 
         Educational_institution:
-          s.institution_detail?.name || s.institution === "__other__" ? "אחר" : s.institution || "",
+          s.institution_detail?.name_he || s.institution_detail?.name || s.institution === "__other__" ? "אחר" : s.institution || "",
 
         degrees: apprenticeDegrees,
 
@@ -191,7 +191,7 @@ export default function Apprentices() {
         isAvailableForResearch: normalizeYesNo(s.isAvailableForResearch),
 
         compensationPreference: Array.isArray(s.compensationPreference_detail)
-          ? s.compensationPreference_detail.map(p => p.name).filter(Boolean)
+          ? s.compensationPreference_detail.map(p => p.name_he || p.name).filter(Boolean)
           : Array.isArray(s.compensationPreference)
             ? s.compensationPreference
             : [],

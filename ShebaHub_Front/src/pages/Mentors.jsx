@@ -147,7 +147,7 @@ export default function Mentors() {
   const mappedMentors = useMemo(() => {
     return (Array.isArray(mentors) ? mentors : []).map((m) => {
       const mentorSpecialties = Array.isArray(m.specialties_detail)
-        ? m.specialties_detail.map(s => s.name).filter(Boolean)
+        ? m.specialties_detail.map(s => s.name_he || s.name).filter(Boolean)
         : Array.isArray(m.specialties)
           ? m.specialties.filter(Boolean)
           : m.specialty_detail
@@ -157,7 +157,7 @@ export default function Mentors() {
               : [];
 
       const mentorSpecialtyGroups = Array.isArray(m.specialtyGroups_detail)
-        ? m.specialtyGroups_detail.map(g => g.name).filter(Boolean)
+        ? m.specialtyGroups_detail.map(g => g.name_he || g.name).filter(Boolean)
         : Array.isArray(m.specialtyGroups)
           ? m.specialtyGroups.filter(Boolean)
           : m.specialtyGroup_detail
@@ -167,7 +167,7 @@ export default function Mentors() {
               : [];
 
       const mentorDegrees = Array.isArray(m.degrees_detail)
-        ? m.degrees_detail.map(d => d.name).filter(Boolean)
+        ? m.degrees_detail.map(d => d.name_he || d.name).filter(Boolean)
         : Array.isArray(m.degrees)
           ? m.degrees.filter(Boolean)
           : m.degrees
@@ -184,7 +184,7 @@ export default function Mentors() {
             specialties: mentorSpecialties,
             specialtyGroups: mentorSpecialtyGroups,
           
-            academicRank: m.academicRank_detail?.name || m.academicRank || m.academic_rank || "",
+            academicRank: m.academicRank_detail?.name_he || m.academicRank_detail?.name || m.academicRank || m.academic_rank || "",
             degrees: mentorDegrees.join(", "),
             degreesList: mentorDegrees,
           
@@ -197,7 +197,7 @@ export default function Mentors() {
             ),
           
             Educational_institution:
-              m.institution_detail?.name || m.institution || m.Educational_institution || m.educational_institution || "",
+              m.institution_detail?.name_he || m.institution_detail?.name || m.institution || m.Educational_institution || m.educational_institution || "",
           
             profileImage: m.avatarUrl || m.avatar_url || null,
           };
