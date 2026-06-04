@@ -21,6 +21,7 @@ from drf_spectacular.views import (
     SpectacularSwaggerView,
 )
 
+from apps.admin_panel.views import public_stats
 from apps.profiles.urls import reference_urlpatterns
 
 # In DEBUG mode, docs are public; in production, admin-only
@@ -48,7 +49,9 @@ urlpatterns = [
     path("api/profiles/", include("apps.profiles.urls")),
     path("api/research/", include("apps.research.urls")),
     path("api/admin-panel/", include("apps.admin_panel.urls")),
+    path("api/saved-items/", include("apps.saved_items.urls")),
     path("api/reference-data/", include(reference_urlpatterns)),
+    path("api/public/stats/", public_stats, name="public-stats"),
 
     # API Documentation — public in dev, admin-only in production
     path("api/schema/", DocsSchemaView.as_view(), name="schema"),

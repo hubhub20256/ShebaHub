@@ -29,7 +29,7 @@ const SPECIALTY_GROUPS = [
 
 const ACADEMIC_RANK_OPTIONS = ["סטאז׳", "מומחה/ית"];
 
-const DEGREE_OPTIONS = ["MD", "PhD", "MSc", "MPH", "MBA", "ללא תואר קודם"];
+const DEGREE_OPTIONS = ["MD", "PhD", "MSc", "MPH", "MBA", "BSc", "ללא תואר קודם"];
 
 const UNIVERSITY_RANK_OPTIONS = [
   "ללא",
@@ -146,23 +146,33 @@ export default function Mentors() {
 
   const mappedMentors = useMemo(() => {
     return (Array.isArray(mentors) ? mentors : []).map((m) => {
-      const mentorSpecialties = Array.isArray(m.specialties)
-        ? m.specialties.filter(Boolean)
-        : m.specialty
-          ? [m.specialty]
-          : [];
+      const mentorSpecialties = Array.isArray(m.specialties_detail)
+        ? m.specialties_detail.map(s => s.name_he || s.name).filter(Boolean)
+        : Array.isArray(m.specialties)
+          ? m.specialties.filter(Boolean)
+          : m.specialty_detail
+            ? [m.specialty_detail.name]
+            : m.specialty
+              ? [m.specialty]
+              : [];
 
-      const mentorSpecialtyGroups = Array.isArray(m.specialtyGroups)
-        ? m.specialtyGroups.filter(Boolean)
-        : m.specialtyGroup
-          ? [m.specialtyGroup]
-          : [];
+      const mentorSpecialtyGroups = Array.isArray(m.specialtyGroups_detail)
+        ? m.specialtyGroups_detail.map(g => g.name_he || g.name).filter(Boolean)
+        : Array.isArray(m.specialtyGroups)
+          ? m.specialtyGroups.filter(Boolean)
+          : m.specialtyGroup_detail
+            ? [m.specialtyGroup_detail.name]
+            : m.specialtyGroup
+              ? [m.specialtyGroup]
+              : [];
 
-      const mentorDegrees = Array.isArray(m.degrees)
-        ? m.degrees.filter(Boolean)
-        : m.degrees
-          ? [m.degrees]
-          : [];
+      const mentorDegrees = Array.isArray(m.degrees_detail)
+        ? m.degrees_detail.map(d => d.name_he || d.name).filter(Boolean)
+        : Array.isArray(m.degrees)
+          ? m.degrees.filter(Boolean)
+          : m.degrees
+            ? [m.degrees]
+            : [];
 
           return {
             id: m.id,
@@ -174,7 +184,7 @@ export default function Mentors() {
             specialties: mentorSpecialties,
             specialtyGroups: mentorSpecialtyGroups,
           
-            academicRank: m.academicRank || m.academic_rank || "",
+            academicRank: m.academicRank_detail?.name_he || m.academicRank_detail?.name || m.academicRank || m.academic_rank || "",
             degrees: mentorDegrees.join(", "),
             degreesList: mentorDegrees,
           
@@ -183,11 +193,11 @@ export default function Mentors() {
               m.universityAffiliation || m.university_affiliation || "",
           
             hasMentoringExperience: normalizeYesNo(
-              m.hasMentoringExperience || m.has_mentoring_experience
+              m.hasMentoringExperience ?? m.has_mentoring_experience
             ),
           
             Educational_institution:
-              m.institution || m.Educational_institution || m.educational_institution || "",
+              m.institution_detail?.name_he || m.institution_detail?.name || m.institution || m.Educational_institution || m.educational_institution || "",
           
             profileImage: m.avatarUrl || m.avatar_url || null,
           };

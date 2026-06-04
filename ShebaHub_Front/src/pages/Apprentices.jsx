@@ -166,27 +166,35 @@ export default function Apprentices() {
         s.weeklyHoursDisplay ??
         "";
 
+      const apprenticeDegrees = Array.isArray(s.degrees_detail)
+        ? s.degrees_detail.map(d => d.name_he || d.name).filter(Boolean)
+        : Array.isArray(s.degrees)
+          ? s.degrees
+          : [];
+
       return {
         id: s.id,
         name: s.name || "",
         gender: s.genderDisplay || s.gender || "",
         email: s.email || "",
 
-        medical_level: s.apprenticeStage || "",
+        medical_level: s.apprenticeStage_detail?.name_he || s.apprenticeStage_detail?.name || s.apprenticeStage || "",
         school_beginner_year: s.startYear ? String(s.startYear) : "",
         yearOfStudy: s.yearOfStudy || "",
 
         Educational_institution:
-          s.institution === "__other__" ? "אחר" : s.institution || "",
+          s.institution_detail?.name_he || s.institution_detail?.name || s.institution === "__other__" ? "אחר" : s.institution || "",
 
-        degrees: Array.isArray(s.degrees) ? s.degrees : [],
+        degrees: apprenticeDegrees,
 
         isShebaEmployee: normalizeYesNo(s.isShebaEmployee),
         isAvailableForResearch: normalizeYesNo(s.isAvailableForResearch),
 
-        compensationPreference: Array.isArray(s.compensationPreference)
-          ? s.compensationPreference
-          : [],
+        compensationPreference: Array.isArray(s.compensationPreference_detail)
+          ? s.compensationPreference_detail.map(p => p.name_he || p.name).filter(Boolean)
+          : Array.isArray(s.compensationPreference)
+            ? s.compensationPreference
+            : [],
 
         weeklyHours: normalizeWeeklyHours(rawWeeklyHours),
         startDate: s.startDate || "",

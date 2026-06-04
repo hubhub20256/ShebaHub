@@ -99,6 +99,21 @@ def researches(request):
     qs = Research.objects.filter(
         moderation_status="approved",
     ).select_related("owner").annotate(status_priority=status_order).order_by("status_priority", "-created_at")
+
+    # --- Optional query-param filters ---
+    q = request.query_params.get('q', '').strip()
+    if q:
+        from django.db.models import Q
+        qs = qs.filter(
+            Q(researchName__icontains=q) | Q(description__icontains=q)
+        )
+    area = request.query_params.get('area', '').strip()
+    if area:
+        qs = qs.filter(researchArea__icontains=area)
+    status_filter = request.query_params.get('status', '').strip()
+    if status_filter:
+        qs = qs.filter(status=status_filter)
+
     return Response(ResearchSerializer(qs, many=True, context={"request": request}).data)
 
 

@@ -36,6 +36,8 @@ from .serializers import (
 
 User = get_user_model()
 
+from rest_framework.permissions import AllowAny
+
 ADMIN_PERMS = [IsAuthenticated, IsAdminUser]
 
 
@@ -342,7 +344,7 @@ def list_users(request):
     return paginator.get_paginated_response(serializer.data)
 
 
-@api_view(["GET"])
+@api_view(["GET", "DELETE"])
 @permission_classes(ADMIN_PERMS)
 def get_user(request, pk):
     try:
@@ -351,6 +353,31 @@ def get_user(request, pk):
         return Response({"detail": "User not found."}, status=status.HTTP_404_NOT_FOUND)
     if user.is_superuser and not request.user.is_superuser:
         return Response({"detail": "User not found."}, status=status.HTTP_404_NOT_FOUND)
+
+    if request.method == "DELETE":
+        if user.is_superuser:
+            return Response(
+                {"detail": "Cannot delete a superuser account."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        if user.pk == request.user.pk:
+            return Response(
+                {"detail": "Cannot delete your own account via admin panel."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        email = user.email
+        user_id = str(user.pk)
+        user.delete()
+
+        _log_action(
+            request.user,
+            AdminActionLog.ActionType.USER_DELETE,
+            note=f"Deleted user {email} ({user_id})",
+            details={"email": email, "user_id": user_id},
+        )
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
     serializer = AdminUserSerializer(user)
     return Response(serializer.data)
 
@@ -470,6 +497,75 @@ def force_verify_user(request, pk):
         details={"email": target.email},
     )
     return Response({"detail": "User email verified."})
+
+
+# ===================== Admin Profile Deletion =====================
+
+
+def _delete_profile(profile, profile_type_label):
+    """Shared cleanup logic for deleting a student or mentor profile."""
+    if profile.avatar:
+        profile.avatar.delete(save=False)
+
+    for doc in profile.documents.all():
+        if doc.file:
+            doc.file.delete(save=False)
+        doc.delete()
+
+    profile.recommendations.all().delete()
+    profile.delete()
+
+
+@api_view(["DELETE"])
+@permission_classes(ADMIN_PERMS)
+def admin_delete_student_profile(request, user_id):
+    try:
+        target = User.objects.get(pk=user_id)
+    except User.DoesNotExist:
+        return Response({"detail": "User not found."}, status=status.HTTP_404_NOT_FOUND)
+
+    try:
+        profile = StudentProfile.objects.get(user=target)
+    except StudentProfile.DoesNotExist:
+        return Response({"detail": "Student profile not found."}, status=status.HTTP_404_NOT_FOUND)
+
+    profile_id = str(profile.pk)
+    _delete_profile(profile, "student")
+
+    _log_action(
+        request.user,
+        AdminActionLog.ActionType.PROFILE_DELETE,
+        target_user=target,
+        note=f"Deleted student profile {profile_id}",
+        details={"profile_type": "student", "profile_id": profile_id},
+    )
+    return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@api_view(["DELETE"])
+@permission_classes(ADMIN_PERMS)
+def admin_delete_mentor_profile(request, user_id):
+    try:
+        target = User.objects.get(pk=user_id)
+    except User.DoesNotExist:
+        return Response({"detail": "User not found."}, status=status.HTTP_404_NOT_FOUND)
+
+    try:
+        profile = MentorProfile.objects.get(user=target)
+    except MentorProfile.DoesNotExist:
+        return Response({"detail": "Mentor profile not found."}, status=status.HTTP_404_NOT_FOUND)
+
+    profile_id = str(profile.pk)
+    _delete_profile(profile, "mentor")
+
+    _log_action(
+        request.user,
+        AdminActionLog.ActionType.PROFILE_DELETE,
+        target_user=target,
+        note=f"Deleted mentor profile {profile_id}",
+        details={"profile_type": "mentor", "profile_id": profile_id},
+    )
+    return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 # ===================== Bulk User Actions =====================
@@ -742,6 +838,21 @@ def override_application(request, pk):
         details={"old_status": old_status, "new_status": new_status, "application_id": application.id},
     )
     return Response({"detail": f"Application status changed from {old_status} to {new_status}."})
+
+
+# ===================== Public Stats =====================
+
+
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def public_stats(request):
+    """Public, read-only aggregate counts. No private data exposed."""
+    data = {
+        "registered_mentors": MentorProfile.objects.count(),
+        "registered_students": StudentProfile.objects.count(),
+        "total_researches": Research.objects.filter(moderation_status="approved").count(),
+    }
+    return Response(data)
 
 
 # ===================== CSV Export =====================

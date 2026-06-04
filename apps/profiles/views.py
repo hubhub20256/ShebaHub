@@ -208,6 +208,28 @@ def public_mentor_list(request):
     )
     if SiteSetting.load().require_email_verification_to_apply:
         qs = qs.filter(user__email_verified=True)
+
+    # --- Optional query-param filters ---
+    q = request.query_params.get('q', '').strip()
+    if q:
+        from django.db.models import Q
+        qs = qs.filter(
+            Q(user__firstName__icontains=q) | Q(user__lastName__icontains=q)
+        )
+    specialty = request.query_params.get('specialty', '').strip()
+    if specialty:
+        qs = qs.filter(specialties__name_he=specialty)
+    institution = request.query_params.get('institution', '').strip()
+    if institution:
+        qs = qs.filter(institution__name_he=institution)
+    degree = request.query_params.get('degree', '').strip()
+    if degree:
+        qs = qs.filter(degrees__name=degree)
+    gender = request.query_params.get('gender', '').strip()
+    if gender:
+        qs = qs.filter(user__gender=gender)
+    qs = qs.distinct()
+
     return Response(PublicMentorSerializer(qs, many=True, context={'request': request}).data)
 
 
@@ -264,6 +286,28 @@ def public_student_list(request):
     )
     if SiteSetting.load().require_email_verification_to_apply:
         qs = qs.filter(user__email_verified=True)
+
+    # --- Optional query-param filters ---
+    q = request.query_params.get('q', '').strip()
+    if q:
+        from django.db.models import Q
+        qs = qs.filter(
+            Q(user__firstName__icontains=q) | Q(user__lastName__icontains=q)
+        )
+    institution = request.query_params.get('institution', '').strip()
+    if institution:
+        qs = qs.filter(institution__name_he=institution)
+    stage = request.query_params.get('stage', '').strip()
+    if stage:
+        qs = qs.filter(apprenticeStage__name_he=stage)
+    gender = request.query_params.get('gender', '').strip()
+    if gender:
+        qs = qs.filter(user__gender=gender)
+    available = request.query_params.get('available', '').strip()
+    if available:
+        qs = qs.filter(isAvailableForResearch=available.lower() in ('true', '1', 'yes'))
+    qs = qs.distinct()
+
     return Response(PublicStudentSerializer(qs, many=True, context={'request': request}).data)
 
 

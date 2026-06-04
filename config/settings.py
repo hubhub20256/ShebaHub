@@ -60,6 +60,7 @@ INSTALLED_APPS = [
     'apps.common',
     'apps.research',
     'apps.admin_panel',
+    'apps.saved_items',
 ]
 
 MIDDLEWARE = [

@@ -16,7 +16,7 @@ from datetime import date
 from rest_framework import serializers
 # Only allow a constrained set of academic degree names from the frontend
 # (prevents unsupported options like Post-Doc/"התמחות" from being saved).
-ALLOWED_DEGREE_NAMES = {"MD", "PhD", "MSc", "MPH", "MBA"}
+ALLOWED_DEGREE_NAMES = {"BSc", "MD", "PhD", "MSc", "MPH", "MBA"}
 # Sentinel value indicating the user has no prior degree – frontend sends this
 # as a degree selection; backend interprets it as "skip degree validation, store none".
 NO_DEGREE_SENTINEL = "ללא תואר קודם"
@@ -853,6 +853,9 @@ class MentorProfileSerializer(serializers.ModelSerializer):
             'recommenders',
             'linkedinUrl',
 
+            # אחר התמחות
+            'specialty_other',
+
             # דרגה אקדמית ושיוך אוניברסיטאי
             'universityRank',
             'universityAffiliation',
@@ -868,6 +871,7 @@ class MentorProfileSerializer(serializers.ModelSerializer):
             'personalAcademicDescription': {'max_length': 5000},
             'universityRank': {'max_length': 255},
             'universityAffiliation': {'max_length': 255},
+            'specialty_other': {'max_length': 255, 'required': False, 'allow_blank': True},
         }
 
     def to_internal_value(self, data):
@@ -1092,8 +1096,10 @@ class PublicMentorSerializer(serializers.ModelSerializer):
 
     specialty = serializers.SerializerMethodField(read_only=True)
     specialties = serializers.SerializerMethodField(read_only=True)
+    specialtyGroups = serializers.SerializerMethodField(read_only=True)
     degrees = serializers.SerializerMethodField(read_only=True)
     institution = serializers.SerializerMethodField(read_only=True)
+    academicRank = serializers.SerializerMethodField(read_only=True)
     avatarUrl = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
@@ -1105,8 +1111,13 @@ class PublicMentorSerializer(serializers.ModelSerializer):
             'genderDisplay',
             'specialty',
             'specialties',
+            'specialtyGroups',
             'degrees',
             'institution',
+            'academicRank',
+            'universityRank',
+            'universityAffiliation',
+            'hasMentoringExperience',
             'avatarUrl',
         ]
 
@@ -1131,8 +1142,16 @@ class PublicMentorSerializer(serializers.ModelSerializer):
     def get_specialties(self, obj):
         return [(s.name_he or s.name) for s in obj.specialties.all()]
 
+    def get_specialtyGroups(self, obj):
+        return [(g.name_he or g.name) for g in obj.specialtyGroups.all()]
+
     def get_degrees(self, obj):
         return [(d.name_he or d.name) for d in obj.degrees.all()]
+
+    def get_academicRank(self, obj):
+        if not obj.academicRank:
+            return None
+        return obj.academicRank.name_he or obj.academicRank.name
 
     def get_institution(self, obj):
         if not obj.institution:
@@ -1158,6 +1177,7 @@ class PublicStudentSerializer(serializers.ModelSerializer):
     startYear = serializers.IntegerField(read_only=True)
     apprenticeStage = serializers.SerializerMethodField(read_only=True)
     institution = serializers.SerializerMethodField(read_only=True)
+    degrees = serializers.SerializerMethodField(read_only=True)
     avatarUrl = serializers.SerializerMethodField(read_only=True)
     isAvailableForResearch = serializers.BooleanField(read_only=True)
 
@@ -1169,10 +1189,16 @@ class PublicStudentSerializer(serializers.ModelSerializer):
             'gender',
             'genderDisplay',
             'startYear',
+            'yearOfStudy',
             'apprenticeStage',
             'institution',
+            'degrees',
             'avatarUrl',
             'isAvailableForResearch',
+            'isShebaEmployee',
+            'compensationPreference',
+            'weeklyHours',
+            'startDate',
         ]
 
     def get_genderDisplay(self, obj):
@@ -1197,6 +1223,9 @@ class PublicStudentSerializer(serializers.ModelSerializer):
         if not obj.institution:
             return None
         return obj.institution.name_he or obj.institution.name
+
+    def get_degrees(self, obj):
+        return [(d.name_he or d.name) for d in obj.degrees.all()]
 
     def get_avatarUrl(self, obj):
         if obj.avatar:

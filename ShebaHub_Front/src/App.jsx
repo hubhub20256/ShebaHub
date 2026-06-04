@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 
 import { useAuth } from "./context/AuthContext";
@@ -48,6 +48,11 @@ const RedirectIfAuth = ({ children }) => {
 };
 
 function App() {
+  useEffect(() => {
+    const saved = localStorage.getItem("theme");
+    if (saved) document.documentElement.setAttribute("data-theme", saved);
+  }, []);
+
   return (
     <>
       <Toaster position="top-center" />

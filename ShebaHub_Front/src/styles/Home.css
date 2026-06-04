@@ -345,3 +345,31 @@ body,
     width: 100%;
   }
 }
+
+/* ===== DARK MODE ===== */
+[data-theme="dark"] .hero-title-text {
+  color: #b0b0b0;
+}
+
+[data-theme="dark"] .hero-subtitle {
+  color: var(--text-color);
+  background: linear-gradient(
+    180deg,
+    rgba(22, 22, 22, 0.35),
+    rgba(17, 17, 17, 0.08)
+  );
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="dark"] .subtitle-highlight {
+  color: var(--primary-color);
+}
+
+[data-theme="dark"] .vision-card {
+  background: var(--card-bg);
+  border-color: var(--border-color);
+}
+
+[data-theme="dark"] .vision-card h3 {
+  color: var(--text-color);
+}

@@ -254,6 +254,7 @@ export default function AdminUsers() {
 
       {confirmDialog && (
         <ConfirmDialog
+          isOpen={true}
           title={confirmDialog.title}
           message={confirmDialog.message}
           onConfirm={confirmDialog.onConfirm}

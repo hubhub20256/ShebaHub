@@ -549,6 +549,14 @@ class MentorProfile(models.Model):
         help_text="LinkedIn profile URL"
     )
 
+    # FE: specialty_other - טקסט חופשי כשנבחר "אחר" בהתמחות
+    specialty_other = models.CharField(
+        max_length=255,
+        blank=True,
+        db_column='specialty_other',
+        help_text="Free-text specialization when 'Other' is selected"
+    )
+
     # FE: universityRank - דרגה אקדמית (מרצה, מרצה בכיר, פרופסור חבר, פרופסור מן המניין)
     universityRank = models.CharField(
         max_length=255,

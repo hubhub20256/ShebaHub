@@ -98,3 +98,30 @@
     padding: 24px 22px;
   }
 }
+
+/* ===== DARK MODE ===== */
+[data-theme="dark"] .qr-modal-card {
+  --qr-modal-theme: #8fa4e6;
+  background: linear-gradient(
+    160deg,
+    rgba(22, 22, 22, 0.99),
+    rgba(17, 17, 17, 0.98)
+  );
+  border-color: var(--border-color);
+  box-shadow: 0 26px 64px rgba(0, 0, 0, 0.6);
+}
+
+[data-theme="dark"] .qr-modal-description {
+  color: #94a3b8;
+}
+
+[data-theme="dark"] .qr-modal-qr-box {
+  background: #1d1d1d;
+  border-color: var(--border-color);
+}
+
+[data-theme="dark"] .qr-modal-close-btn {
+  background: var(--card-bg);
+  color: var(--qr-modal-accent);
+  border-color: var(--qr-modal-accent);
+}

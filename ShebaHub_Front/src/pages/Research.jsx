@@ -25,7 +25,7 @@ import React, {
 } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import toast from "react-hot-toast";
-import { profilesAPI, researchAPI } from "../services/api";
+import { profilesAPI, researchAPI, savedItemsAPI } from "../services/api";
 import { useAuth } from "../context/AuthContext";
 import { useNotifications } from "../context/NotificationContext";
 import usePageTitle from "../hooks/usePageTitle";
@@ -186,7 +186,6 @@ const getAccordionContentStyle = (isOpen) => ({
 export default function Research() {
   usePageTitle("מחקר");
   const { user } = useAuth();
-  const savedResearchesKey = `savedResearches_${user?.id || 'guest'}`;
   const { refreshCount } = useNotifications();
   const { id } = useParams();
   const location = useLocation();
@@ -225,8 +224,8 @@ export default function Research() {
   const shareMenuRef = useRef(null);
 
   const [isSaved, setIsSaved] = useState(false);
+  const [savedItemId, setSavedItemId] = useState(null);
 
-  
   useEffect(() => {
     let cancelled = false;
 
@@ -355,16 +354,13 @@ export default function Research() {
   const data = research;
 
   useEffect(() => {
-    const savedResearches = JSON.parse(
-      localStorage.getItem(savedResearchesKey) || "[]"
-    );
-  
-    const exists = savedResearches.some(
-      (item) => item.id === data?.id
-    );
-  
-    setIsSaved(exists);
-  }, [data]);
+    if (!data?.id || !user) return;
+    savedItemsAPI.list("research").then((items) => {
+      const match = items.find((item) => String(item.objectId) === String(data.id));
+      setIsSaved(!!match);
+      setSavedItemId(match ? match.id : null);
+    }).catch(() => {});
+  }, [data, user]);
 
   const researchShareUrl = useMemo(() => {
     const researchId = data?.id ?? id;
@@ -1339,40 +1335,31 @@ export default function Research() {
               {!canEditThis && (  
                 <button
                   type="button"
-                  className={`save-research-button-inline ${isSaved ? "saved" : ""}`}                  onClick={(e) => {
+                  className={`save-research-button-inline ${isSaved ? "saved" : ""}`}                  onClick={async (e) => {
                     e.stopPropagation();
-
-                    const savedResearches = JSON.parse(
-                      localStorage.getItem(savedResearchesKey) || "[]"
-                    );
-
-                    const exists = savedResearches.some((item) => item.id === data.id);
-
-                    if (exists) {
-                      const updated = savedResearches.filter((item) => item.id !== data.id);
-                      localStorage.setItem(savedResearchesKey, JSON.stringify(updated));
-                      setIsSaved(false);
-                      toast("המחקר הוסר מהשמורים");
-                    } else {
-                      savedResearches.push({
-                        id: data.id,
-                        title: data.researchName,
-                        status: data.status,
-                        acceptingApplications: data.accepting_applications,
-                        isFull: data.isFull,
-                        fields: data.fields || [],
-                        mentors: data.mentors || [],
-                        description: data.description || "",
-                        apprenticesCount: data.apprenticesCount || "",
-                        startDate: data.startDate || "",
-                        hoursScope: data.hoursScope || "",
-                        duration: data.duration || "",
-                        rewards: data.rewards || "",
-                      });
-
-                      localStorage.setItem(savedResearchesKey, JSON.stringify(savedResearches));
-                      setIsSaved(true);
-                      toast.success("המחקר נשמר");
+                    try {
+                      if (isSaved && savedItemId) {
+                        await savedItemsAPI.remove(savedItemId);
+                        setIsSaved(false);
+                        setSavedItemId(null);
+                        toast("המחקר הוסר מהשמורים");
+                      } else {
+                        const result = await savedItemsAPI.save("research", data.id);
+                        setIsSaved(true);
+                        setSavedItemId(result.id);
+                        toast.success("המחקר נשמר");
+                      }
+                    } catch (err) {
+                      if (err?.status === 409) {
+                        // Already saved — refresh state
+                        setIsSaved(true);
+                        savedItemsAPI.list("research").then((items) => {
+                          const match = items.find((item) => String(item.objectId) === String(data.id));
+                          if (match) setSavedItemId(match.id);
+                        }).catch(() => {});
+                      } else {
+                        toast.error("שגיאה בשמירת המחקר");
+                      }
                     }
                   }}
                   aria-label="שמירת מחקר"

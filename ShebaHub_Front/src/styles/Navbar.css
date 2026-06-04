@@ -308,4 +308,29 @@
   .hamburger-menu.open .hamburger-line:nth-child(3) {
     transform: rotate(-45deg) translate(5px, -6px);
   }
+
+  [data-theme="dark"] .navbar-link {
+    border-bottom-color: var(--border-color);
+  }
+}
+
+/* ===== DARK MODE - Links & Hamburger ===== */
+[data-theme="dark"] .navbar-link {
+  color: var(--text-color);
+}
+
+[data-theme="dark"] .navbar-link:hover {
+  background: rgba(230, 236, 255, 0.08);
+}
+
+[data-theme="dark"] .navbar-link:hover::after {
+  background: rgba(230, 236, 255, 0.35);
+}
+
+[data-theme="dark"] .hamburger-line {
+  background-color: var(--text-color);
+}
+
+[data-theme="dark"] .profile-dropdown-link:hover {
+  background: rgba(230, 236, 255, 0.08);
 }
